@@ -1,0 +1,58 @@
+name: Bug report
+description: Something does not work the way the docs say it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Polish or English are both fine.
+        **Do not paste real client names or phone numbers.** Replace them with the fixture `+48 601 234 567`.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Mobile app (apps/mobile)
+        - Backend: migrations / RLS (supabase/migrations)
+        - Backend: edge functions (supabase/functions)
+        - Waitlist site (apps/waitlist)
+        - Product website (apps/website)
+        - Build, CI or tooling
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Tap …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Include logs or a screenshot if you have them (with personal data removed).
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "Android 15 / Pixel 8, Flutter 3.47.2, commit abc1234, local supabase start"
+  - type: checkboxes
+    id: offline
+    attributes:
+      label: Connectivity
+      options:
+        - label: It happens while the phone is offline
+        - label: It happens only after a sync

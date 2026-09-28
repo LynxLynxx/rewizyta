@@ -1,0 +1,29 @@
+# OS / editors
+.DS_Store
+.idea/
+*.iml
+*.log
+
+# Dart / Flutter
+.dart_tool/
+build/
+coverage/
+pubspec_overrides.yaml
+
+# Secrets and local config. Copy the *.example files instead.
+.env
+.env.*
+!.env.example
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# Generated code (melos run gen / melos run l10n)
+*.g.dart
+*.drift.dart
+packages/rewizyta_localization/lib/generated/
+
+# Private business notes (pricing, margins, competitor research). See docs/private/BUSINESS.md locally.
+docs/private/

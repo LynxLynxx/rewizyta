@@ -1,0 +1,35 @@
+# Shared lint configuration for every package in the workspace.
+# Each package's analysis_options.yaml includes this file by relative path,
+# so there is exactly one place to change a rule.
+#
+# leancode_lint (LeanCode, Warsaw) ships as a Dart analyzer plugin; no
+# custom_lint, so it does not conflict with melos over cli_util.
+include: package:leancode_lint/analysis_options.yaml
+
+plugins:
+  leancode_lint: ^27.0.0
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.drift.dart"
+    - "**/generated/**"
+    - build/**
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+formatter:
+  page_width: 100
+  trailing_commas: preserve
+
+linter:
+  rules:
+    # The formatter's page_width above is the line-length rule.
+    lines_longer_than_80_chars: false
+    # Every domain object, DTO and state is a plain class; public API docs on a
+    # private app are noise. Keep them on the shared packages' barrels only.
+    public_member_api_docs: false
+    # One-line `if (x) return;` guards are the norm in cubits; keep them.
+    always_put_control_body_on_new_line: false

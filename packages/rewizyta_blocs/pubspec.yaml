@@ -1,0 +1,31 @@
+name: rewizyta_blocs
+description: State management - cubits and their Equatable states, the cubit-pattern mixins (error and signal side-channels, subscriptions) and the global BlocObserver. Depends on services and view models, never on repositories.
+publish_to: none
+version: 0.1.0
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0 <4.0.0"
+
+dependencies:
+  equatable: ^3.0.0
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  meta: ^1.18.0
+  rewizyta_models:
+    path: ../rewizyta_models
+  rewizyta_services:
+    path: ../rewizyta_services
+  rewizyta_shared:
+    path: ../rewizyta_shared
+  rewizyta_view_models:
+    path: ../rewizyta_view_models
+
+dev_dependencies:
+  bloc_test: ^10.0.0
+  flutter_test:
+    sdk: flutter
+  leancode_lint: ^27.0.0
+  mocktail: ^1.0.5

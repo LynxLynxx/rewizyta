@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Blocks a commit that would record a secret or personal data.
+# Enable once per clone:  git config core.hooksPath tool/githooks   (or: melos run hooks)
+# Bypass for a false positive you have checked:  git commit --no-verify
+exec "$(git rev-parse --show-toplevel)/tool/check_secrets.sh" --staged

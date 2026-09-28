@@ -1,0 +1,39 @@
+{
+  "@@locale": "pl",
+  "appTitle": "Rewizyta",
+  "@appTitle": {
+    "description": "Application name shown in the task switcher."
+  },
+  "clientsTitle": "Klienci",
+  "@clientsTitle": {
+    "description": "App bar title of the client list."
+  },
+  "clientsEmpty": "Nie masz jeszcze żadnych klientów.",
+  "@clientsEmpty": {
+    "description": "Shown when the client list is empty."
+  },
+  "clientsAdd": "Dodaj klienta",
+  "@clientsAdd": {
+    "description": "Floating action button on the client list."
+  },
+  "clientNoPhone": "Brak numeru",
+  "@clientNoPhone": {
+    "description": "Subtitle of a client without a phone number."
+  },
+  "errorGenericTitle": "Coś poszło nie tak",
+  "@errorGenericTitle": {
+    "description": "Default snackbar title for errors."
+  },
+  "errorClientNotFound": "Nie znaleziono klienta.",
+  "@errorClientNotFound": {
+    "description": "Snackbar message when a client id is unknown."
+  },
+  "validationNameEmpty": "Podaj nazwę klienta.",
+  "@validationNameEmpty": {
+    "description": "Inline validation: client name is empty."
+  },
+  "validationPhoneInvalid": "Nieprawidłowy numer telefonu.",
+  "@validationPhoneInvalid": {
+    "description": "Inline validation: phone number is not E.164."
+  }
+}

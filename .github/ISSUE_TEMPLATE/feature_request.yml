@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a change to what the app does.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check `docs/PRODUCT.md` and `docs/TASKS.md` first: the feature may already be planned,
+        or deliberately out of scope. Polish or English are both fine.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What does a technician struggle with today? A concrete situation beats a feature name.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: offline
+    attributes:
+      label: Offline behaviour
+      description: The app must work without signal. How does this feature behave when the phone is offline?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

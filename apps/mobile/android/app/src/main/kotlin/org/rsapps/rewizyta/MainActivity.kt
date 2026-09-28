@@ -1,0 +1,5 @@
+package org.rsapps.rewizyta
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

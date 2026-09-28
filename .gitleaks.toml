@@ -1,0 +1,67 @@
+# gitleaks configuration. Run `melos run secrets` (or tool/check_secrets.sh) locally;
+# CI runs the same scan on every push and over the full history.
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+title = "rewizyta"
+
+[extend]
+# Start from the built-in rule set (AWS, GitHub, Slack, JWT, private keys, ...).
+useDefault = true
+
+# Project-specific rules on top of the defaults.
+[[rules]]
+id = "supabase-publishable-or-secret-key"
+description = "Supabase sb_publishable_/sb_secret_ API key"
+regex = '''sb_(publishable|secret)_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_publishable_", "sb_secret_"]
+
+[[rules]]
+id = "supabase-project-url"
+description = "Hosted Supabase project URL (reveals the project ref; use a placeholder)"
+regex = '''https://[a-z]{20}\.supabase\.co'''
+keywords = ["supabase.co"]
+
+[[rules]]
+id = "sentry-dsn"
+description = "Sentry DSN"
+regex = '''https://[a-f0-9]{16,}@[a-z0-9.-]*(sentry\.io|ingest\.[a-z0-9.-]+)/[0-9]+'''
+keywords = ["sentry.io", "ingest."]
+
+[[rules]]
+id = "posthog-project-key"
+description = "PostHog project API key"
+regex = '''phc_[A-Za-z0-9]{30,}'''
+keywords = ["phc_"]
+
+[[rules]]
+id = "smsapi-token"
+description = "SMSAPI OAuth bearer token (assigned in an env var or secret)"
+regex = '''(?i)(smsapi|sms_api)[a-z_]*(token|key)\s*[:=]\s*["']?[A-Za-z0-9]{40,}'''
+keywords = ["smsapi", "sms_api"]
+
+[[rules]]
+id = "brevo-api-key"
+description = "Brevo (Sendinblue) API key"
+regex = '''xkeysib-[a-f0-9]{64}-[A-Za-z0-9]{16}'''
+keywords = ["xkeysib-"]
+
+[[rules]]
+id = "google-services-file"
+description = "Firebase google-services.json / GoogleService-Info.plist committed (contains the FCM API key)"
+path = '''(google-services\.json|GoogleService-Info\.plist)$'''
+
+[allowlist]
+description = "Known-safe values"
+paths = [
+  '''(^|/)pubspec\.lock$''',
+  '''\.gitleaks\.toml$''',
+  '''^tool/check_secrets\.sh$''',
+  '''(^|/)\.dart_tool/''',
+  '''(^|/)build/''',
+]
+regexes = [
+  # Local Supabase stack: URL and the well-known demo JWTs every `supabase start` prints.
+  '''http://127\.0\.0\.1:54321''',
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIi[A-Za-z0-9._-]+''',
+  # Fixture phone number used across tests and docs.
+  '''\+48601234567''',
+]

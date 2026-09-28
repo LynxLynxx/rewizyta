@@ -1,0 +1,134 @@
+# Root of the Melos workspace. `melos bootstrap` here sets up every package.
+#
+# Pub-workspace members (shared lockfile): the Flutter app and the layer
+# packages under packages/ (see docs/ARCHITECTURE.md, "Packages").
+#
+# The Jaspr sites (apps/waitlist, apps/website) are deliberately NOT pub-workspace
+# members: jaspr_builder pins an older `analyzer` than drift_dev / json_serializable
+# need, so one shared lockfile would force the app's codegen onto stale versions.
+# They keep their own lockfiles and are driven by the `sites:*` scripts below (and
+# by the bootstrap hook), so melos stays the one entry point for the whole repo.
+name: rewizyta_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - apps/mobile
+  - packages/rewizyta_blocs
+  - packages/rewizyta_localization
+  - packages/rewizyta_models
+  - packages/rewizyta_repositories
+  - packages/rewizyta_services
+  - packages/rewizyta_shared
+  - packages/rewizyta_view_models
+
+dev_dependencies:
+  # Melos looks for itself here to recognise the workspace root.
+  melos: ^8.6.0
+
+melos:
+  command:
+    bootstrap:
+      runPubGetInParallel: true
+      hooks:
+        post: melos run sites:get
+
+  scripts:
+    # ---- whole repo -------------------------------------------------------
+    check:
+      description: Everything CI runs, in order.
+      run: >-
+        melos run gen &&
+        melos run l10n &&
+        melos run format &&
+        melos run analyze &&
+        melos run test &&
+        melos run sites:format &&
+        melos run sites:analyze
+
+    # ---- Flutter side (pub-workspace members) -----------------------------
+    analyze:
+      description: Static analysis of every workspace package.
+      exec:
+        command: dart analyze --fatal-infos .
+        concurrency: 1
+    format:
+      description: Check formatting of every workspace package, generated files excluded (CI mode).
+      exec:
+        command: bash $MELOS_ROOT_PATH/tool/format.sh --check
+        concurrency: 1
+    format:fix:
+      description: Format every workspace package in place, generated files excluded.
+      exec:
+        command: bash $MELOS_ROOT_PATH/tool/format.sh
+        concurrency: 1
+    test:
+      description: Run the tests of every workspace package that has a test/ folder.
+      exec:
+        command: flutter test
+        concurrency: 1
+        failFast: true
+      packageFilters:
+        dirExists: test
+    gen:
+      description: build_runner (json_serializable, drift) in every package that needs it.
+      exec:
+        command: dart run build_runner build
+        concurrency: 1
+        orderDependents: true
+      packageFilters:
+        dependsOn: build_runner
+    gen:watch:
+      description: build_runner watch for the repositories package (DTOs, drift).
+      exec:
+        command: dart run build_runner watch
+      packageFilters:
+        scope: rewizyta_repositories
+    l10n:
+      description: Regenerate the localizations from the ARB files.
+      exec:
+        command: flutter gen-l10n
+      packageFilters:
+        scope: rewizyta_localization
+    layering:
+      description: Fails if any package imports across a layer boundary (see docs/ARCHITECTURE.md).
+      run: bash tool/check_layering.sh
+    secrets:
+      description: gitleaks + greps for credentials, hosted hostnames and personal data in the tree.
+      run: bash tool/check_secrets.sh
+    secrets:history:
+      description: The same scan over every commit (what CI runs).
+      run: bash tool/check_secrets.sh --history
+    hooks:
+      description: Point git at tool/githooks so the secrets scan runs before every commit.
+      run: git config core.hooksPath tool/githooks && echo "hooks installed"
+
+    # ---- Jaspr sites (own lockfiles) --------------------------------------
+    sites:get:
+      description: pub get for both Jaspr sites.
+      run: >-
+        (cd apps/waitlist && dart pub get) &&
+        (cd apps/website && dart pub get)
+    sites:format:
+      description: Check formatting of both sites (CI mode).
+      run: >-
+        (cd apps/waitlist && dart format --output=none --set-exit-if-changed lib) &&
+        (cd apps/website && dart format --output=none --set-exit-if-changed lib)
+    sites:analyze:
+      description: Static analysis of both sites.
+      run: >-
+        (cd apps/waitlist && dart analyze --fatal-infos) &&
+        (cd apps/website && dart analyze --fatal-infos)
+    sites:build:
+      description: Pre-render both sites to apps/<site>/build/jaspr.
+      run: >-
+        (cd apps/waitlist && jaspr build) &&
+        (cd apps/website && jaspr build)
+    waitlist:serve:
+      description: Dev server for the waitlist page (http://localhost:8080).
+      run: cd apps/waitlist && jaspr serve
+    website:serve:
+      description: Dev server for the product website (http://localhost:8080).
+      run: cd apps/website && jaspr serve
