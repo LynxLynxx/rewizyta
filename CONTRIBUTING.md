@@ -56,12 +56,28 @@ existing migration or the database by hand.
 
 ## Pull requests
 
+`main` is protected by a ruleset: nobody pushes to it directly, not even the
+maintainer. Every change is a branch and a pull request, and the PR can only be
+merged when the four CI checks are green:
+
+| Check | What it runs |
+|---|---|
+| Secret and personal-data scan | gitleaks over the tree and the whole history, plus the PII greps |
+| Flutter workspace | `melos run gen`, `l10n`, `format`, `analyze`, `layering`, `test` |
+| Jaspr site (waitlist) | `dart format`, `dart analyze --fatal-infos`, `jaspr build` |
+| Jaspr site (website) | the same for the product website |
+
 - One change per pull request. Refactors and features go in separate PRs.
+- Branch names: `feat/…`, `fix/…`, `chore/…`, `docs/…`. The branch is deleted
+  automatically after the merge.
 - Fill in the template. The checklist mirrors `CLAUDE.md`; ticking a box you have
   not done wastes review time.
-- CI must be green: secrets scan, format, analyse, layering, tests, both sites.
-- Commit messages are in English, imperative mood, and say *why* when the diff
-  does not make it obvious.
+- Every review thread must be resolved before merging.
+- PRs are **squash-merged**, so `main` has one commit per PR and a linear history.
+  The PR title becomes the commit subject: write it in English, imperative mood,
+  under 72 characters (`Add equipment table and repository`), and use the PR
+  description to say *why* when the diff does not make it obvious. Commits inside
+  the branch can be as messy as you like.
 
 Review is done by the maintainer, usually within a week. Small, focused PRs get
 merged fastest.

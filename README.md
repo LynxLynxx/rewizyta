@@ -1,5 +1,8 @@
 # Rewizyta
 
+[![CI](https://github.com/LynxLynxx/rewizyta/actions/workflows/ci.yml/badge.svg)](https://github.com/LynxLynxx/rewizyta/actions/workflows/ci.yml)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
 *Rewizyta* (Polish: a return visit) is an offline-first app for one-person field
 technicians in Poland: chimney sweeps, gas and boiler servicemen. They look after
 300–600 clients who each need a service every 3 or 12 months, and today they keep
@@ -84,7 +87,8 @@ cp .env.example .env           # then paste the URL and publishable key from `su
 
 ## Contributing
 
-Issues and pull requests are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the
+Issues and pull requests are welcome. `main` is protected: every change lands through a
+pull request that passes CI. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the
 process and [`CLAUDE.md`](CLAUDE.md) for the rules the codebase follows (offline-first,
 RLS on every table, Polish UI strings in ARB files, layers that only point down,
 EU-hosted services) and the decisions that are already made. Stack: flutter_bloc +
