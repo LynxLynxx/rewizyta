@@ -229,7 +229,7 @@ format → analyze matters; `melos run check` does it right.
   change the defaults in code).
 - MIT licence.
 - Trunk-based git: `main` is the only long-lived branch, protected by a ruleset
-  (PR required, four CI checks, squash-only, linear history). Releases are `v*`
+  (PR required, five CI checks, squash-only, linear history). Releases are `v*`
   tags on `main`; no `develop` or `release/*` branches. Hotfixes are ordinary PRs.
 - Secrets stay in git-ignored `.env` files, GitHub environment secrets and
   Supabase function secrets. No hosted secrets manager: Doppler was considered
