@@ -384,6 +384,19 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# The waitlist functions are called by the static site and by mail providers,
+# neither of which has a Supabase key. They check origin, rate and input
+# themselves and reach the database only through service-role-only SQL
+# functions. `supabase functions deploy` reads these flags too.
+[functions.waitlist-signup]
+verify_jwt = false
+
+[functions.waitlist-confirm]
+verify_jwt = false
+
+[functions.waitlist-unsubscribe]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

@@ -1,0 +1,17 @@
+{
+  "fmt": {
+    "include": ["functions/"],
+    "lineWidth": 120,
+    "singleQuote": true
+  },
+  "lint": {
+    "include": ["functions/"],
+    "rules": { "tags": ["recommended"] }
+  },
+  "test": {
+    "include": ["functions/"]
+  },
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check functions/ && deno test"
+  }
+}

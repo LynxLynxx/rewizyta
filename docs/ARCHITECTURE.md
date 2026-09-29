@@ -342,18 +342,33 @@ user data. Brevo's own contact lists are not used: the list is ours.
 
 We keep the mailing list ourselves so no vendor owns it:
 
-1. **Sign-up.** The waitlist form posts `{email, trade, source}` plus a decoy anti-spam field to
-   `waitlist-signup`. The function upserts `waitlist_signups`, generates a
-   `confirm_token`, an `unsubscribe_token` and a `promo_code`, and sends the
-   double-opt-in mail. The page shows the promo code right away so the visitor
-   has a reason to keep it.
-2. **Confirm.** The mail's link hits `waitlist-confirm?token=…`, which sets
+1. **Sign-up.** The waitlist form posts `{email, trade, source}` plus a decoy
+   anti-spam field to `waitlist-signup`. The function checks the origin, the
+   input and two rate limits, then calls `waitlist_signup()` in SQL, which
+   inserts the row with a `confirm_token`, an `unsubscribe_token` and a
+   `promo_code`, and sends the double-opt-in mail. The page shows the promo
+   code right away so the visitor has a reason to keep it. An address that is
+   already on the list never gets its code in the response, only by mail, so
+   typing someone else's address reveals nothing but the fact that it is
+   known.
+2. **Confirm.** The mail links to the site's `/potwierdz/#t=…` page, which has
+   a "confirm" button that posts the token to `waitlist-confirm`; that sets
    `confirmed_at`. Only confirmed rows ever receive a second mail (GDPR
-   consent is the confirmation).
-3. **Unsubscribe.** Every mail carries `waitlist-unsubscribe?token=…` in the
-   body and as `List-Unsubscribe` / `List-Unsubscribe-Post` headers (one-click,
-   required by Gmail/Yahoo since 2024). The function sets `unsubscribed_at`; the
-   row stays so we never mail that address again and can prove the opt-out.
+   consent is the confirmation). The link opens a page instead of acting on
+   GET because corporate link scanners open every URL in a message and would
+   confirm on the reader's behalf; hosted functions also rewrite `text/html`
+   on GET to plain text, so the page has to live on the site anyway. The token
+   rides in the fragment, which never reaches a server log.
+3. **Unsubscribe.** Every mail carries the site's `/wypisz/#t=…` page in the
+   body (a button again) and `waitlist-unsubscribe?token=…` as `List-Unsubscribe`
+   / `List-Unsubscribe-Post` headers (RFC 8058 one-click, required by
+   Gmail/Yahoo since 2024; mail providers POST to it). A GET on that URL is
+   redirected to the page. The function sets `unsubscribed_at`; the row stays
+   so we never mail that address again and can prove the opt-out. Brevo adds
+   its own `List-Unsubscribe` to transactional mail as well, and a click on it
+   blocks the address at Brevo without telling us. Before launch, check with a
+   real send which header wins; if Brevo's does, add a webhook that mirrors
+   Brevo unsubscribes into `unsubscribed_at`.
 4. **Launch mail and later sends** are an edge function that selects
    `confirmed_at is not null and unsubscribed_at is null` and sends in batches
    through the same adapter, recording `last_mailed_at`.
@@ -361,6 +376,13 @@ We keep the mailing list ourselves so no vendor owns it:
    onboarding; `redeem-promo` (service role) checks the code is unused, sets
    `redeemed_at` / `redeemed_by` and grants the reward on `profiles`
    (`sms_balance` credit or days on `paid_until`). One code, one account.
+
+Abuse controls on the public functions, all without a CAPTCHA or a third-party
+script: the decoy field (a filled one gets a fake success and nothing is
+stored), an origin check, 5 sign-ups per caller per 10 minutes and 120 for
+everyone per hour (`rate_limits`, keyed by an HMAC of the IP), and at most one
+mail per address per 15 minutes. The overall cap is what keeps a flood with
+forged `x-forwarded-for` headers from burning Brevo's 300 mails a day.
 
 The website and the waitlist page still ship no scripts other than the form,
 and set no cookies.

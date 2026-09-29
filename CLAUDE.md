@@ -41,6 +41,8 @@ melos run layering     # grep-based import-direction audit (tool/check_layering.
 melos run secrets      # gitleaks + PII greps over the tree (tool/check_secrets.sh); CI runs it on the history too
 melos run hooks        # once per clone: pre-commit hook that runs the secrets scan on staged files
 melos run test         # flutter test in every package with test/
+melos run functions:check  # edge functions: deno fmt, lint, check, test (needs Deno 2)
+melos run db:test      # pgTAP tests in supabase/tests against the local database
 melos run check        # gen + l10n + format + analyze + test, app and sites
 melos run --list       # everything else (serve a site, build the sites, ...)
 supabase start / db reset / functions serve     # from the repo root (the CLI finds supabase/)
@@ -183,7 +185,12 @@ format → analyze matters; `melos run check` does it right.
 - One SQL file per change under `migrations/`, named `YYYYMMDDHHMMSS_<what>.sql`.
   Tables, RLS, policies, indexes and triggers for a table are in the same file.
 - Edge functions in TypeScript, one folder per function, shared code under
-  `functions/_shared/`. Gateways (SMS, e-mail, push) are behind small adapter
+  `functions/_shared/`. Each function is `index.ts` (reads env, wires the real
+  dependencies, `Deno.serve`) plus `handler.ts` (`createXHandler(deps)`) tested
+  with fakes in `handler_test.ts`; nothing in a handler reads `Deno.env`. SQL
+  behaviour (RLS, grants, functions) is tested with pgTAP under `supabase/tests/`.
+  Public functions set `verify_jwt = false` in `config.toml` and do their own
+  origin, input and rate-limit checks. Gateways (SMS, e-mail, push) are behind small adapter
   interfaces selected by `SMS_PROVIDER` / `EMAIL_PROVIDER` / `PUSH_PROVIDER`
   secrets, each with a console stub and a shared contract test. Interfaces
   expose only what every vendor offers, so switching to a cheaper vendor is

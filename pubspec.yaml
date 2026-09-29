@@ -45,6 +45,7 @@ melos:
         melos run format &&
         melos run analyze &&
         melos run test &&
+        melos run functions:check &&
         melos run sites:format &&
         melos run sites:analyze
 
@@ -95,6 +96,14 @@ melos:
     layering:
       description: Fails if any package imports across a layer boundary (see docs/ARCHITECTURE.md).
       run: bash tool/check_layering.sh
+
+    # ---- Backend (supabase/) ----------------------------------------------
+    functions:check:
+      description: Edge functions - deno fmt, lint, type check and tests (needs Deno 2).
+      run: cd supabase && deno task check
+    db:test:
+      description: pgTAP tests in supabase/tests against the local database (needs `supabase start` or `supabase db start`).
+      run: supabase test db
     secrets:
       description: gitleaks + greps for credentials, hosted hostnames and personal data in the tree.
       run: bash tool/check_secrets.sh
