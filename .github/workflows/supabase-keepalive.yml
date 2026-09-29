@@ -7,7 +7,9 @@
 # backups) or self-hosted, because a paused project also stops the reminder
 # jobs. See docs/ARCHITECTURE.md, "Hosting and the free-tier pause".
 #
-# Secrets: SUPABASE_URL (https://<ref>.supabase.co) and SUPABASE_PUBLISHABLE_KEY.
+# Secrets, on the "staging" GitHub environment (never repo-level, so a future
+# production project keeps its own values apart): SUPABASE_URL
+# (https://<ref>.supabase.co) and SUPABASE_PUBLISHABLE_KEY.
 name: Supabase keepalive
 
 on:
@@ -21,6 +23,7 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    environment: staging
     steps:
       - name: Call keepalive()
         env:

@@ -27,7 +27,8 @@ Tick items as they land; add a short note when a decision changes.
 - [x] Adapter interfaces + no-ops for analytics, crash reporting, push.
 - [x] `README.md`, `CLAUDE.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/DATABASE.md`.
 - [x] CI skeleton, keepalive workflow + `keepalive()` migration, MIT licence, `CONTRIBUTING.md`, `SECURITY.md`, code of conduct, issue and PR templates, `.env.example`.
-- [x] `main` protected by a ruleset: PR required, the four CI checks required, squash-only, linear history, no force-push; Dependabot for the GitHub Actions (2026-09-28).
+- [x] Environments: `supabase/config.toml` committed, `Backend migrations` CI job, `deploy-supabase.yml` (staging on merge, production on `v*` tag with approval), `staging` / `production` GitHub environments, `.coderabbit.yaml` (2026-09-28).
+- [x] `main` protected by a ruleset: PR required, the five CI checks required, squash-only, linear history, no force-push; Dependabot for the GitHub Actions (2026-09-28).
 
 ## M1 – Local data layer
 

@@ -75,11 +75,14 @@ melos run website:serve
 Backend, locally:
 
 ```bash
-cd supabase && supabase init   # first time only
-supabase start                 # Postgres, Auth, Studio in Docker
+supabase start                 # from the repo root: Postgres, Auth, Studio in Docker
 supabase db reset              # applies migrations/ and seed.sql
 cp .env.example .env           # then paste the URL and publishable key from `supabase status`
 ```
+
+`supabase/config.toml` is committed, so there is no `supabase init` step. Staging
+and production are hosted projects deployed by GitHub Actions; see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#environments-and-deployment).
 
 `melos run --list` shows every script. The Jaspr sites keep their own lockfiles
 (see the note in `pubspec.yaml`), which is why `melos bootstrap` runs their

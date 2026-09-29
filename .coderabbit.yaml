@@ -1,0 +1,79 @@
+# CodeRabbit reviews every pull request against the conventions in CLAUDE.md.
+# The mechanical checks (format, analyze, layering, tests, secrets) stay in CI;
+# this is the second pair of eyes a one-person project does not otherwise have.
+# Reference: https://docs.coderabbit.ai/reference/configuration
+language: en-US
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  collapse_walkthrough: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!**/*.g.dart"
+    - "!**/*.drift.dart"
+    - "!**/generated/**"
+    - "!**/pubspec.lock"
+  path_instructions:
+    - path: "supabase/migrations/**/*.sql"
+      instructions: >-
+        Every table created here must, in this same file, enable and force row level
+        security and add a policy on user_id = auth.uid(). Money is an integer in
+        grosze, phone numbers are E.164 text, timestamps are timestamptz, dates are
+        date, deletion is a deleted_at column. Never edit an existing migration.
+        A migration must keep working for the previous app release: add columns
+        with defaults, never rename or drop in the same release (expand, then
+        contract).
+    - path: "supabase/functions/**"
+      instructions: >-
+        SMS, e-mail and push go through the adapter interfaces in _shared; nothing
+        may call a vendor SDK directly. Vendor selection comes from the
+        SMS_PROVIDER / EMAIL_PROVIDER / PUSH_PROVIDER secrets. No secrets or hosted
+        project refs in code.
+    - path: "packages/rewizyta_blocs/**"
+      instructions: >-
+        Cubits inject services only, never repositories. Every await is followed
+        by an isClosed guard. Errors and one-off effects leave through emitError
+        and emitSignal, never through an error state. Map domain models to view
+        models before emitting.
+    - path: "apps/mobile/lib/**"
+      instructions: >-
+        No hardcoded user-facing strings (use context.l10n) and no Colors.*
+        literals (use context.appColors / context.colorScheme). Pages resolve
+        cubits only inside BlocProvider.create. Nothing in the UI waits on the
+        network.
+    - path: "packages/rewizyta_localization/lib/l10n/*.arb"
+      instructions: >-
+        Values are Polish on purpose; do not suggest translating them. Keys are
+        camelCase and sorted, each with a description.
+    - path: "**/*_test.dart"
+      instructions: >-
+        Every service method, cubit and page gets a test; mocktail for mocks,
+        bloc_test for cubits, repositories against NativeDatabase.memory(). Flag
+        tautological assertions and tests that only exercise mocks.
+  tools:
+    gitleaks:
+      enabled: true
+    shellcheck:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: false # the design docs use long tables and headings on purpose
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - CLAUDE.md
+      - CONTRIBUTING.md
+
+chat:
+  auto_reply: true

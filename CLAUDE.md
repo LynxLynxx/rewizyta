@@ -43,7 +43,7 @@ melos run hooks        # once per clone: pre-commit hook that runs the secrets s
 melos run test         # flutter test in every package with test/
 melos run check        # gen + l10n + format + analyze + test, app and sites
 melos run --list       # everything else (serve a site, build the sites, ...)
-supabase start / db reset / functions serve     # from supabase/
+supabase start / db reset / functions serve     # from the repo root (the CLI finds supabase/)
 ```
 
 Generated files (`*.g.dart`, `*.drift.dart`, `lib/generated/`) are git-ignored.
@@ -92,6 +92,11 @@ format → analyze matters; `melos run check` does it right.
     the app may. `melos run layering` fails otherwise.
 11. **EU first.** Every hosted service we add must offer EU data residency or
     be self-hostable in the EU. See `docs/ARCHITECTURE.md`, "EU stance".
+12. **A migration must keep working for the previous app release.** Phones are
+    offline-first and can run last month's build; the server cannot wait for
+    them. Expand, then contract: add columns with defaults, add tables, add
+    function parameters with fallbacks; rename or drop only in a later release,
+    after the old build is gone. Edge functions accept the previous payload shape.
 
 ## Conventions – the Flutter side
 
@@ -190,6 +195,15 @@ format → analyze matters; `melos run check` does it right.
 - The Supabase project lives in an EU region (Frankfurt). Dev/staging on the
   free tier is kept awake by `.github/workflows/supabase-keepalive.yml`;
   production is Pro or self-hosted, never free (a paused project stops reminders).
+- Three targets, one set of migrations: **local** (`supabase start` from the
+  repo root), **staging** (hosted, free tier, deployed by
+  `.github/workflows/deploy-supabase.yml` on every merge to `main` that touches
+  `supabase/`) and **production** (hosted Pro or self-hosted, deployed by the same
+  workflow on a `v*` tag after approval on the `production` GitHub environment).
+  The access token, project ref and database password live as secrets on the
+  GitHub environments; function secrets are set per project by hand. The app
+  picks its backend with `.env`, `.env.staging` or `.env.production`, all
+  git-ignored. See `docs/ARCHITECTURE.md`, "Environments and deployment".
 
 ## Decisions already made (don't relitigate without a reason)
 
@@ -214,3 +228,13 @@ format → analyze matters; `melos run check` does it right.
   catalogue, not global tables (works offline, fully editable, self-hoster can
   change the defaults in code).
 - MIT licence.
+- Trunk-based git: `main` is the only long-lived branch, protected by a ruleset
+  (PR required, five CI checks, squash-only, linear history). Releases are `v*`
+  tags on `main`; no `develop` or `release/*` branches. Hotfixes are ordinary PRs.
+- Secrets stay in git-ignored `.env` files, GitHub environment secrets and
+  Supabase function secrets. No hosted secrets manager: Doppler was considered
+  and rejected (US-only hosting, a fourth account for self-hosters); sops + age
+  or Infisical are the EU-compatible options if a team ever needs one.
+- CodeRabbit reviews every PR (`.coderabbit.yaml`, reads `CLAUDE.md`). It is
+  free for the public repo and only sees code that is public anyway; it is not a
+  required check and does not replace CI.
