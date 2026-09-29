@@ -25,6 +25,7 @@
 - [Account export and deletion](#account-export-and-deletion)
 - [Messaging: start free, swap by config](#messaging-start-free-swap-by-config)
 - [Hosting and the free-tier pause](#hosting-and-the-free-tier-pause)
+- [Environments and deployment](#environments-and-deployment)
 - [EU stance](#eu-stance)
 - [Websites](#websites)
 - [Open source and self-hosting](#open-source-and-self-hosting)
@@ -460,6 +461,58 @@ VPS (Falkenstein or Helsinki) with the same migrations and functions; the
 `keepalive()` function is harmless there. `supabase/README.md` will carry the
 compose notes once M5 lands.
 
+## Environments and deployment
+
+Three targets share one `supabase/` folder. Nothing is ever applied by hand to a
+hosted database.
+
+| Target | What | Backend deployed by | App build |
+|---|---|---|---|
+| local | `supabase start` on the developer's machine | `supabase db reset` | `--dart-define-from-file=.env` |
+| staging | hosted, free tier, EU region (kept awake by the keepalive job) | `deploy-supabase.yml` on every merge to `main` that touches `supabase/` | `.env.staging` |
+| production | hosted Pro, EU region, or self-hosted on Hetzner | `deploy-supabase.yml` on a `v*` tag, after approval on the `production` GitHub environment | `.env.production` |
+
+**Trunk-based.** `main` is the only long-lived branch and is protected by a
+ruleset: pull request required, the CI checks required, squash-only merges,
+linear history, no force-push. Every merge is deployable and lands on staging
+by itself. A release is an annotated `vX.Y.Z` tag on `main`; the same tag will
+later drive the Play Store build. There is no `develop` branch and no release
+branch: one person does not need a release train, and the app-store review is
+already a gate. A hotfix is a normal PR plus a new patch tag.
+
+**What CI proves before merge.** Besides format, analysis, layering and tests,
+the `Backend migrations` job starts a fresh Postgres and applies every migration
+in order, then runs `supabase db lint`. A migration that does not apply never
+reaches `main`, and so never reaches `supabase db push`.
+
+**Secrets per target.** The deploy workflow reads `SUPABASE_ACCESS_TOKEN`,
+`SUPABASE_PROJECT_REF` and `SUPABASE_DB_PASSWORD` from the GitHub environment
+(the ref is kept as a secret so the hosted project never appears in the public
+repo). Function secrets (`SMS_PROVIDER`, gateway tokens, `BILLING_ENABLED`) are
+set once per project with `supabase secrets set --project-ref`. The app's keys
+are in git-ignored `.env*` files and end up inside the binary, so anything that
+must stay private belongs behind an edge function, never in `.env`. There is no
+hosted secrets manager: Doppler was considered and rejected (US-only hosting,
+and a self-hoster would need a fourth account); if a team ever needs one,
+sops + age in the repo or self-hostable Infisical keep the EU stance.
+
+**Expand, then contract.** Phones are offline-first and may run a build from a
+month ago when a migration lands. Every migration therefore keeps the previous
+app release working: new columns get defaults, new tables and functions are
+additive, edge functions accept the previous payload shape. Renames and drops
+happen in a later release, once the old build is out of the field. This is hard
+rule 12 in `CLAUDE.md`.
+
+**Not used, on purpose.** Supabase branching (a preview database per PR) needs
+the Pro plan and the GitHub integration; not worth it for one contributor.
+`config.toml` is not pushed to hosted projects: it describes the local stack,
+and the hosted auth and API settings are set in the dashboard.
+
+**Code review.** CodeRabbit reviews every pull request against `CLAUDE.md`
+(`.coderabbit.yaml`). It is free for a public repository and only reads code
+that is public anyway, so the EU rule does not apply. It is advisory, not a
+required check.
+
 ## EU stance
 
 Every hosted dependency, with the EU option chosen and the reason:
@@ -552,4 +605,8 @@ added when the first site is ready.
 | 2026-09-28 | MIT licence | Simplest for adoption and contributions. |
 | 2026-09-28 | Free app; "Przypomnienia" sold in-app through Google Play Billing as one-time passes (12 months, 1 month) plus 200-SMS top-ups, 300 SMS/month fair use, verified by `verify-purchase` | Charges only for what costs money and matches the market's flat-with-SMS norm. Play's 15% buys one-tap purchase, restore, refunds, Google as merchant of record (no customer invoices) and the iOS path; a 0% web checkout would force the app to stay silent about buying. One-time products because BLIK on Play is one-time only and there is no subscription lifecycle to handle. Self-hosted is the same app with billing off. RevenueCat deferred until an App Store path exists. |
 | 2026-09-28 | Waitlist collects e-mail and an optional trade | One tap sizes the segments and picks which default catalogue to polish first. |
+| 2026-09-28 | Trunk-based git: protected `main`, squash-only PRs, `v*` tags as releases; staging deploys on merge, production on tag with approval | One contributor, an app-store gate already exists, and a `develop` branch would only add merges. |
+| 2026-09-28 | Migrations must keep the previous app release working (expand, then contract) | Offline-first phones lag the server by weeks. |
+| 2026-09-28 | No hosted secrets manager; `.env` files, GitHub environment secrets and Supabase function secrets | Doppler is US-hosted and would be a fourth account for self-hosters; the app's keys ship in the binary anyway. |
+| 2026-09-28 | CodeRabbit on every PR, advisory only | Free for open source; a second reviewer for a one-person project; the repo is public so no EU concern. |
 | 2026-09-28 | Two-way SMS stays in "Later"; reminders carry `{telefon}` | A receiving number is a fixed monthly cost, but an alphanumeric sender cannot receive replies, so two-way costs the `KOMINIARZ` branding. |

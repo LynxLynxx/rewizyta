@@ -45,6 +45,8 @@ commit that contains a credential, a real phone number or an e-mail address. See
    - layers point down only (`melos run layering` enforces it);
    - every new remote table gets RLS enabled and forced in the same migration;
    - no hardcoded UI strings; no `Colors.*` literals in widgets.
+   - a migration must keep working for the previous app release (add columns
+     with defaults now; rename or drop in a later release).
 4. Add tests. Every service method, cubit and page has one; repositories run
    against an in-memory database.
 5. Update the document that describes what you changed (`docs/DATABASE.md` for
@@ -58,11 +60,12 @@ existing migration or the database by hand.
 
 `main` is protected by a ruleset: nobody pushes to it directly, not even the
 maintainer. Every change is a branch and a pull request, and the PR can only be
-merged when the four CI checks are green:
+merged when the five CI checks are green:
 
 | Check | What it runs |
 |---|---|
 | Secret and personal-data scan | gitleaks over the tree and the whole history, plus the PII greps |
+| Backend migrations | every migration applied to a fresh Postgres, then `supabase db lint` |
 | Flutter workspace | `melos run gen`, `l10n`, `format`, `analyze`, `layering`, `test` |
 | Jaspr site (waitlist) | `dart format`, `dart analyze --fatal-infos`, `jaspr build` |
 | Jaspr site (website) | the same for the product website |
@@ -72,6 +75,8 @@ merged when the four CI checks are green:
   automatically after the merge.
 - Fill in the template. The checklist mirrors `CLAUDE.md`; ticking a box you have
   not done wastes review time.
+- CodeRabbit posts an automated review on every PR. Treat it like a reviewer:
+  fix what is right, reply to what is not, and resolve the thread either way.
 - Every review thread must be resolved before merging.
 - PRs are **squash-merged**, so `main` has one commit per PR and a linear history.
   The PR title becomes the commit subject: write it in English, imperative mood,
@@ -81,6 +86,18 @@ merged when the four CI checks are green:
 
 Review is done by the maintainer, usually within a week. Small, focused PRs get
 merged fastest.
+
+## Releases
+
+`main` deploys to staging automatically. A release is a tag on `main`:
+
+```bash
+git tag -a v0.1.0 -m "v0.1.0" && git push origin v0.1.0
+```
+
+The tag triggers the production backend deploy, which waits for the maintainer's
+approval on the `production` environment. There are no `develop` or `release/*`
+branches; a hotfix is an ordinary PR followed by a new patch tag.
 
 ## What must never be committed
 
