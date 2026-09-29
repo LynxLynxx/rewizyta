@@ -485,10 +485,13 @@ the `Backend migrations` job starts a fresh Postgres and applies every migration
 in order, then runs `supabase db lint`. A migration that does not apply never
 reaches `main`, and so never reaches `supabase db push`.
 
-**Secrets per target.** The deploy workflow reads `SUPABASE_ACCESS_TOKEN`,
-`SUPABASE_PROJECT_REF` and `SUPABASE_DB_PASSWORD` from the GitHub environment
-(the ref is kept as a secret so the hosted project never appears in the public
-repo). Function secrets (`SMS_PROVIDER`, gateway tokens, `BILLING_ENABLED`) are
+**Secrets per target.** Every hosted value lives on the GitHub environment of
+its target, never at repository level, so staging and production can never be
+mixed up. The deploy workflow reads `SUPABASE_ACCESS_TOKEN`,
+`SUPABASE_PROJECT_REF` and `SUPABASE_DB_PASSWORD` (the ref is kept as a secret
+so the hosted project never appears in the public repo); the keepalive job reads
+`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `staging` only, since Pro
+never pauses. Function secrets (`SMS_PROVIDER`, gateway tokens, `BILLING_ENABLED`) are
 set once per project with `supabase secrets set --project-ref`. The app's keys
 are in git-ignored `.env*` files and end up inside the binary, so anything that
 must stay private belongs behind an edge function, never in `.env`. There is no

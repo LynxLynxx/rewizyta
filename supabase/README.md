@@ -31,8 +31,9 @@ Copy `.env.example` to `.env` and put the local URL and anon key from
 
 The workflow runs `supabase link`, `supabase db push` and `supabase functions
 deploy`. It needs `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` and
-`SUPABASE_DB_PASSWORD` as secrets on the GitHub environment. Function secrets are
-set once per project by hand:
+`SUPABASE_DB_PASSWORD` as secrets on the GitHub environment; the keepalive job
+reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `staging`. Nothing is
+stored at repository level. Function secrets are set once per project by hand:
 
 ```bash
 supabase secrets set --project-ref <ref> SMS_PROVIDER=console EMAIL_PROVIDER=console
