@@ -20,6 +20,12 @@ void main() {
         'theme-color': '#F6F4EF',
       },
       head: [
+        // The header mark as the site icon: the SVG where it is supported, the ICO
+        // (16, 32, 48) elsewhere, the PNG for iOS home screens. The `sizes` on the
+        // ICO makes browsers that understand SVG prefer it.
+        link(rel: 'icon', href: '/favicon.ico', attributes: {'sizes': '32x32'}),
+        link(rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml'),
+        link(rel: 'apple-touch-icon', href: '/apple-touch-icon.png'),
         link(rel: 'stylesheet', href: '/styles.css'),
       ],
       body: const App(),
