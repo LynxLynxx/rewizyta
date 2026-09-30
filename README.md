@@ -37,8 +37,7 @@ This is a [Melos](https://melos.invertase.dev) monorepo.
 rewizyta/
 ├── apps/
 │   ├── mobile/      Flutter app (Android first, iOS second): bootstrap, DI, router, pages, theme.
-│   ├── waitlist/    Pre-launch landing page with a sign-up form and promo code. Jaspr, static.
-│   └── website/     Product website. Jaspr, static.
+│   └── website/     Public site: the waitlist until launch, then the app's info and support pages. Jaspr, static.
 ├── packages/        Layer packages: rewizyta_models, _repositories (drift), _services,
 │                    _blocs (flutter_bloc), _view_models, _localization, _shared (get_it).
 ├── supabase/        Backend: SQL migrations, edge functions, local config.
@@ -61,15 +60,14 @@ brew install supabase/tap/supabase     # or: npm i -g supabase
 Then:
 
 ```bash
-melos bootstrap          # pub get for every package, incl. the two Jaspr sites
+melos bootstrap          # pub get for every package, incl. the Jaspr site
 melos run gen            # code generation (json_serializable, drift)
 melos run l10n           # AppLocalizations from app_pl.arb
 melos run check          # everything CI runs: gen, l10n, format, analyze, test
 melos run hooks          # once: pre-commit hook that blocks secrets and personal data
 
 cd apps/mobile && flutter run --dart-define-from-file=../../.env
-melos run waitlist:serve # http://localhost:8080
-melos run website:serve
+melos run website:serve  # http://localhost:8080, the waitlist page for now
 ```
 
 Backend, locally:

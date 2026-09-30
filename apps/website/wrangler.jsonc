@@ -1,0 +1,25 @@
+// The site on Cloudflare Workers: static assets only, no Worker script.
+// `jaspr build` fills build/jaspr; .github/workflows/deploy-website.yml
+// uploads it. Headers are in web/_headers. See docs/ARCHITECTURE.md, "Websites".
+{
+  "name": "rewizyta-website",
+  "compatibility_date": "2026-09-30",
+  "assets": {
+    "directory": "./build/jaspr/",
+    // Unknown paths get 404.html (lib/pages/not_found_page.dart) with a 404 status.
+    "not_found_handling": "404-page",
+    // /potwierdz/ serves potwierdz/index.html; /potwierdz redirects to it.
+    "html_handling": "auto-trailing-slash"
+  },
+  // Only the custom domain: no second copy of the site on *.workers.dev.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "rewizyta.rsapps.org", "custom_domain": true }],
+  "env": {
+    // `wrangler deploy --env staging` -> Worker "rewizyta-website-staging".
+    // routes are inherited, so staging must name its own.
+    "staging": {
+      "routes": [{ "pattern": "staging.rewizyta.rsapps.org", "custom_domain": true }]
+    }
+  }
+}

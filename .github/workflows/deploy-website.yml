@@ -1,0 +1,119 @@
+# Deploys apps/website to Cloudflare Workers (static assets; apps/website/wrangler.jsonc).
+#
+#   push to main touching apps/website/   -> staging, https://staging.rewizyta.rsapps.org
+#   tag v*                                -> production, https://rewizyta.rsapps.org, after
+#                                            the reviewer on the "production" environment approves
+#   workflow_dispatch                     -> either, chosen by input
+#
+# Same triggers as deploy-supabase.yml, so each site talks to the backend of its
+# own environment. Each GitHub environment holds, besides the Supabase secrets:
+#   CLOUDFLARE_API_TOKEN    "Edit Cloudflare Workers" token, limited to the account
+#                           and the rsapps.org zone
+#   CLOUDFLARE_ACCOUNT_ID   from the Cloudflare dashboard
+#   SUPABASE_PROJECT_REF    already set for deploy-supabase.yml; the forms post to
+#                           https://<ref>.supabase.co/functions/v1
+# See docs/ARCHITECTURE.md, "Websites".
+name: Deploy website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/website/**
+      - .github/workflows/deploy-website.yml
+    tags: [v*] # path filters are not evaluated for tags: a release always deploys
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Where to deploy
+        type: choice
+        options: [staging, production]
+        default: staging
+
+permissions:
+  contents: read
+
+# One deploy per environment at a time; never cancel a running one.
+concurrency:
+  group: deploy-website-${{ inputs.target || (startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging') }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.target || (startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ inputs.target || (startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging') }}
+      url: ${{ steps.target.outputs.site_url }}
+    defaults:
+      run:
+        working-directory: apps/website
+    env:
+      TARGET: ${{ inputs.target || (startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging') }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the environment secrets
+        run: |
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID SUPABASE_PROJECT_REF; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is not set on this GitHub environment"; exit 1
+            fi
+          done
+
+      # The host names are the ones in wrangler.jsonc.
+      - name: Pick the target
+        id: target
+        run: |
+          if [ "$TARGET" = production ]; then
+            echo "site_url=https://rewizyta.rsapps.org" >> "$GITHUB_OUTPUT"
+            echo "wrangler_env=" >> "$GITHUB_OUTPUT"
+          else
+            echo "site_url=https://staging.rewizyta.rsapps.org" >> "$GITHUB_OUTPUT"
+            echo "wrangler_env=staging" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+        with:
+          sdk: 3.13.2
+
+      - run: dart pub get
+
+      # The CLI is released in step with the jaspr package, so use the locked version.
+      - name: Install the jaspr CLI
+        run: |
+          version=$(awk '/^  jaspr:/{f=1} f&&/version:/{gsub(/"/,"",$2);print $2;exit}' pubspec.lock)
+          dart pub global activate jaspr_cli "$version"
+
+      - name: Build
+        env:
+          SITE_URL: ${{ steps.target.outputs.site_url }}
+        run: |
+          jaspr build \
+            --dart-define=FUNCTIONS_URL="https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1" \
+            --sitemap-domain="$SITE_URL" \
+            --sitemap-exclude='^/(potwierdz|wypisz|404)'
+          # Dev-compiler and test-runner files the static build leaves behind; no page uses them.
+          rm -rf build/jaspr/packages
+
+      - name: Keep staging out of search results
+        if: env.TARGET != 'production'
+        run: |
+          printf '\n/*\n  X-Robots-Tag: noindex\n' >> build/jaspr/_headers
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Deploy
+        env:
+          WRANGLER_ENV: ${{ steps.target.outputs.wrangler_env }}
+          WRANGLER_SEND_METRICS: 'false'
+        # The version verified locally; bump on purpose, not by accident.
+        run: npx --yes wrangler@4.145.0 deploy ${WRANGLER_ENV:+--env "$WRANGLER_ENV"}

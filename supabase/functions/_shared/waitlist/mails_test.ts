@@ -36,6 +36,15 @@ Deno.test('the code mail has no confirm link', () => {
   assertStringIncludes(mail.html, links.unsubscribePage);
 });
 
+Deno.test('both mails say what the code is worth, as the page does', () => {
+  const confirmation = confirmationMail('REWI-7K3M-9QZT', links);
+  const code = codeMail('REWI-7K3M-9QZT', { ...links, confirmPage: undefined });
+
+  for (const body of [confirmation.text, confirmation.html, code.text, code.html]) {
+    assertStringIncludes(body, '3 miesiące za darmo');
+  }
+});
+
 Deno.test('values are escaped in the HTML body', () => {
   const mail = codeMail('<b>&"', links);
 

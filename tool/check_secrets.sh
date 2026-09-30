@@ -44,10 +44,11 @@ check() {
 check "phone number that is not the test fixture" \
   '(^|[^0-9A-Za-z])(\+48 ?)?[5-8][0-9]{2}[ -]?[0-9]{3}[ -]?[0-9]{3}([^0-9A-Za-z]|$)' \
   '601[ -]?234[ -]?567|\.pbxproj:|\.svg:|[0-9]{3} [0-9]{3} [0-9]{3} [0-9]|version|rgb|#[0-9a-fA-F]{6}'
-# E-mail addresses outside the documented example domains.
+# E-mail addresses outside the documented example domains, except the public
+# contact address the website names as the data controller's.
 check "e-mail address" \
   '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}' \
-  '@(example\.(com|org|pl)|rewizyta\.pl)\b|noreply@anthropic\.com|Co-Authored-By|@[0-9.]+x\.(png|jpg|jpeg|webp)'
+  '@(example\.(com|org|pl)|rewizyta\.pl)\b|r\.schossler@rsapps\.org|noreply@anthropic\.com|Co-Authored-By|@[0-9.]+x\.(png|jpg|jpeg|webp)'
 # Hosted project hostnames: the app must read these from .env.
 check "hosted backend hostname" \
   '[a-z0-9-]+\.(supabase\.co|ingest\.(de|us)\.sentry\.io|posthog\.com/project)' \

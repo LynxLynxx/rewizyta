@@ -75,7 +75,7 @@
                                                                     │
                                                               client's phone
 
- apps/waitlist, apps/website  ── jaspr build ──► static HTML ──► EU CDN (Bunny.net / Hetzner)
+ apps/website (waitlist until launch)  ── jaspr build ──► static HTML ──► Cloudflare Workers (rewizyta.rsapps.org)
 ```
 
 ## Components
@@ -86,9 +86,8 @@
 | `supabase/migrations` | SQL | Schema, RLS, indexes, triggers, `sync_push`/`sync_pull` RPCs, `keepalive()`, cron schedules. |
 | `supabase/functions` | Deno / TypeScript | `send-due-reminders`, `send-pending-sms`, `sms-webhook`, `waitlist-signup`, `waitlist-confirm`, `waitlist-unsubscribe`, `redeem-promo`, `verify-purchase`. Gateways behind adapter interfaces. |
 | Supabase Auth | email + password (magic link optional), custom SMTP | One account per technician. The JWT `sub` is the `user_id` on every row. |
-| `apps/waitlist` | Jaspr 0.23 static | One pre-launch page with a sign-up form; shows the promo code after sign-up. |
-| `apps/website` | Jaspr 0.23 static, jaspr_router | Product site: features, pricing, privacy policy, contact. PL + EN. |
-| CI | GitHub Actions | Format, analyse, layering audit, test the workspace; format, analyse, build both sites; keepalive ping for the free-tier project. |
+| `apps/website` | Jaspr 0.23 static, jaspr_router | The one site. Until launch: the waitlist page with the sign-up form, `/potwierdz/`, `/wypisz/`, privacy notice (Polish). After launch: the information and support pages the store listings link to (about and pricing, support, privacy policy, account deletion, terms), PL + EN. Never a web version of the app. |
+| CI | GitHub Actions | Format, analyse, layering audit, test the workspace; format, analyse, test and build the site; keepalive ping for the free-tier project. |
 
 ## The app
 
@@ -342,8 +341,12 @@ user data. Brevo's own contact lists are not used: the list is ours.
 
 We keep the mailing list ourselves so no vendor owns it:
 
-1. **Sign-up.** The waitlist form posts `{email, trade, source}` plus a decoy
-   anti-spam field to `waitlist-signup`. The function checks the origin, the
+1. **Sign-up.** The waitlist form posts `{email, answers, phone, consent,
+   source}` plus a decoy anti-spam field to `waitlist-signup` (`answers` are
+   the seven survey questions as option keys, checked against
+   `_shared/waitlist/survey.ts`; the phone number is optional, normalised to
+   E.164 and taken only with the consent tick; the older `{email, trade,
+   source}` shape still works). The function checks the origin, the
    input and two rate limits, then calls `waitlist_signup()` in SQL, which
    inserts the row with a `confirm_token`, an `unsubscribe_token` and a
    `promo_code`, and sends the double-opt-in mail. The page shows the promo
@@ -550,8 +553,8 @@ Every hosted dependency, with the EU option chosen and the reason:
 | Push | FCM behind an adapter | no EU service delivers reliably on stock Android; the adapter keeps UnifiedPush possible for self-hosters |
 | SMS | SMSAPI or SerwerSMS (Poland) | needed for a registered Polish sender name anyway |
 | E-mail | Brevo (FR) free plan to start; Scaleway Transactional Email (FR) at volume | EU companies, EU data centres; see "Messaging: start free, swap by config" |
-| Static hosting / CDN | Bunny.net (SI) or Hetzner Object Storage (DE) | EU companies; Cloudflare Pages and Firebase Hosting are US |
-| DNS / domain | OVH (FR) or the registrar's DNS | EU |
+| Static hosting / CDN | Cloudflare Workers static assets | US, but serves static files only: the forms post straight to Supabase, so it holds no user data (only request logs). Free with no traffic cap. Bunny.net (SI, about $1/month) is the fully-EU fallback; any static host works |
+| DNS / domain | Cloudflare, `rsapps.org` zone | US; DNS only. The domain was already there |
 | Source hosting and CI | GitHub Actions | US, but holds code only, no user data |
 
 Rule for new dependencies: an EU region or an EU company, or self-hostable in
@@ -559,21 +562,47 @@ the EU behind an adapter. If none applies, it does not hold user data.
 
 ## Websites
 
-Both sites follow `portfolio_rs`: Jaspr in static mode, every route pre-rendered
-at build time, no Dart in the browser except where a component must be
-interactive. Polish at `/`, English at `/en/`. Self-hosted fonts, no third-party
-scripts, no cookies, so no consent banner.
+One site, `apps/website`, following `portfolio_rs`: Jaspr in static mode, every
+route pre-rendered at build time, no Dart in the browser except where a
+component must be interactive. Polish at `/`, English at `/en/` (English from
+launch). Self-hosted fonts, no third-party scripts, no cookies, so no consent
+banner.
 
-- **Waitlist**: one page. The form posts to the `waitlist-signup` edge function
-  (rate-limited, decoy field) which inserts into `waitlist_signups`, sends the
-  confirmation mail and returns the promo code. The site has no Supabase key;
-  the function's URL is public and the table is written only through the
+- **Until launch – the waitlist.** The home page is the sign-up page. The form
+  posts to the `waitlist-signup` edge function (rate-limited, decoy field),
+  which inserts into `waitlist_signups`, sends the confirmation mail and returns
+  the promo code. `/potwierdz/` and `/wypisz/` carry the buttons the mail links
+  to; `/prywatnosc/` is the privacy notice. The site has no Supabase key; the
+  functions' URLs are public and the table is written only through the
   functions' service role.
-- **Website**: home, features, pricing, privacy policy (required for the Play
-  caller-ID review), contact, and a link to the app stores.
+- **From launch – the app's information and support site.** Not a web version
+  of the app (the app is phone-only), but the pages the store listings need:
 
-Hosting is static on an EU CDN; deployment is a GitHub Actions job per site,
-added when the first site is ready.
+  | Page | Why |
+  |---|---|
+  | Home: what the app does, pricing, store badges | Play "Website" and App Store "Marketing URL" (optional in both) |
+  | Support: FAQ and a contact address | App Store "Support URL" (required) |
+  | Privacy policy, with the sub-processors and the retention table | "Privacy Policy URL" in both stores (required); the Play caller-ID review reads it |
+  | Account deletion: how to delete in the app, and how to ask by e-mail without reinstalling | Play "Delete account URL" in the Data safety form (required for apps with accounts); App Store needs the in-app path only |
+  | Terms with the DPA (umowa powierzenia) | The technician is the controller of their clients' data; we are the processor |
+
+  `/potwierdz/`, `/wypisz/` and `/prywatnosc/` keep their paths, because every
+  mail already sent links to them.
+
+Waitlist and website were one site from the start (2026-09-29) rather than two
+apps: a second site would have had to take over the domain at launch and carry
+the mail pages across.
+
+**Hosting.** Cloudflare Workers with static assets only (no Worker script):
+`apps/website/wrangler.jsonc` points at `build/jaspr`, serves `404.html` for
+unknown paths and redirects `/potwierdz` to `/potwierdz/`; `web/_headers` sets
+the CSP (this origin plus `https://*.supabase.co` for the forms), HSTS and a
+year-long cache for the fonts. `.github/workflows/deploy-website.yml` builds
+with `FUNCTIONS_URL` derived from the environment's `SUPABASE_PROJECT_REF` and
+deploys on the backend's triggers: staging (`staging.rewizyta.rsapps.org`,
+`X-Robots-Tag: noindex`) on every merge touching `apps/website/`, production
+(`rewizyta.rsapps.org`) on a `v*` tag after approval. So each site always
+talks to its own backend, whose `WAITLIST_SITE_URL` must be that site's origin.
 
 ## Open source and self-hosting
 
@@ -630,6 +659,8 @@ added when the first site is ready.
 | 2026-09-28 | MIT licence | Simplest for adoption and contributions. |
 | 2026-09-28 | Free app; "Przypomnienia" sold in-app through Google Play Billing as one-time passes (12 months, 1 month) plus 200-SMS top-ups, 300 SMS/month fair use, verified by `verify-purchase` | Charges only for what costs money and matches the market's flat-with-SMS norm. Play's 15% buys one-tap purchase, restore, refunds, Google as merchant of record (no customer invoices) and the iOS path; a 0% web checkout would force the app to stay silent about buying. One-time products because BLIK on Play is one-time only and there is no subscription lifecycle to handle. Self-hosted is the same app with billing off. RevenueCat deferred until an App Store path exists. |
 | 2026-09-28 | Waitlist collects e-mail and an optional trade | One tap sizes the segments and picks which default catalogue to polish first. |
+| 2026-09-29 | Waitlist asks seven one-tap questions (trade, client count, phone platform, current records, how reminders are sent, clients lost, willingness to pay) plus an optional call-back number | Answers decide what to build first (Android or iPhone, which trades, whether the price holds) before any app code exists. Stored as option keys in `answers` jsonb; `trade` stays for the older payload. |
+| 2026-09-30 | Site on Cloudflare Workers static assets, DNS at Cloudflare (`rewizyta.rsapps.org`); mail stays on Brevo | Free with no traffic cap, and the DNS was there already. A US company is acceptable because a static site holds no user data. Firebase Hosting was rejected for its free daily transfer cap (about 1,200 first visits); Bunny/Hetzner stay the fully-EU fallback. Mailgun EU (100 mails a day free) and MailerLite (no API sending on free) were looked at and not taken. |
 | 2026-09-28 | Trunk-based git: protected `main`, squash-only PRs, `v*` tags as releases; staging deploys on merge, production on tag with approval | One contributor, an app-store gate already exists, and a `develop` branch would only add merges. |
 | 2026-09-28 | Migrations must keep the previous app release working (expand, then contract) | Offline-first phones lag the server by weeks. |
 | 2026-09-28 | No hosted secrets manager; `.env` files, GitHub environment secrets and Supabase function secrets | Doppler is US-hosted and would be a fourth account for self-hosters; the app's keys ship in the binary anyway. |

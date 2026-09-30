@@ -2,54 +2,62 @@ import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_router/jaspr_router.dart';
 
-import 'components/header.dart';
-import 'pages/about.dart';
-import 'pages/home.dart';
+import 'constants/theme.dart';
+import 'pages/home/home_page.dart';
+import 'pages/mail_page.dart';
+import 'pages/not_found_page.dart';
+import 'pages/privacy_page.dart';
+import 'waitlist/confirm_action.dart';
+import 'waitlist/unsubscribe_action.dart';
 
-// The main component of your application.
-//
-// By using multi-page routing, this component will only be built on the server during pre-rendering and
-// **not** executed on the client. Instead only the nested [Home] and [About] components will be mounted on the client.
+/// The site's routes. Every route is pre-rendered to its own HTML file.
 class App extends StatelessComponent {
   const App({super.key});
 
   @override
   Component build(BuildContext context) {
-    // This method is rerun every time the component is rebuilt.
-
-    // Renders a <div class="main"> html element with children.
-    return div(classes: 'main', [
-      const Header(),
-      Router(
-        routes: [
-          Route(path: '/', title: 'Home', builder: (context, state) => const Home()),
-          Route(path: '/about', title: 'About', builder: (context, state) => const About()),
-        ],
-      ),
-    ]);
+    return Router(
+      routes: [
+        Route(
+          path: '/',
+          title: 'Rewizyta – terminy przeglądów i przypomnienia SMS dla serwisantów',
+          builder: (context, state) => const HomePage(),
+        ),
+        // The mail pages and the privacy notice keep these paths after launch:
+        // every mail already sent links to them.
+        Route(
+          path: '/potwierdz',
+          title: 'Potwierdź zapis – Rewizyta',
+          builder: (context, state) => const MailPage(ConfirmAction()),
+        ),
+        Route(
+          path: '/wypisz',
+          title: 'Wypisz się – Rewizyta',
+          builder: (context, state) => const MailPage(UnsubscribeAction()),
+        ),
+        Route(
+          path: '/prywatnosc',
+          title: 'Polityka prywatności – Rewizyta',
+          builder: (context, state) => const PrivacyPage(),
+        ),
+        // Built as a file of its own (the path has an extension); the host
+        // serves it for every unknown path.
+        Route(
+          path: '/404.html',
+          title: 'Nie ma takiej strony – Rewizyta',
+          builder: (context, state) => const NotFoundPage(),
+        ),
+      ],
+    );
   }
 
-  // Defines the CSS styles for this component.
-  //
-  // By using the @css annotation, these will be rendered automatically to CSS and included in your page.
-  // Must be a variable or getter of type [List<StyleRule>].
   @css
   static List<StyleRule> get styles => [
-    css('.main', [
-      // The '&' refers to the parent selector of a nested style rules.
-      css('&').styles(
-        display: .flex,
-        height: 100.vh,
-        flexDirection: .column,
-        flexWrap: .wrap,
-      ),
-      css('section').styles(
-        display: .flex,
-        flexDirection: .column,
-        justifyContent: .center,
-        alignItems: .center,
-        flex: Flex(grow: 1),
-      ),
-    ]),
+    css('.container').styles(
+      width: 100.percent,
+      maxWidth: pageMaxWidth,
+      padding: .symmetric(horizontal: pagePadding),
+      margin: .symmetric(horizontal: .auto),
+    ),
   ];
 }

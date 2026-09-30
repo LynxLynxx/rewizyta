@@ -95,17 +95,37 @@ interest before the app is built.
 - [x] `waitlist_signups` + `rate_limits` migration with service-role-only SQL functions and pgTAP tests; `waitlist-signup` edge function (origin check, decoy field, per-caller and overall rate limits, 15-minute mail throttle) (2026-09-29).
 - [x] `EmailGateway` adapter (`functions/_shared/email/`) selected by `EMAIL_PROVIDER` (brevo | console): Brevo implementation, console stub, shared contract test (2026-09-29).
 - [x] `waitlist-confirm`, `waitlist-unsubscribe` (page button + `List-Unsubscribe` one-click; GET never acts) (2026-09-29).
-- [ ] `apps/waitlist`: one page, Polish, email + optional trade form → `waitlist-signup`, shows the promo code; `/potwierdz/` and `/wypisz/` pages with the buttons; privacy notice.
-- [ ] Real Brevo send before launch: verify the sender domain (SPF, DKIM, DMARC) and check whether our `List-Unsubscribe` or Brevo's own reaches the inbox; if Brevo's, mirror its unsubscribes through a webhook.
+- [x] Waitlist and product website are one Jaspr site, `apps/website`; `apps/waitlist` removed (2026-09-29).
+- [x] Waitlist home page in `apps/website` from the claude.ai/design mock-up: hero, how it works, audience, comparison, seven-question survey + contact step (`@client` `SignupForm`) → `waitlist-signup`, promo code on screen, sticky call to action on phones; self-hosted IBM Plex (2026-09-29).
+- [x] `waitlist-signup` takes the survey `answers`, an optional `phone` (E.164) and `consent`; expand-only migration `*_waitlist_survey.sql` with pgTAP tests (2026-09-29).
+- [x] `/potwierdz/` and `/wypisz/` pages (`noindex`), one `@client` button each that posts the `#t=` token to `waitlist-confirm` / `waitlist-unsubscribe`; `/prywatnosc/` notice (GDPR art. 13) (2026-09-30).
+- [x] Controller and contact on the site: USŁUGI IT Ryszard Schossler, NIP and `r.schossler@rsapps.org` in `apps/website/lib/constants/site.dart` (2026-09-30).
+- [ ] Before the site goes live: a legal read of `/prywatnosc/` (Supabase's transfer wording in particular).
+- [ ] Waitlist retention job before the site goes live, because `/wypisz/` and `/prywatnosc/` promise it: delete a row 30 days after `unsubscribed_at` and everything 12 months after launch, keeping only a salted hash of the address that `waitlist_signup` checks, so the opt-out holds (see `DATABASE.md`, "Retention and purge"). Moved from V1 on 2026-09-30.
+- [x] `promo_reward` defaults to `trial_90d`, earlier rows backfilled (`*_waitlist_promo_reward.sql`, pgTAP): the page promises "3 miesiące za darmo" (2026-09-30).
+- [x] Both mails name the reward ("3 miesiące za darmo"), as the page does (2026-09-30).
+- [ ] Brevo (account exists): authenticate `rewizyta.rsapps.org` as the sender domain (Brevo code, DKIM and DMARC records in Cloudflare), send as `lista@rewizyta.rsapps.org` and forward replies to `r.schossler@rsapps.org` with Cloudflare Email Routing (one SPF record if both need one). Then a real send on staging: Gmail, Outlook, WP, Onet, Interia; does our `List-Unsubscribe` or Brevo's reach the inbox (if Brevo's, mirror its unsubscribes through a webhook); does the free plan add a Brevo footer.
+- [x] Hosting on Cloudflare Workers static assets (`apps/website/wrangler.jsonc`): 404 page, `web/_headers` (CSP, HSTS, font cache), `robots.txt` and a sitemap; `deploy-website.yml` deploys staging on merge and production on a `v*` tag, like the backend. Checked locally with `wrangler dev` (2026-09-30).
+- [ ] Cloudflare setup: an "Edit Cloudflare Workers" API token (account + `rsapps.org` zone) and the account id as `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` on both GitHub environments; no existing DNS records on `rewizyta` and `staging.rewizyta` (the first deploy creates them); Rocket Loader and Web Analytics off.
+- [ ] Production backend for the waitlist: Pro, or free plus the keepalive job (a paused project breaks the form; check what backups the free plan keeps, and dump the list yourself if none); function secrets `EMAIL_PROVIDER=brevo`, `BREVO_API_KEY`, `WAITLIST_SITE_URL` (`https://rewizyta.rsapps.org`; staging: `https://staging.rewizyta.rsapps.org`), `WAITLIST_FROM_EMAIL`, `WAITLIST_IP_SALT` on each project; the first `v*` tag deploys migrations and functions.
+- [ ] Sharing: a Rewizyta favicon (`web/favicon.ico` is still the Jaspr scaffold's), Open Graph tags and a 1200×630 image.
+- [ ] Data processing agreements accepted with Supabase, Brevo and Cloudflare (the notice says they exist; Cloudflare is named on `/prywatnosc/` since 2026-09-30).
+
+Not needed to go public, only for the app launch:
+
 - [ ] Supabase Auth custom SMTP pointed at the same Brevo account.
 - [ ] Launch-mail function with batching and `last_mailed_at`; `scaleway` adapter when volume outgrows Brevo's free plan.
 - [ ] `redeem-promo` function and the onboarding step that calls it.
-- [ ] Hosting on Bunny.net or Hetzner Object Storage, DNS at OVH.
 
 ## M9 – Product website
 
-- [ ] `apps/website`: home, features, pricing, privacy policy (needed for Play review), contact. PL + EN.
-- [ ] Privacy policy and terms with the DPA (umowa powierzenia), the sub-processor list (Supabase EU, SMSAPI/SerwerSMS, Scaleway, Sentry EU, PostHog EU, FCM) and the retention table from `DATABASE.md`.
+The app's information and support site that the store listings link to, not a
+web version of the app (see `ARCHITECTURE.md`, "Websites").
+
+- [ ] Home at launch: replace the waitlist hero with what the app does, pricing and store badges; keep `/potwierdz/`, `/wypisz/`, `/prywatnosc/`. PL + EN.
+- [ ] Support page: FAQ and contact address (App Store "Support URL").
+- [ ] Privacy policy (both stores' "Privacy Policy URL") and terms with the DPA (umowa powierzenia), the sub-processor list (Supabase EU, SMSAPI/SerwerSMS, Scaleway, Sentry EU, PostHog EU, FCM) and the retention table from `DATABASE.md`.
+- [ ] Account deletion page: the in-app path and an e-mail request route that works without reinstalling (Play Data safety "Delete account URL").
 
 ## V1 (after MVP ships)
 
@@ -115,7 +135,7 @@ interest before the app is built.
 - [ ] Push notifications from the server ("3 clients due this week", low balance) through `devices`; `PushSender` adapter with `PUSH_PROVIDER` (fcm | ntfy | console).
 - [ ] Per-user data key in Supabase Vault, `pii_encrypt`/`pii_decrypt`, encrypted personal-data columns, key drop on deletion.
 - [ ] Optional SQLCipher for the local database, key in the platform keystore.
-- [ ] `reminders` 12-month purge; waitlist retention job.
+- [ ] `reminders` 12-month purge.
 
 ## Later
 

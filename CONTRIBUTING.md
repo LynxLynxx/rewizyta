@@ -67,8 +67,7 @@ merged when the required CI checks are green:
 | Secret and personal-data scan | gitleaks over the tree and the whole history, plus the PII greps |
 | Backend migrations | every migration applied to a fresh Postgres, `supabase db lint`, then the pgTAP tests (`supabase test db`) |
 | Flutter workspace | `melos run gen`, `l10n`, `format`, `analyze`, `layering`, `test` |
-| Jaspr site (waitlist) | `dart format`, `dart analyze --fatal-infos`, `jaspr build` |
-| Jaspr site (website) | the same for the product website |
+| Jaspr site (website) | `dart format`, `dart analyze --fatal-infos`, `dart test`, `jaspr build` |
 | Edge functions | `deno task check` in `supabase/`: fmt, lint, type check, unit and contract tests |
 
 - One change per pull request. Refactors and features go in separate PRs.

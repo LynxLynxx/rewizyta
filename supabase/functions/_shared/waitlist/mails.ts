@@ -32,12 +32,18 @@ export function mailLinks(
   };
 }
 
+/**
+ * What the code is worth. Must match the page's promise and
+ * `waitlist_signups.promo_reward` (`trial_90d`, migration `*_waitlist_promo_reward.sql`).
+ */
+const codeReward = 'Po starcie wpiszesz go w aplikacji i dostaniesz 3 miesiące za darmo.';
+
 /** Double opt-in: the confirmation link and the promo code. */
 export function confirmationMail(promoCode: string, links: MailLinks): RenderedMail {
   const subject = 'Potwierdź zapis na listę Rewizyty';
   const intro = 'dziękujemy za zapis na listę oczekujących Rewizyty – aplikacji dla kominiarzy ' +
     'i serwisantów, która pilnuje terminów przeglądów i sama przypomina klientom SMS-em.';
-  const code = 'Zachowaj go. Po starcie wpiszesz go w aplikacji i odbierzesz bonus dla pierwszych użytkowników.';
+  const code = `Zachowaj go. ${codeReward}`;
   const ignore = 'Jeśli ten zapis to pomyłka, zignoruj tę wiadomość. Bez potwierdzenia nie napiszemy więcej.';
 
   return {
@@ -75,11 +81,14 @@ export function codeMail(promoCode: string, links: MailLinks): RenderedMail {
 
   return {
     subject,
-    text: ['Dzień dobry,', '', known, '', `Twój kod: ${promoCode}`, '', later, '', ...footerText(links)].join('\n'),
+    text: ['Dzień dobry,', '', known, '', `Twój kod: ${promoCode}`, codeReward, '', later, '', ...footerText(links)]
+      .join('\n'),
     html: layout(subject, [
       p('Dzień dobry,'),
       p(known),
-      p(`Twój kod: <strong style="font-family:monospace;font-size:18px">${escape(promoCode)}</strong>`),
+      p(`Twój kod: <strong style="font-family:monospace;font-size:18px">${
+        escape(promoCode)
+      }</strong><br>${codeReward}`),
       p(later),
     ], links),
   };

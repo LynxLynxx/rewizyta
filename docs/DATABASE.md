@@ -311,6 +311,9 @@ RLS: the user can `select` their own rows; only the service role writes.
 | `email` | `text` not null, unique | Stored trimmed and lower-cased (a check enforces it), so the plain unique constraint is case-insensitive. |
 | `trade` | `text` | `chimney`, `gas`, `boiler`, `other`; optional. |
 | `source` | `text` | UTM / referrer. |
+| `answers` | `jsonb` | The waitlist survey: option keys per question (a list for multiple choice) and `<question>_other` free text up to 200 characters, validated by `functions/_shared/waitlist/survey.ts`. Must be an object, at most 4,000 characters. The price in the `would_pay` question is the one on the page at `created_at`. |
+| `phone` | `text` | E.164, optional, for a call-back. Accepted only with `consented_at`. |
+| `consented_at` | `timestamptz` | When the visitor last ticked "contact me about Rewizyta". Cleared by a re-subscription without the tick. Mail beyond the first still needs `confirmed_at`. |
 | `confirm_token` | `text` unique | Random 32 bytes, base64url. Cleared on confirmation. |
 | `signup_mailed_at` | `timestamptz` | When the last confirmation or code-reminder mail went out. A repeat sign-up within 15 minutes sends nothing. |
 | `confirmed_at` | `timestamptz` | Double opt-in. Null = never mail again except the confirmation itself. |
@@ -318,7 +321,7 @@ RLS: the user can `select` their own rows; only the service role writes.
 | `unsubscribed_at` | `timestamptz` | Set by `waitlist-unsubscribe`; the row is kept as the opt-out record. |
 | `last_mailed_at` | `timestamptz` | Set by the launch/newsletter function. |
 | `promo_code` | `text` not null unique | Human-typeable, e.g. `REWI-7K3M-9QZT`: Crockford base32 without the vowels A and E, 30^8 codes. Generated on sign-up and shown on the page, only to a new address. |
-| `promo_reward` | `text` | `sms_100`, `trial_90d`; the campaign decides. Null until then: the page promises "a bonus for early users" without naming it. |
+| `promo_reward` | `text` default `'trial_90d'` | `sms_100`, `trial_90d`; the campaign decides. The waitlist page promises three free months, so the default is `trial_90d` and earlier rows were backfilled (`*_waitlist_promo_reward.sql`). A campaign with another reward changes the default in a new migration. |
 | `redeemed_at` | `timestamptz` | Set by `redeem-promo`. |
 | `redeemed_by` | `uuid` → `auth.users` | The account that used it. One code, one account. |
 | `created_at` | `timestamptz` default `now()` | |
@@ -330,7 +333,7 @@ executable by `service_role` alone:
 
 | Function | Does |
 |---|---|
-| `waitlist_signup(email, trade, source)` | Inserts or finds the address and says which mail to send: `confirm` (new, pending or re-subscribing), `code` (already confirmed) or none (throttled). Re-subscribing after an opt-out clears `confirmed_at`, so consent is given again. |
+| `waitlist_signup(email, trade, source, answers, phone, consent)` | Inserts or finds the address and says which mail to send: `confirm` (new, pending or re-subscribing), `code` (already confirmed) or none (throttled). Re-subscribing after an opt-out clears `confirmed_at`, so consent is given again. A repeat never overwrites the first answers or phone number. The last three arguments default to null/false, so the three-argument call still works. |
 | `waitlist_confirm(token)` | Sets `confirmed_at` and clears the token; false for a used or unknown token. |
 | `waitlist_unsubscribe(token)` | Sets `unsubscribed_at` (idempotent) and clears any pending confirm token. |
 
@@ -432,9 +435,10 @@ self-hoster who prefers E2EE can run the reminder job on the phone instead
   way. This is the one exception to "nothing is physically deleted".
 - `reminders` older than **12 months** are purged (the visit history stays; the
   message body was personal data).
-- `waitlist_signups` rows are deleted 12 months after launch or on unsubscribe
-  plus 30 days, whichever is later; the unsubscribed e-mail is kept as a
-  salted hash only, to honour the opt-out.
+- `waitlist_signups` rows are deleted 12 months after launch or 30 days after
+  unsubscribing, whichever comes first; the unsubscribed e-mail is kept as a
+  salted hash only, to honour the opt-out. `/prywatnosc/` and `/wypisz/` state
+  this to the reader.
 - `rate_limits` rows (keyed hashes of IP addresses) live for one day; every
   call to `rate_limit_hit` deletes the older ones.
 - Platform backups roll off after 7 days (Pro) – stated in the privacy policy.

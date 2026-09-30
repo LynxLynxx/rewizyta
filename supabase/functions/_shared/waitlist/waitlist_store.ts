@@ -1,3 +1,5 @@
+import type { Answers } from './survey.ts';
+
 /** The waitlist's database operations, one SQL function each (migration `*_waitlist.sql`). */
 export interface WaitlistStore {
   signup(input: SignupInput): Promise<SignupResult>;
@@ -16,6 +18,12 @@ export interface SignupInput {
   email: string;
   trade: Trade | null;
   source: string | null;
+  /** Validated by `parseAnswers`; null when the page sent none. */
+  answers: Answers | null;
+  /** E.164, only together with [consent]. */
+  phone: string | null;
+  /** The visitor ticked "contact me about Rewizyta". */
+  consent: boolean;
 }
 
 /** Mirrors the jsonb returned by `public.waitlist_signup`. */

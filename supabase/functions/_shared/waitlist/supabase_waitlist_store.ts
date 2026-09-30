@@ -10,6 +10,9 @@ export class SupabaseWaitlistStore implements WaitlistStore {
       p_email: input.email,
       p_trade: input.trade,
       p_source: input.source,
+      p_answers: input.answers,
+      p_phone: input.phone,
+      p_consent: input.consent,
     });
     return {
       status: row.status as SignupResult['status'],

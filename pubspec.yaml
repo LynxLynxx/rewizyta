@@ -3,11 +3,12 @@
 # Pub-workspace members (shared lockfile): the Flutter app and the layer
 # packages under packages/ (see docs/ARCHITECTURE.md, "Packages").
 #
-# The Jaspr sites (apps/waitlist, apps/website) are deliberately NOT pub-workspace
-# members: jaspr_builder pins an older `analyzer` than drift_dev / json_serializable
-# need, so one shared lockfile would force the app's codegen onto stale versions.
-# They keep their own lockfiles and are driven by the `sites:*` scripts below (and
-# by the bootstrap hook), so melos stays the one entry point for the whole repo.
+# The Jaspr site (apps/website, which carries the waitlist until launch) is
+# deliberately NOT a pub-workspace member: jaspr_builder pins an older `analyzer`
+# than drift_dev / json_serializable need, so one shared lockfile would force the
+# app's codegen onto stale versions. It keeps its own lockfile and is driven by
+# the `sites:*` scripts below (and by the bootstrap hook), so melos stays the one
+# entry point for the whole repo.
 name: rewizyta_workspace
 publish_to: none
 
@@ -47,7 +48,8 @@ melos:
         melos run test &&
         melos run functions:check &&
         melos run sites:format &&
-        melos run sites:analyze
+        melos run sites:analyze &&
+        melos run sites:test
 
     # ---- Flutter side (pub-workspace members) -----------------------------
     analyze:
@@ -114,30 +116,27 @@ melos:
       description: Point git at tool/githooks so the secrets scan runs before every commit.
       run: git config core.hooksPath tool/githooks && echo "hooks installed"
 
-    # ---- Jaspr sites (own lockfiles) --------------------------------------
+    # ---- Jaspr site (own lockfile) -----------------------------------------
     sites:get:
-      description: pub get for both Jaspr sites.
+      description: pub get for the Jaspr site.
       run: >-
-        (cd apps/waitlist && dart pub get) &&
         (cd apps/website && dart pub get)
     sites:format:
-      description: Check formatting of both sites (CI mode).
+      description: Check formatting of the site (CI mode).
       run: >-
-        (cd apps/waitlist && dart format --output=none --set-exit-if-changed lib) &&
-        (cd apps/website && dart format --output=none --set-exit-if-changed lib)
+        (cd apps/website && dart format --output=none --set-exit-if-changed lib $([ -d test ] && echo test))
     sites:analyze:
-      description: Static analysis of both sites.
+      description: Static analysis of the site.
       run: >-
-        (cd apps/waitlist && dart analyze --fatal-infos) &&
         (cd apps/website && dart analyze --fatal-infos)
-    sites:build:
-      description: Pre-render both sites to apps/<site>/build/jaspr.
+    sites:test:
+      description: Render and unit tests of the site.
       run: >-
-        (cd apps/waitlist && jaspr build) &&
+        (cd apps/website && if [ -d test ]; then dart test; else echo "no tests yet"; fi)
+    sites:build:
+      description: Pre-render the site to apps/website/build/jaspr.
+      run: >-
         (cd apps/website && jaspr build)
-    waitlist:serve:
-      description: Dev server for the waitlist page (http://localhost:8080).
-      run: cd apps/waitlist && jaspr serve
     website:serve:
-      description: Dev server for the product website (http://localhost:8080).
+      description: Dev server for the site, waitlist included (http://localhost:8080).
       run: cd apps/website && jaspr serve

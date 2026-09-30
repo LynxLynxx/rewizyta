@@ -1,6 +1,6 @@
 # Rewizyta – working notes for contributors and AI assistants
 
-Offline-first Flutter app (plus two Jaspr websites and a Supabase backend) that
+Offline-first Flutter app (plus a Jaspr website and a Supabase backend) that
 keeps a one-person field technician's clients, service cycles, due dates,
 appointments and SMS reminders. Read `docs/PRODUCT.md` for what we are building
 and why, `docs/ARCHITECTURE.md` for how, `docs/DATABASE.md` for the schema and
@@ -19,16 +19,15 @@ the thing they describe.
 | `packages/rewizyta_view_models` | What widgets render: view models, presentation enums, formatters, `LocalizedException`. | equatable, intl |
 | `packages/rewizyta_localization` | `app_pl.arb` and the generated `AppLocalizations`; `context.l10n`. | gen-l10n |
 | `packages/rewizyta_shared` | `DependencyProvider` (get_it wrapper), `Optional`. Leaf, pure Dart. | get_it |
-| `apps/waitlist` | Pre-launch landing page with a sign-up form and promo code. | Jaspr 0.23, static mode, own lockfile |
-| `apps/website` | Product website (features, pricing, privacy, contact). | Jaspr 0.23, static mode, jaspr_router, own lockfile |
+| `apps/website` | The app's public website, not a web version of the app. Until launch the waitlist (sign-up form, promo code, `/potwierdz/`, `/wypisz/`, privacy); from launch the information and support pages the store listings link to (about and pricing, support, privacy policy, account deletion, terms). | Jaspr 0.23, static mode, jaspr_router, own lockfile |
 | `supabase/` | Backend: `migrations/` (SQL), `functions/` (Deno/TS edge functions), `config.toml`. | Supabase CLI |
 | `tool/` | `check_layering.sh`, `format.sh` (used by the melos scripts). | bash |
 | `docs/` | Design documents. | Markdown |
 
 Melos 8 with a pub workspace at the root: the app and every `packages/rewizyta_*`
-share one lockfile. The Jaspr sites are **not** workspace members (jaspr_builder
-pins an older `analyzer` than drift_dev needs); they are driven through the
-`sites:*` melos scripts. Don't try to add them to `workspace:` again.
+share one lockfile. The Jaspr site is **not** a workspace member (jaspr_builder
+pins an older `analyzer` than drift_dev needs); it is driven through the
+`sites:*` melos scripts. Don't try to add it to `workspace:` again.
 
 ## Commands
 
@@ -93,7 +92,9 @@ format → analyze matters; `melos run check` does it right.
     leaves. A cubit never imports a repository; only `dependencies.dart` in
     the app may. `melos run layering` fails otherwise.
 11. **EU first.** Every hosted service we add must offer EU data residency or
-    be self-hostable in the EU. See `docs/ARCHITECTURE.md`, "EU stance".
+    be self-hostable in the EU. A service that holds no user data may be
+    elsewhere (Cloudflare serves the static site; the forms post straight to
+    Supabase). See `docs/ARCHITECTURE.md`, "EU stance".
 12. **A migration must keep working for the previous app release.** Phones are
     offline-first and can run last month's build; the server cannot wait for
     them. Expand, then contract: add columns with defaults, add tables, add
@@ -167,18 +168,28 @@ format → analyze matters; `melos run check` does it right.
   FCM) live in `apps/mobile/lib/app/integrations/` and are chosen in
   `_registerReporting()` from `AppConfig`. Nothing else knows the vendor.
 
-## Conventions – websites (apps/waitlist, apps/website)
+## Conventions – website (apps/website)
 
+- One site: the waitlist until launch, then the app's information and support
+  site that the Play and App Store listings link to (support URL, privacy policy
+  URL, Play's account-deletion URL). It is never a web version of the app; the
+  app is phone-only. Launch swaps the home page; `/potwierdz/`, `/wypisz/` and
+  `/prywatnosc/` stay, because every mail already sent links to them (decided
+  2026-09-29; there is no `apps/waitlist`).
 - Same approach as the author's `portfolio_rs`: Jaspr **static** mode, every
   route pre-rendered to HTML at build time, no Dart shipped to the browser unless a
-  component really needs interactivity (the waitlist form is the one exception).
+  component really needs interactivity (the sign-up form and the confirm and
+  unsubscribe buttons are the only `@client` components).
 - Polish first, English second, each language on its own path (`/`, `/en/`).
+  Until launch the site is Polish only.
 - Styling through Jaspr `@css` rules and a small `styles.css`; self-hosted fonts;
   no third-party scripts, no cookies, no analytics that need a consent banner.
-- Hosting is static on an EU CDN (Bunny.net or Hetzner Object Storage; see
-  `docs/ARCHITECTURE.md`). The waitlist form posts to a Supabase edge function
-  that inserts into `waitlist_signups`, sends a double-opt-in e-mail and
-  returns the promo code.
+- Hosting is static on Cloudflare Workers (assets only, `apps/website/wrangler.jsonc`,
+  headers in `web/_headers`) at `rewizyta.rsapps.org`, staging at
+  `staging.rewizyta.rsapps.org`, deployed by `.github/workflows/deploy-website.yml`
+  on the same triggers as the backend. The waitlist form posts to a Supabase edge
+  function that inserts into `waitlist_signups`, sends a double-opt-in e-mail
+  and returns the promo code.
 
 ## Conventions – backend (supabase/)
 
@@ -230,7 +241,12 @@ format → analyze matters; `melos run check` does it right.
 - Melos + pub workspace for the Flutter side; Jaspr sites keep separate lockfiles.
 - Crash reporting: Sentry (EU region) or self-hosted GlitchTip. Analytics:
   PostHog EU cloud. Push: FCM behind the adapter (no EU alternative reaches
-  Android reliably). E-mail: an EU SMTP/API provider (Scaleway TEM or Brevo).
+  Android reliably). E-mail: Brevo (free plan) now, Scaleway TEM at volume.
+- The site: Cloudflare Workers static assets, DNS at Cloudflare for
+  `rsapps.org` (2026-09-30). US, but it holds no user data, the free plan has no
+  traffic cap, and the DNS was there already. Firebase Hosting was rejected (a
+  daily transfer cap on the free plan); Bunny.net (about $1/month) is the
+  fully-EU fallback.
 - Trades and service types are per-user rows seeded from a Dart default
   catalogue, not global tables (works offline, fully editable, self-hoster can
   change the defaults in code).
