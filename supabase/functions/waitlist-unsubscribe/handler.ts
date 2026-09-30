@@ -18,6 +18,10 @@ export interface UnsubscribeDeps {
  *   redirected to the /wypisz/ page, because GET must not act (link scanners)
  *   and hosted functions cannot serve HTML on GET.
  * Answers `{status: 'unsubscribed' | 'invalid'}`.
+ *
+ * No rate limit, on purpose: one-click unsubscribes arrive from a mail
+ * provider's few addresses, and throttling them would ignore opt-outs we must
+ * honour. The token is 256 random bits, so there is nothing to guess.
  */
 export function createUnsubscribeHandler(deps: UnsubscribeDeps): (request: Request) => Promise<Response> {
   const log = deps.log ?? console.error;

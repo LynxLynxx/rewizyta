@@ -1,4 +1,4 @@
-import { assertStringIncludes } from 'jsr:@std/assert@1';
+import { assert, assertStringIncludes } from 'jsr:@std/assert@1';
 import { ConsoleEmailGateway } from './console_email_gateway.ts';
 import { emailGatewayContract } from './email_gateway_contract.ts';
 
@@ -20,5 +20,6 @@ Deno.test('ConsoleEmailGateway prints the text body, so local links can be click
   });
 
   assertStringIncludes(lines[0], 'To: jan@example.com');
+  assert(!lines[0].includes('Reply-To:'));
   assertStringIncludes(lines[0], 'http://localhost:8080/potwierdz/#t=abc');
 });

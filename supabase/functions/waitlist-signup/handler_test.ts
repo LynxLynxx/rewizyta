@@ -26,13 +26,16 @@ Deno.test('a new address is stored, mailed and gets its promo code back', async 
   const response = await handler(post(url, { email: ' JAN@example.com ', trade: 'chimney', source: ' fb ' }));
 
   assertEquals(response.status, 200);
-  assertEquals(await response.json(), { status: 'created', promoCode: 'REWI-7K3M-9QZT', mailSent: true });
+  assertEquals(await response.json(), { status: 'created', promoCode: 'REWI-7K3M-9QZT', mail: 'sent', mailSent: true });
   assertEquals(response.headers.get('access-control-allow-origin'), testConfig.siteUrl);
-  assertEquals(store.signups, [{ email: 'jan@example.com', trade: 'chimney', source: 'fb' }]);
+  assertEquals(store.signups, [
+    { email: 'jan@example.com', trade: 'chimney', source: 'fb', answers: null, phone: null, consent: false },
+  ]);
 
   const mail = email.sent[0];
   assertEquals(mail.to, { email: 'jan@example.com' });
   assertEquals(mail.from, testConfig.from);
+  assertEquals(mail.replyTo, testConfig.replyTo);
   assertEquals(mail.subject, 'Potwierdź zapis na listę Rewizyty');
   assertStringIncludes(mail.text, `https://waitlist.example.com/potwierdz/#t=${confirmToken}`);
   assertStringIncludes(mail.text, 'REWI-7K3M-9QZT');
@@ -42,13 +45,34 @@ Deno.test('a new address is stored, mailed and gets its promo code back', async 
   );
 });
 
+Deno.test('the survey, a phone number and the consent are passed on', async () => {
+  const { store, handler } = setUp();
+
+  const response = await handler(post(url, {
+    email: 'jan@example.com',
+    answers: { trade: ['chimney', 'other'], trade_other: ' szamba ', clients: '50_200', would_pay: 'maybe' },
+    phone: '601 234 567',
+    consent: true,
+  }));
+
+  assertEquals(response.status, 200);
+  assertEquals(store.signups[0].answers, {
+    trade: ['chimney', 'other'],
+    trade_other: 'szamba',
+    clients: '50_200',
+    would_pay: 'maybe',
+  });
+  assertEquals(store.signups[0].phone, '+48601234567');
+  assertEquals(store.signups[0].consent, true);
+});
+
 Deno.test('a known address never gets the promo code in the response', async () => {
   const { store, email, handler } = setUp();
   store.signupResult = { ...store.signupResult, status: 'confirmed', mail: 'code', confirmToken: null };
 
   const response = await handler(post(url, { email: 'jan@example.com' }));
 
-  assertEquals(await response.json(), { status: 'confirmed', mailSent: true });
+  assertEquals(await response.json(), { status: 'confirmed', mail: 'sent', mailSent: true });
   assertEquals(email.sent[0].subject, 'Twój kod Rewizyty');
   assertStringIncludes(email.sent[0].text, 'REWI-7K3M-9QZT');
 });
@@ -59,11 +83,11 @@ Deno.test('a throttled repeat sends nothing', async () => {
 
   const response = await handler(post(url, { email: 'jan@example.com' }));
 
-  assertEquals(await response.json(), { status: 'pending', mailSent: false });
+  assertEquals(await response.json(), { status: 'pending', mail: 'throttled', mailSent: false });
   assertEquals(email.sent.length, 0);
 });
 
-Deno.test('a vendor refusal keeps the sign-up and reports mailSent false', async () => {
+Deno.test('a vendor refusal keeps the sign-up and reports the mail as failed', async () => {
   const { store, logs } = setUp();
   const handler = createSignupHandler({
     store,
@@ -75,7 +99,12 @@ Deno.test('a vendor refusal keeps the sign-up and reports mailSent false', async
 
   const response = await handler(post(url, { email: 'jan@example.com' }));
 
-  assertEquals(await response.json(), { status: 'created', promoCode: 'REWI-7K3M-9QZT', mailSent: false });
+  assertEquals(await response.json(), {
+    status: 'created',
+    promoCode: 'REWI-7K3M-9QZT',
+    mail: 'failed',
+    mailSent: false,
+  });
   assertStringIncludes(logs[0], 'retryable');
 });
 
@@ -96,6 +125,12 @@ Deno.test('invalid input is refused before any database call', async () => {
       [{ email: 'not-an-email' }, 'invalid_email'],
       [{ email: `${'a'.repeat(250)}@example.com` }, 'invalid_email'],
       [{ email: 'jan@example.com', trade: 'plumber' }, 'invalid_trade'],
+      [{ email: 'jan@example.com', answers: { clients: 'thousands' } }, 'invalid_answers'],
+      [{ email: 'jan@example.com', answers: ['chimney'] }, 'invalid_answers'],
+      [{ email: 'jan@example.com', phone: '12', consent: true }, 'invalid_phone'],
+      [{ email: 'jan@example.com', phone: 601234567, consent: true }, 'invalid_phone'],
+      [{ email: 'jan@example.com', phone: '601 234 567' }, 'consent_required'],
+      [{ email: 'jan@example.com', consent: 'yes' }, 'invalid_request'],
       [['jan@example.com'], 'invalid_request'],
     ] as const
   ) {

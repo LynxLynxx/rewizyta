@@ -24,8 +24,8 @@ be credited in the release notes if you wish.
 - The Flutter app under `apps/mobile` and the packages it is built from.
 - The backend under `supabase/`: migrations (schema, RLS policies, triggers,
   RPC functions), edge functions and their shared code.
-- The two websites under `apps/waitlist` and `apps/website`, and the waitlist
-  sign-up flow.
+- The website under `apps/website` (currently the waitlist page) and the
+  waitlist sign-up flow.
 - CI workflows under `.github/`.
 
 Things we especially want to hear about: a way to read or change another user's

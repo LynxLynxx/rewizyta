@@ -15,8 +15,7 @@ body:
         - Mobile app (apps/mobile)
         - Backend: migrations / RLS (supabase/migrations)
         - Backend: edge functions (supabase/functions)
-        - Waitlist site (apps/waitlist)
-        - Product website (apps/website)
+        - Website and waitlist page (apps/website)
         - Build, CI or tooling
         - Documentation
     validations:

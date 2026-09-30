@@ -11,6 +11,8 @@ export interface WaitlistConfig {
   /** Origins allowed to call the functions from a browser. */
   allowedOrigins: string[];
   from: EmailAddress;
+  /** Where replies to the mail go (`WAITLIST_REPLY_TO`); unset, they go to [from]. */
+  replyTo?: EmailAddress;
   /** Key for hashing client IPs before they reach the rate-limit table. */
   ipSalt: string;
 }
@@ -35,12 +37,14 @@ export function loadWaitlistConfig(env: Env): WaitlistConfig {
     (env('SUPABASE_URL') ? `${trimSlash(env('SUPABASE_URL')!)}/functions/v1` : need('WAITLIST_FUNCTIONS_URL'));
   if (missing.length > 0) throw new Error(`waitlist config: missing ${missing.join(', ')}`);
 
+  const replyTo = env('WAITLIST_REPLY_TO')?.trim();
   const origins = env('WAITLIST_ALLOWED_ORIGINS')?.split(',').map((o) => trimSlash(o.trim())).filter(Boolean);
   return {
     siteUrl,
     functionsUrl: trimSlash(functionsUrl),
     allowedOrigins: origins?.length ? origins : [new URL(siteUrl).origin],
     from: { email: fromEmail, name: env('WAITLIST_FROM_NAME')?.trim() || 'Rewizyta' },
+    ...(replyTo ? { replyTo: { email: replyTo } } : {}),
     ipSalt,
   };
 }

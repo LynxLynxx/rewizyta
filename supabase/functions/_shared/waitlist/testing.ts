@@ -10,6 +10,7 @@ export const testConfig: WaitlistConfig = {
   functionsUrl: 'https://api.example.com/functions/v1',
   allowedOrigins: ['https://waitlist.example.com'],
   from: { email: 'lista@example.com', name: 'Rewizyta' },
+  replyTo: { email: 'kontakt@example.com' },
   ipSalt: 'salt',
 };
 

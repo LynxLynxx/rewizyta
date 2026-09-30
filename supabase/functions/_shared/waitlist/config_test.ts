@@ -20,17 +20,19 @@ Deno.test('defaults: functions under SUPABASE_URL, the site as the only origin, 
   });
 });
 
-Deno.test('overrides: explicit functions URL, several origins, sender name', () => {
+Deno.test('overrides: explicit functions URL, several origins, sender name, reply-to', () => {
   const config = loadWaitlistConfig(env({
     ...minimal,
     WAITLIST_FUNCTIONS_URL: 'http://127.0.0.1:54321/functions/v1/',
     WAITLIST_ALLOWED_ORIGINS: 'http://localhost:8080, https://waitlist.example.com/',
     WAITLIST_FROM_NAME: 'Rewizyta – lista',
+    WAITLIST_REPLY_TO: ' kontakt@example.com ',
   }));
 
   assertEquals(config.functionsUrl, 'http://127.0.0.1:54321/functions/v1');
   assertEquals(config.allowedOrigins, ['http://localhost:8080', 'https://waitlist.example.com']);
   assertEquals(config.from.name, 'Rewizyta – lista');
+  assertEquals(config.replyTo, { email: 'kontakt@example.com' });
 });
 
 Deno.test('every missing variable is named at once', () => {

@@ -105,7 +105,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        site: [waitlist, website]
+        # One site since 2026-09-29: the waitlist lives in apps/website until launch.
+        site: [website]
     defaults:
       run:
         working-directory: apps/${{ matrix.site }}
@@ -126,6 +127,7 @@ jobs:
           version=$(awk '/^  jaspr:/{f=1} f&&/version:/{gsub(/"/,"",$2);print $2;exit}' pubspec.lock)
           dart pub global activate jaspr_cli "$version"
 
-      - run: dart format --output=none --set-exit-if-changed lib
+      - run: dart format --output=none --set-exit-if-changed lib $([ -d test ] && echo test)
       - run: dart analyze --fatal-infos
+      - run: if [ -d test ]; then dart test; else echo "no tests yet"; fi
       - run: jaspr build
