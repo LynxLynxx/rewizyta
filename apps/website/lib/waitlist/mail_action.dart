@@ -52,7 +52,8 @@ class MailActionState<T extends StatefulComponent> extends State<T> {
 
   Future<void> _send() async {
     final token = _token;
-    if (token == null) return;
+    // A second click lands before the rebuild disables the button.
+    if (token == null || _phase == _Phase.sending) return;
     setState(() => _phase = _Phase.sending);
     final outcome = await switch (action) {
       MailAction.confirm => _client.confirm(token),

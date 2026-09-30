@@ -201,7 +201,10 @@ format → analyze matters; `melos run check` does it right.
   with fakes in `handler_test.ts`; nothing in a handler reads `Deno.env`. SQL
   behaviour (RLS, grants, functions) is tested with pgTAP under `supabase/tests/`.
   Public functions set `verify_jwt = false` in `config.toml` and do their own
-  origin, input and rate-limit checks. Gateways (SMS, e-mail, push) are behind small adapter
+  origin and input checks, plus a rate limit wherever a call can send mail or
+  cost money (`waitlist-signup`). Token-only endpoints (`waitlist-confirm`,
+  `waitlist-unsubscribe`) have none: the tokens are unguessable, and an
+  opt-out from a mail provider must never be throttled. Gateways (SMS, e-mail, push) are behind small adapter
   interfaces selected by `SMS_PROVIDER` / `EMAIL_PROVIDER` / `PUSH_PROVIDER`
   secrets, each with a console stub and a shared contract test. Interfaces
   expose only what every vendor offers, so switching to a cheaper vendor is

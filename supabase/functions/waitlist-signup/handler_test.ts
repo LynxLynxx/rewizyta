@@ -26,7 +26,7 @@ Deno.test('a new address is stored, mailed and gets its promo code back', async 
   const response = await handler(post(url, { email: ' JAN@example.com ', trade: 'chimney', source: ' fb ' }));
 
   assertEquals(response.status, 200);
-  assertEquals(await response.json(), { status: 'created', promoCode: 'REWI-7K3M-9QZT', mailSent: true });
+  assertEquals(await response.json(), { status: 'created', promoCode: 'REWI-7K3M-9QZT', mail: 'sent', mailSent: true });
   assertEquals(response.headers.get('access-control-allow-origin'), testConfig.siteUrl);
   assertEquals(store.signups, [
     { email: 'jan@example.com', trade: 'chimney', source: 'fb', answers: null, phone: null, consent: false },
@@ -72,7 +72,7 @@ Deno.test('a known address never gets the promo code in the response', async () 
 
   const response = await handler(post(url, { email: 'jan@example.com' }));
 
-  assertEquals(await response.json(), { status: 'confirmed', mailSent: true });
+  assertEquals(await response.json(), { status: 'confirmed', mail: 'sent', mailSent: true });
   assertEquals(email.sent[0].subject, 'Twój kod Rewizyty');
   assertStringIncludes(email.sent[0].text, 'REWI-7K3M-9QZT');
 });
@@ -83,11 +83,11 @@ Deno.test('a throttled repeat sends nothing', async () => {
 
   const response = await handler(post(url, { email: 'jan@example.com' }));
 
-  assertEquals(await response.json(), { status: 'pending', mailSent: false });
+  assertEquals(await response.json(), { status: 'pending', mail: 'throttled', mailSent: false });
   assertEquals(email.sent.length, 0);
 });
 
-Deno.test('a vendor refusal keeps the sign-up and reports mailSent false', async () => {
+Deno.test('a vendor refusal keeps the sign-up and reports the mail as failed', async () => {
   const { store, logs } = setUp();
   const handler = createSignupHandler({
     store,
@@ -99,7 +99,12 @@ Deno.test('a vendor refusal keeps the sign-up and reports mailSent false', async
 
   const response = await handler(post(url, { email: 'jan@example.com' }));
 
-  assertEquals(await response.json(), { status: 'created', promoCode: 'REWI-7K3M-9QZT', mailSent: false });
+  assertEquals(await response.json(), {
+    status: 'created',
+    promoCode: 'REWI-7K3M-9QZT',
+    mail: 'failed',
+    mailSent: false,
+  });
   assertStringIncludes(logs[0], 'retryable');
 });
 

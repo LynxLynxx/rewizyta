@@ -148,7 +148,7 @@ class PrivacyPage extends StatelessComponent {
             li([
               .text(
                 'złożyć skargę do Prezesa Urzędu Ochrony Danych Osobowych '
-                '(ul. Stawki 2, 00-193 Warszawa, ',
+                '(ul. Moniuszki 1A, 00-014 Warszawa, ',
               ),
               a(href: 'https://uodo.gov.pl', [.text('uodo.gov.pl')]),
               .text(').'),

@@ -15,10 +15,20 @@ export interface SignupDeps {
   log?: (message: string) => void;
 }
 
-/** What the page receives. The promo code only for a new address. */
+/**
+ * What happened to the mail: sent; skipped because one went out in the last
+ * 15 minutes; or refused by the vendor (the sign-up stands, and the 15 minutes
+ * run from this attempt).
+ */
+export type MailOutcome = 'sent' | 'throttled' | 'failed';
+
+/**
+ * What the page receives. The promo code only for a new address. `mailSent`
+ * is `mail === 'sent'`, kept for pages built before `mail` existed.
+ */
 export type SignupResponse =
-  | { status: 'created'; promoCode: string; mailSent: boolean }
-  | { status: 'pending' | 'confirmed' | 'resubscribed'; mailSent: boolean };
+  | { status: 'created'; promoCode: string; mail: MailOutcome; mailSent: boolean }
+  | { status: 'pending' | 'confirmed' | 'resubscribed'; mail: MailOutcome; mailSent: boolean };
 
 /** Per caller: enough for a typo and a retry, too few to spray addresses. */
 export const perClientLimit = { max: 5, windowSeconds: 10 * 60 };
@@ -52,7 +62,7 @@ export function createSignupHandler(deps: SignupDeps): (request: Request) => Pro
     if (body === null) return json({ error: 'invalid_request' }, 400, cors);
 
     if (typeof body.website === 'string' && body.website !== '') {
-      return json({ status: 'pending', mailSent: true } satisfies SignupResponse, 200, cors);
+      return json({ status: 'pending', mail: 'sent', mailSent: true } satisfies SignupResponse, 200, cors);
     }
 
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
@@ -89,11 +99,16 @@ export function createSignupHandler(deps: SignupDeps): (request: Request) => Pro
       if (!allowed) return json({ error: 'rate_limited' }, 429, { ...cors, 'retry-after': '600' });
 
       const result = await store.signup({ email, trade: trade as Trade | null, source, answers, phone, consent });
-      const mailSent = result.mail !== null && await sendMail(deps, email, result, log);
+      const mail: MailOutcome = result.mail === null
+        ? 'throttled'
+        : (await sendMail(deps, email, result, log))
+        ? 'sent'
+        : 'failed';
+      const mailSent = mail === 'sent';
 
       const response: SignupResponse = result.status === 'created'
-        ? { status: 'created', promoCode: result.promoCode, mailSent }
-        : { status: result.status, mailSent };
+        ? { status: 'created', promoCode: result.promoCode, mail, mailSent }
+        : { status: result.status, mail, mailSent };
       return json(response, 200, cors);
     } catch (error) {
       log(`waitlist-signup: ${error instanceof Error ? error.message : error}`);

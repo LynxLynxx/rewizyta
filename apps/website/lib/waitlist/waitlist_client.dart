@@ -7,6 +7,17 @@ import 'package:http/http.dart' as http;
 /// Defaults to `supabase start` on this machine.
 const functionsUrl = String.fromEnvironment('FUNCTIONS_URL', defaultValue: 'http://127.0.0.1:54321/functions/v1');
 
+/// What happened to the mail the sign-up asked for.
+enum MailDelivery {
+  sent,
+
+  /// One went out to this address in the last 15 minutes, so none was sent now.
+  throttled,
+
+  /// The mail provider refused it; another try works after 15 minutes.
+  failed,
+}
+
 /// What `waitlist-signup` answered, in the terms the page needs.
 sealed class SignupOutcome {
   const SignupOutcome();
@@ -14,20 +25,18 @@ sealed class SignupOutcome {
 
 /// A new address: the code is shown on the page and sent with the confirmation mail.
 final class SignupCreated extends SignupOutcome {
-  const SignupCreated({required this.promoCode, required this.mailSent});
+  const SignupCreated({required this.promoCode, required this.mail});
 
   final String promoCode;
-  final bool mailSent;
+  final MailDelivery mail;
 }
 
 /// An address already on the list. The code goes only by mail, never to the page.
 final class SignupKnown extends SignupOutcome {
-  const SignupKnown({required this.confirmed, required this.mailSent});
+  const SignupKnown({required this.confirmed, required this.mail});
 
   final bool confirmed;
-
-  /// False when a mail went out in the last 15 minutes and nothing was sent now.
-  final bool mailSent;
+  final MailDelivery mail;
 }
 
 enum SignupFailureReason { invalidEmail, invalidPhone, rateLimited, other }
@@ -57,12 +66,14 @@ class WaitlistClient {
   final http.Client _http;
 
   /// Posts the sign-up. Never throws: a network error is [SignupFailureReason.other].
+  /// [decoy] is whatever filled the hidden `website` field; people leave it empty.
   Future<SignupOutcome> signup({
     required String email,
     required Map<String, Object> answers,
     required String phone,
     required bool consent,
     String? source,
+    String decoy = '',
   }) async {
     final body = <String, Object>{
       'email': email.trim(),
@@ -70,8 +81,8 @@ class WaitlistClient {
       'consent': consent,
       if (phone.trim().isNotEmpty) 'phone': phone.trim(),
       if (source != null && source.isNotEmpty) 'source': source,
-      // The decoy field the server expects empty from people.
-      'website': '',
+      // The server drops a sign-up with this filled, pretending success.
+      'website': decoy,
     };
 
     final http.Response response;
@@ -87,14 +98,20 @@ class WaitlistClient {
 
     final json = _decode(response.body);
     if (response.statusCode == 200) {
-      final mailSent = json['mailSent'] == true;
+      final mail = switch (json['mail']) {
+        'sent' => MailDelivery.sent,
+        'throttled' => MailDelivery.throttled,
+        'failed' => MailDelivery.failed,
+        // A function from before `mail` only says whether the mail went out.
+        _ => json['mailSent'] == true ? MailDelivery.sent : MailDelivery.failed,
+      };
       return switch (json['status']) {
         'created' when json['promoCode'] is String => SignupCreated(
           promoCode: json['promoCode'] as String,
-          mailSent: mailSent,
+          mail: mail,
         ),
-        'confirmed' => SignupKnown(confirmed: true, mailSent: mailSent),
-        'pending' || 'resubscribed' => SignupKnown(confirmed: false, mailSent: mailSent),
+        'confirmed' => SignupKnown(confirmed: true, mail: mail),
+        'pending' || 'resubscribed' => SignupKnown(confirmed: false, mail: mail),
         _ => const SignupFailed(SignupFailureReason.other),
       };
     }

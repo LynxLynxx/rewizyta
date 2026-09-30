@@ -33,6 +33,9 @@ class SignupFormState extends State<SignupForm> {
   SignupOutcome? _outcome;
   bool _copied = false;
 
+  /// What a bot typed into the hidden decoy field; the server drops such sign-ups.
+  String _decoy = '';
+
   bool _stickyVisible = false;
   web.IntersectionObserver? _observer;
   web.MediaQueryList? _narrow;
@@ -79,6 +82,9 @@ class SignupFormState extends State<SignupForm> {
   }
 
   Future<void> _submit() async {
+    // A second click lands before the rebuild disables the button; a second
+    // request would find the new address and hide its promo code.
+    if (_sending) return;
     if (!_flow.canContinue) {
       setState(() => _flow = _flow.next());
       return;
@@ -93,12 +99,18 @@ class SignupFormState extends State<SignupForm> {
       phone: _flow.phone,
       consent: _flow.consent,
       source: Uri.base.queryParameters['utm_source'] ?? Uri.base.queryParameters['ref'],
+      decoy: _decoy,
     );
     if (!mounted) return;
     setState(() {
       _sending = false;
       _outcome = outcome;
     });
+  }
+
+  /// A server refusal of the e-mail or phone describes the old value, not the one being typed.
+  void _clearServerError() {
+    if (_outcome is SignupFailed) _outcome = null;
   }
 
   void _copyCode(String code) {
@@ -210,7 +222,10 @@ class SignupFormState extends State<SignupForm> {
             'required': '',
             if (emailError) 'aria-invalid': 'true',
           },
-          onInput: (value) => setState(() => _flow = _flow.withEmail(value)),
+          onInput: (value) => setState(() {
+            _flow = _flow.withEmail(value);
+            _clearServerError();
+          }),
         ),
       ]),
       if (emailError) span(classes: 'signup-error', attributes: {'role': 'alert'}, [.text('Sprawdź adres e-mail.')]),
@@ -229,7 +244,10 @@ class SignupFormState extends State<SignupForm> {
             'placeholder': '601 234 567',
             if (phoneError) 'aria-invalid': 'true',
           },
-          onInput: (value) => setState(() => _flow = _flow.withPhone(value)),
+          onInput: (value) => setState(() {
+            _flow = _flow.withPhone(value);
+            _clearServerError();
+          }),
         ),
         span(classes: 'signup-optional', [.text('Jeśli możemy oddzwonić na 10 minut rozmowy.')]),
       ]),
@@ -251,6 +269,7 @@ class SignupFormState extends State<SignupForm> {
             type: InputType.text,
             name: 'website',
             attributes: {'tabindex': '-1', 'autocomplete': 'off'},
+            onInput: (value) => _decoy = value,
           ),
         ],
       ),
@@ -295,7 +314,7 @@ class SignupFormState extends State<SignupForm> {
       attributes: {'role': 'status'},
       [
         switch (_outcome) {
-          SignupCreated(:final promoCode, :final mailSent) => div(classes: 'signup-step', [
+          SignupCreated(:final promoCode, :final mail) => div(classes: 'signup-step', [
             h3(classes: 'signup-done-title', [.text('Dziękujemy! Potwierdź jeszcze adres e-mail.')]),
             div(classes: 'signup-code', [
               span(classes: 'signup-hint', [.text('Twój kod bonusowy')]),
@@ -310,20 +329,23 @@ class SignupFormState extends State<SignupForm> {
             ),
             p(classes: 'signup-note', [
               .text(
-                mailSent
+                mail == MailDelivery.sent
                     ? 'Wysłaliśmy na $email link potwierdzający i ten sam kod. '
                           'Bez potwierdzenia nie napiszemy więcej.'
                     : 'E-mail z potwierdzeniem nie wyszedł. Zapisz kod i spróbuj ponownie za kwadrans.',
               ),
             ]),
           ]),
-          SignupKnown(:final confirmed, :final mailSent) => div(classes: 'signup-step', [
+          SignupKnown(:final confirmed, :final mail) => div(classes: 'signup-step', [
             h3(classes: 'signup-done-title', [.text('Ten adres jest już na liście.')]),
             p(classes: 'signup-note', [
-              .text(switch ((confirmed, mailSent)) {
-                (true, true) => 'Wysłaliśmy na $email e-mail z Twoim kodem.',
-                (false, true) => 'Wysłaliśmy na $email e-mail z linkiem potwierdzającym i kodem.',
-                (_, false) => 'E-mail z kodem wysłaliśmy przed chwilą. Sprawdź skrzynkę, także folder spam.',
+              .text(switch ((confirmed, mail)) {
+                (true, MailDelivery.sent) => 'Wysłaliśmy na $email e-mail z Twoim kodem.',
+                (false, MailDelivery.sent) => 'Wysłaliśmy na $email e-mail z linkiem potwierdzającym i kodem.',
+                (_, MailDelivery.throttled) =>
+                  'Wiadomość na ten adres wysłaliśmy niedawno. Jeśli jej nie ma, także w folderze spam, '
+                      'spróbuj ponownie za kwadrans.',
+                (_, MailDelivery.failed) => 'Nie udało się wysłać e-maila. Spróbuj ponownie za kwadrans.',
               }),
             ]),
           ]),

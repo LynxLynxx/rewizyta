@@ -1,7 +1,7 @@
 -- pgTAP tests for supabase/migrations/*_waitlist_survey.sql. Run with `supabase test db`.
 begin;
 
-select plan(14);
+select plan(17);
 
 delete from public.waitlist_signups;
 
@@ -67,14 +67,32 @@ select isnt(
   'a repeat without the tick keeps the earlier consent'
 );
 
--- Coming back after an opt-out: consent must be given again.
+-- Anyone can type any address: a repeat must not write into the row.
+select public.waitlist_signup(
+  p_email => 'old@example.com',
+  p_answers => '{"trade": ["gas"]}'::jsonb,
+  p_phone => '+48601234567',
+  p_consent => true
+);
+select ok(
+  (select answers is null and phone is null and consented_at is null from public.waitlist_signups where email = 'old@example.com'),
+  'a repeat does not fill in answers, a phone number or consent'
+);
+
+-- Coming back after an opt-out changes nothing until the new link is used.
 update public.waitlist_signups set unsubscribed_at = now(), signup_mailed_at = now() - interval '16 minutes'
 where email = 'jan@example.com';
 select public.waitlist_signup(p_email => 'jan@example.com');
+select ok(
+  (select unsubscribed_at is not null and consented_at is not null from public.waitlist_signups where email = 'jan@example.com'),
+  'a re-subscription keeps the opt-out and the earlier consent'
+);
+
+select public.waitlist_signup(p_email => 'ola@example.com', p_phone => '+48601234567');
 select is(
-  (select consented_at from public.waitlist_signups where email = 'jan@example.com'),
+  (select phone from public.waitlist_signups where email = 'ola@example.com'),
   null,
-  're-subscribing without the tick clears the old consent'
+  'a phone number without consent is not stored'
 );
 
 reset role;
@@ -82,6 +100,10 @@ reset role;
 select throws_ok(
   $$ update public.waitlist_signups set phone = '601234567' where email = 'jan@example.com' $$,
   '23514', null, 'a phone number that is not E.164 is refused'
+);
+select throws_ok(
+  $$ update public.waitlist_signups set consented_at = null where email = 'jan@example.com' $$,
+  '23514', null, 'a phone number needs consent'
 );
 select throws_ok(
   $$ update public.waitlist_signups set answers = '["chimney"]'::jsonb where email = 'jan@example.com' $$,

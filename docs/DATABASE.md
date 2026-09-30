@@ -312,13 +312,13 @@ RLS: the user can `select` their own rows; only the service role writes.
 | `trade` | `text` | `chimney`, `gas`, `boiler`, `other`; optional. |
 | `source` | `text` | UTM / referrer. |
 | `answers` | `jsonb` | The waitlist survey: option keys per question (a list for multiple choice) and `<question>_other` free text up to 200 characters, validated by `functions/_shared/waitlist/survey.ts`. Must be an object, at most 4,000 characters. The price in the `would_pay` question is the one on the page at `created_at`. |
-| `phone` | `text` | E.164, optional, for a call-back. Accepted only with `consented_at`. |
-| `consented_at` | `timestamptz` | When the visitor last ticked "contact me about Rewizyta". Cleared by a re-subscription without the tick. Mail beyond the first still needs `confirmed_at`. |
+| `phone` | `text` | E.164, optional, for a call-back. Only with `consented_at` (a check enforces it); stored only when the first sign-up ticks consent, cleared on unsubscribe. |
+| `consented_at` | `timestamptz` | When the first sign-up ticked "contact me about Rewizyta"; kept after an opt-out as the record of it. Mail beyond the first still needs `confirmed_at`. |
 | `confirm_token` | `text` unique | Random 32 bytes, base64url. Cleared on confirmation. |
 | `signup_mailed_at` | `timestamptz` | When the last confirmation or code-reminder mail went out. A repeat sign-up within 15 minutes sends nothing. |
 | `confirmed_at` | `timestamptz` | Double opt-in. Null = never mail again except the confirmation itself. |
 | `unsubscribe_token` | `text` not null unique | Lives for the row's lifetime; every mail links to it. |
-| `unsubscribed_at` | `timestamptz` | Set by `waitlist-unsubscribe`; the row is kept as the opt-out record. |
+| `unsubscribed_at` | `timestamptz` | Set by `waitlist-unsubscribe`; the row is kept as the opt-out record. Cleared only by confirming a new link after re-subscribing. |
 | `last_mailed_at` | `timestamptz` | Set by the launch/newsletter function. |
 | `promo_code` | `text` not null unique | Human-typeable, e.g. `REWI-7K3M-9QZT`: Crockford base32 without the vowels A and E, 30^8 codes. Generated on sign-up and shown on the page, only to a new address. |
 | `promo_reward` | `text` default `'trial_90d'` | `sms_100`, `trial_90d`; the campaign decides. The waitlist page promises three free months, so the default is `trial_90d` and earlier rows were backfilled (`*_waitlist_promo_reward.sql`). A campaign with another reward changes the default in a new migration. |
@@ -333,9 +333,9 @@ executable by `service_role` alone:
 
 | Function | Does |
 |---|---|
-| `waitlist_signup(email, trade, source, answers, phone, consent)` | Inserts or finds the address and says which mail to send: `confirm` (new, pending or re-subscribing), `code` (already confirmed) or none (throttled). Re-subscribing after an opt-out clears `confirmed_at`, so consent is given again. A repeat never overwrites the first answers or phone number. The last three arguments default to null/false, so the three-argument call still works. |
-| `waitlist_confirm(token)` | Sets `confirmed_at` and clears the token; false for a used or unknown token. |
-| `waitlist_unsubscribe(token)` | Sets `unsubscribed_at` (idempotent) and clears any pending confirm token. |
+| `waitlist_signup(email, trade, source, answers, phone, consent)` | Inserts or finds the address and says which mail to send: `confirm` (new, pending or re-subscribing), `code` (already confirmed) or none (throttled). Anyone can type any address, so a repeat changes none of the stored data (answers, phone, consent, trade, source); it only issues a confirmation link when needed. A re-subscription stays opted out until that link is used. The phone is stored only with consent. The last three arguments default to null/false, so the three-argument call still works. |
+| `waitlist_confirm(token)` | Sets `confirmed_at`, clears the token and any opt-out (a token on an unsubscribed row came from a re-subscription); false for a used or unknown token. |
+| `waitlist_unsubscribe(token)` | Sets `unsubscribed_at` (idempotent), clears any pending confirm token and the phone number (its consent is withdrawn). |
 
 Tokens are 256-bit random values looked up through their unique index, so
 there is nothing to learn from timing. The reward lands on `profiles`

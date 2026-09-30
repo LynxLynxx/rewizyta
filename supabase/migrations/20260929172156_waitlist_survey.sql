@@ -16,7 +16,9 @@ alter table public.waitlist_signups
     check (phone ~ '^\+[1-9][0-9]{7,14}$'),
   -- When the visitor last ticked "contact me about Rewizyta" on the page. The
   -- double opt-in (confirmed_at) is still what allows a second mail.
-  add column consented_at timestamptz;
+  add column consented_at timestamptz,
+  -- A phone number is kept only under that consent.
+  add constraint waitlist_signups_phone_needs_consent check (phone is null or consented_at is not null);
 
 -- A new signature cannot replace the old one in place; the defaults keep every
 -- existing named-argument call (PostgREST RPC) resolving to the new function.
@@ -35,8 +37,10 @@ drop function public.waitlist_signup(text, text, text);
 --
 -- The caller shows the promo code only for 'created'; for a known address it
 -- goes by mail, so typing someone else's address never reveals their code.
--- For the same reason a repeat never overwrites the answers or the phone
--- number: the first sign-up's stay.
+-- For the same reason a repeat changes none of the stored data (answers,
+-- phone, consent, trade, source): anyone can type any address. It only decides
+-- which mail to send, and a re-subscription stays opted out until its new link
+-- is confirmed (waitlist_confirm lifts the opt-out).
 create function public.waitlist_signup(
   p_email text,
   p_trade text default null,
@@ -65,7 +69,7 @@ begin
         confirm_token, signup_mailed_at, unsubscribe_token, promo_code
       )
       values (
-        v_email, p_trade, p_source, p_answers, p_phone, v_consented_at,
+        v_email, p_trade, p_source, p_answers, case when p_consent then p_phone end, v_consented_at,
         public.waitlist_random_token(), now(), public.waitlist_random_token(), public.waitlist_promo_code()
       )
       on conflict (email) do nothing
@@ -106,18 +110,6 @@ begin
 
   update public.waitlist_signups
   set
-    trade = coalesce(trade, p_trade),
-    source = coalesce(source, p_source),
-    answers = coalesce(answers, p_answers),
-    phone = coalesce(phone, p_phone),
-    -- Re-subscribing starts the double opt-in again; consent must be fresh.
-    consented_at = case
-      when p_consent then v_consented_at
-      when v_status = 'resubscribed' and v_mail is not null then null
-      else consented_at
-    end,
-    unsubscribed_at = case when v_status = 'resubscribed' and v_mail is not null then null else unsubscribed_at end,
-    confirmed_at = case when v_status = 'resubscribed' and v_mail is not null then null else confirmed_at end,
     confirm_token = case
       when v_mail = 'confirm' then coalesce(confirm_token, public.waitlist_random_token())
       else confirm_token

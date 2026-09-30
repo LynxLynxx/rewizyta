@@ -40,6 +40,16 @@ check() {
   fi
 }
 
+# Like check(), but judges every match on its own, so an allowed value cannot
+# hide another one on the same line. [allowed] is matched against
+# "file:line:match": anchor it with $, and with a leading : for a whole value.
+check_each() {
+  local label="$1" pattern="$2" allowed="$3"
+  if hits=$(printf '%s\n' "$files" | xargs grep -HnoIE "$pattern" 2>/dev/null | grep -vE "$allowed" || true) && [ -n "$hits" ]; then
+    echo "SECRETS: $label"; echo "$hits"; status=1
+  fi
+}
+
 # Polish mobile numbers other than the shared fixture +48 601 234 567.
 check "phone number that is not the test fixture" \
   '(^|[^0-9A-Za-z])(\+48 ?)?[5-8][0-9]{2}[ -]?[0-9]{3}[ -]?[0-9]{3}([^0-9A-Za-z]|$)' \
@@ -47,9 +57,9 @@ check "phone number that is not the test fixture" \
 # E-mail addresses outside the documented example domains, except the product's
 # sending domain and the public contact address the website names as the
 # data controller's.
-check "e-mail address" \
+check_each "e-mail address" \
   '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}' \
-  '@(example\.(com|org|pl)|rewizyta\.pl|rewizyta\.rsapps\.org)\b|r\.schossler@rsapps\.org|noreply@anthropic\.com|Co-Authored-By|@[0-9.]+x\.(png|jpg|jpeg|webp)'
+  '@(example\.(com|org|pl)|rewizyta\.pl|rewizyta\.rsapps\.org)$|:(r\.schossler@rsapps\.org|noreply@anthropic\.com)$|@[0-9.]+x\.(png|jpg|jpeg|webp)$'
 # Hosted project hostnames: the app must read these from .env.
 check "hosted backend hostname" \
   '[a-z0-9-]+\.(supabase\.co|ingest\.(de|us)\.sentry\.io|posthog\.com/project)' \

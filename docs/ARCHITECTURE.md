@@ -377,8 +377,11 @@ We keep the mailing list ourselves so no vendor owns it:
    body (a button again) and `waitlist-unsubscribe?token=…` as `List-Unsubscribe`
    / `List-Unsubscribe-Post` headers (RFC 8058 one-click, required by
    Gmail/Yahoo since 2024; mail providers POST to it). A GET on that URL is
-   redirected to the page. The function sets `unsubscribed_at`; the row stays
-   so we never mail that address again and can prove the opt-out. Brevo adds
+   redirected to the page. The function sets `unsubscribed_at` and drops the
+   phone number; the row stays so we never mail that address again and can
+   prove the opt-out. Typing the address into the form again only mails a new
+   confirmation link; the opt-out holds until that link is used, so nobody can
+   lift someone else's. Brevo adds
    its own `List-Unsubscribe` to transactional mail as well, and a click on it
    blocks the address at Brevo without telling us. Before launch, check with a
    real send which header wins; if Brevo's does, add a webhook that mirrors

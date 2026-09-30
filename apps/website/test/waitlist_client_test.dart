@@ -60,20 +60,39 @@ void main() {
 
   test('a new address gets its promo code', () async {
     final outcome = await signup(
-      clientAnswering(200, {'status': 'created', 'promoCode': 'REWI-7K3M-9QZT', 'mailSent': false}),
+      clientAnswering(200, {'status': 'created', 'promoCode': 'REWI-7K3M-9QZT', 'mail': 'failed', 'mailSent': false}),
     );
 
     expect(outcome, isA<SignupCreated>().having((o) => o.promoCode, 'promoCode', 'REWI-7K3M-9QZT'));
-    expect((outcome as SignupCreated).mailSent, isFalse);
+    expect((outcome as SignupCreated).mail, MailDelivery.failed);
   });
 
   test('a known address is reported without a code', () async {
-    final confirmed = await signup(clientAnswering(200, {'status': 'confirmed', 'mailSent': true}));
-    final pending = await signup(clientAnswering(200, {'status': 'resubscribed', 'mailSent': false}));
+    final confirmed = await signup(clientAnswering(200, {'status': 'confirmed', 'mail': 'sent', 'mailSent': true}));
+    final pending = await signup(
+      clientAnswering(200, {'status': 'resubscribed', 'mail': 'throttled', 'mailSent': false}),
+    );
 
     expect(confirmed, isA<SignupKnown>().having((o) => o.confirmed, 'confirmed', isTrue));
     expect(pending, isA<SignupKnown>().having((o) => o.confirmed, 'confirmed', isFalse));
-    expect((pending as SignupKnown).mailSent, isFalse);
+    expect((confirmed as SignupKnown).mail, MailDelivery.sent);
+    expect((pending as SignupKnown).mail, MailDelivery.throttled);
+  });
+
+  test('a function without the mail field is read from mailSent', () async {
+    final sent = await signup(clientAnswering(200, {'status': 'pending', 'mailSent': true}));
+    final notSent = await signup(clientAnswering(200, {'status': 'pending', 'mailSent': false}));
+
+    expect((sent as SignupKnown).mail, MailDelivery.sent);
+    expect((notSent as SignupKnown).mail, MailDelivery.failed);
+  });
+
+  test('passes on what filled the decoy field', () async {
+    final client = clientAnswering(200, {'status': 'pending', 'mail': 'sent', 'mailSent': true});
+
+    await client.signup(email: 'bot@example.com', answers: {}, phone: '', consent: true, decoy: 'http://spam');
+
+    expect((jsonDecode(sent.body) as Map)['website'], 'http://spam');
   });
 
   test('server refusals map to what the page can say', () async {

@@ -3,7 +3,7 @@
 -- exercised by moving signup_mailed_at into the past.
 begin;
 
-select plan(35);
+select plan(37);
 
 -- Start from empty tables whatever the local database holds; rolled back at the end.
 delete from public.waitlist_signups;
@@ -132,8 +132,13 @@ insert into result values ('back', public.waitlist_signup('jan.kowalski@example.
 
 select is((select body ->> 'status' from result where step = 'back'), 'resubscribed', 'signing up after an opt-out is a re-subscription');
 select ok(
-  (select unsubscribed_at is null and confirmed_at is null and confirm_token is not null from public.waitlist_signups),
-  're-subscribing needs a fresh confirmation'
+  (select unsubscribed_at is not null and confirm_token is not null from public.waitlist_signups),
+  'a re-subscription stays opted out until its new link is confirmed'
+);
+select ok(public.waitlist_confirm((select body ->> 'confirm_token' from result where step = 'back')), 'the new link confirms');
+select ok(
+  (select unsubscribed_at is null and confirmed_at is not null from public.waitlist_signups),
+  'confirming the new link opts the address in again'
 );
 
 -- ---------------------------------------------------------------------------

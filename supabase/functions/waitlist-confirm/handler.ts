@@ -13,6 +13,10 @@ export interface ConfirmDeps {
  * `POST {token}` from the site's /potwierdz/ page, after the reader presses
  * the button. Never GET: link scanners would confirm on the reader's behalf.
  * Answers `{status: 'confirmed' | 'invalid'}`; a used token is invalid.
+ *
+ * No rate limit, unlike waitlist-signup: nothing here sends mail, a token is
+ * 256 random bits (guessing one is hopeless), and a limit kept in Postgres
+ * would cost each request more than the one indexed update it guards.
  */
 export function createConfirmHandler(deps: ConfirmDeps): (request: Request) => Promise<Response> {
   const log = deps.log ?? console.error;
