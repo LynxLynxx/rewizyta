@@ -109,7 +109,8 @@ interest before the app is built.
 - [x] Hosting on Cloudflare Workers static assets (`apps/website/wrangler.jsonc`): 404 page, `web/_headers` (CSP, HSTS, font cache), `robots.txt` and a sitemap; `deploy-website.yml` deploys staging on merge and production on a `v*` tag, like the backend. Checked locally with `wrangler dev` (2026-09-30).
 - [ ] Cloudflare setup: an "Edit Cloudflare Workers" API token (account + `rsapps.org` zone) and the account id as `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` on both GitHub environments; no existing DNS records on `rewizyta` and `staging.rewizyta` (the first deploy creates them); Rocket Loader and Web Analytics off.
 - [ ] Production backend for the waitlist: Pro, or free plus the keepalive job (a paused project breaks the form; check what backups the free plan keeps, and dump the list yourself if none); function secrets `EMAIL_PROVIDER=brevo`, `BREVO_API_KEY`, `WAITLIST_SITE_URL` (`https://rewizyta.rsapps.org`; staging: `https://staging.rewizyta.rsapps.org`), `WAITLIST_FROM_EMAIL`, `WAITLIST_REPLY_TO`, `WAITLIST_IP_SALT` on each project; the first `v*` tag deploys migrations and functions.
-- [ ] Sharing: a Rewizyta favicon (`web/favicon.ico` is still the Jaspr scaffold's), Open Graph tags and a 1200×630 image.
+- [x] Site icon: the header mark as `web/favicon.svg`, `favicon.ico` (16/32/48) and `apple-touch-icon.png`, linked from the document head (2026-09-30).
+- [ ] Sharing: Open Graph tags and a 1200×630 image.
 - [ ] Data processing agreements accepted with Supabase, Brevo and Cloudflare (the notice says they exist; Cloudflare is named on `/prywatnosc/` since 2026-09-30).
 
 Not needed to go public, only for the app launch:

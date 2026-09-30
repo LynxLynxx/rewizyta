@@ -56,3 +56,7 @@ jaspr build --dart-define=FUNCTIONS_URL=https://<ref>.supabase.co/functions/v1
   `http://localhost:8080/potwierdz/#t=<confirm_token>`.
 - Fonts: IBM Plex Sans and Mono, self-hosted in `web/fonts/` (SIL OFL 1.1,
   `web/fonts/OFL.txt`), Latin and Latin Extended subsets.
+- Icons: `web/favicon.svg` is the header mark (`lib/components/site_header.dart`)
+  and the source; `favicon.ico` (16, 32, 48) and `apple-touch-icon.png` (180,
+  full-bleed, iOS rounds it) are rasterised from it. Change the mark in all
+  three; `lib/main.server.dart` links them.

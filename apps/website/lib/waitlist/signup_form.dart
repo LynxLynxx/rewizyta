@@ -31,7 +31,12 @@ class SignupFormState extends State<SignupForm> {
   SignupFlow _flow = const SignupFlow();
   bool _sending = false;
   SignupOutcome? _outcome;
-  bool _copied = false;
+
+  /// The address the last request went out with; the field may change meanwhile.
+  String _submittedEmail = '';
+
+  /// Null until "Skopiuj kod" is pressed; false when the browser refused the clipboard.
+  bool? _copied;
 
   /// What a bot typed into the hidden decoy field; the server drops such sign-ups.
   String _decoy = '';
@@ -92,9 +97,10 @@ class SignupFormState extends State<SignupForm> {
     setState(() {
       _sending = true;
       _outcome = null;
+      _submittedEmail = _flow.email.trim();
     });
     final outcome = await _client.signup(
-      email: _flow.email,
+      email: _submittedEmail,
       answers: _flow.answersJson,
       phone: _flow.phone,
       consent: _flow.consent,
@@ -113,9 +119,16 @@ class SignupFormState extends State<SignupForm> {
     if (_outcome is SignupFailed) _outcome = null;
   }
 
-  void _copyCode(String code) {
-    web.window.navigator.clipboard.writeText(code);
-    setState(() => _copied = true);
+  Future<void> _copyCode(String code) async {
+    bool copied;
+    try {
+      await web.window.navigator.clipboard.writeText(code).toDart;
+      copied = true;
+    } catch (_) {
+      // Permission refused, or no clipboard at all outside HTTPS.
+      copied = false;
+    }
+    if (mounted) setState(() => _copied = copied);
   }
 
   bool get _done => _outcome is SignupCreated || _outcome is SignupKnown;
@@ -221,6 +234,7 @@ class SignupFormState extends State<SignupForm> {
             'placeholder': 'jan.kowalski@example.pl',
             'required': '',
             if (emailError) 'aria-invalid': 'true',
+            if (emailError) 'aria-describedby': 'signup-email-error',
           },
           onInput: (value) => setState(() {
             _flow = _flow.withEmail(value);
@@ -228,7 +242,13 @@ class SignupFormState extends State<SignupForm> {
           }),
         ),
       ]),
-      if (emailError) span(classes: 'signup-error', attributes: {'role': 'alert'}, [.text('Sprawdź adres e-mail.')]),
+      if (emailError)
+        span(
+          id: 'signup-email-error',
+          classes: 'signup-error',
+          attributes: {'role': 'alert'},
+          [.text('Sprawdź adres e-mail.')],
+        ),
       label(classes: 'signup-field', [
         span([
           .text('Telefon '),
@@ -243,6 +263,7 @@ class SignupFormState extends State<SignupForm> {
             'autocomplete': 'tel',
             'placeholder': '601 234 567',
             if (phoneError) 'aria-invalid': 'true',
+            if (phoneError) 'aria-describedby': 'signup-phone-error',
           },
           onInput: (value) => setState(() {
             _flow = _flow.withPhone(value);
@@ -251,15 +272,32 @@ class SignupFormState extends State<SignupForm> {
         ),
         span(classes: 'signup-optional', [.text('Jeśli możemy oddzwonić na 10 minut rozmowy.')]),
       ]),
-      if (phoneError) span(classes: 'signup-error', attributes: {'role': 'alert'}, [.text('Sprawdź numer telefonu.')]),
+      if (phoneError)
+        span(
+          id: 'signup-phone-error',
+          classes: 'signup-error',
+          attributes: {'role': 'alert'},
+          [.text('Sprawdź numer telefonu.')],
+        ),
       label(classes: 'signup-consent${consentError ? ' has-error' : ''}', [
         input<bool>(
           type: InputType.checkbox,
           checked: _flow.consent,
+          attributes: {
+            if (consentError) 'aria-invalid': 'true',
+            if (consentError) 'aria-describedby': 'signup-consent-error',
+          },
           onChange: (value) => setState(() => _flow = _flow.withConsent(value)),
         ),
         span([.text('Zgadzam się na kontakt w sprawie Rewizyty. Mogę się wypisać w każdej chwili.')]),
       ]),
+      if (consentError)
+        span(
+          id: 'signup-consent-error',
+          classes: 'signup-error',
+          attributes: {'role': 'alert'},
+          [.text('Zaznacz zgodę, żeby się zapisać.')],
+        ),
       // A decoy for bots. People never see it; a filled one is dropped by the server.
       div(
         classes: 'visually-hidden',
@@ -308,7 +346,7 @@ class SignupFormState extends State<SignupForm> {
   }
 
   Component _result() {
-    final email = _flow.email.trim();
+    final email = _submittedEmail;
     return div(
       classes: 'signup-step',
       attributes: {'role': 'status'},
@@ -325,8 +363,16 @@ class SignupFormState extends State<SignupForm> {
               type: ButtonType.button,
               classes: 'signup-copy',
               onClick: () => _copyCode(promoCode),
-              [.text(_copied ? 'Skopiowano' : 'Skopiuj kod')],
+              [.text(_copied == true ? 'Skopiowano' : 'Skopiuj kod')],
             ),
+            if (_copied == false)
+              p(
+                classes: 'signup-note',
+                attributes: {'role': 'alert'},
+                [
+                  .text('Nie udało się skopiować. Zaznacz kod powyżej i skopiuj go ręcznie.'),
+                ],
+              ),
             p(classes: 'signup-note', [
               .text(
                 mail == MailDelivery.sent
