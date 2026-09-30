@@ -567,12 +567,13 @@ Every hosted dependency, with the EU option chosen and the reason:
 | Push | FCM behind an adapter | no EU service delivers reliably on stock Android; the adapter keeps UnifiedPush possible for self-hosters |
 | SMS | SMSAPI or SerwerSMS (Poland) | needed for a registered Polish sender name anyway |
 | E-mail | Brevo (FR) free plan to start; Scaleway Transactional Email (FR) at volume | EU companies, EU data centres; see "Messaging: start free, swap by config" |
-| Static hosting / CDN | Cloudflare Workers static assets | US, but serves static files only: the forms post straight to Supabase, so it holds no user data (only request logs). Free with no traffic cap. Bunny.net (SI, about $1/month) is the fully-EU fallback; any static host works |
+| Static hosting / CDN | Cloudflare Workers static assets | US, but serves static files only: the forms post straight to Supabase, so form data never reaches it. It still sees request metadata (IP address, user agent) in its logs, as any host does; the privacy notice names it. Free with no traffic cap. Bunny.net (SI, about $1/month) is the fully-EU fallback; any static host works |
 | DNS / domain | Cloudflare, `rsapps.org` zone | US; DNS only. The domain was already there |
 | Source hosting and CI | GitHub Actions | US, but holds code only, no user data |
 
 Rule for new dependencies: an EU region or an EU company, or self-hostable in
-the EU behind an adapter. If none applies, it does not hold user data.
+the EU behind an adapter. If none applies, nothing people enter may reach it
+(request metadata such as IP addresses is disclosed in the privacy notice).
 
 ## Websites
 
@@ -674,7 +675,7 @@ talks to its own backend, whose `WAITLIST_SITE_URL` must be that site's origin.
 | 2026-09-28 | Free app; "Przypomnienia" sold in-app through Google Play Billing as one-time passes (12 months, 1 month) plus 200-SMS top-ups, 300 SMS/month fair use, verified by `verify-purchase` | Charges only for what costs money and matches the market's flat-with-SMS norm. Play's 15% buys one-tap purchase, restore, refunds, Google as merchant of record (no customer invoices) and the iOS path; a 0% web checkout would force the app to stay silent about buying. One-time products because BLIK on Play is one-time only and there is no subscription lifecycle to handle. Self-hosted is the same app with billing off. RevenueCat deferred until an App Store path exists. |
 | 2026-09-28 | Waitlist collects e-mail and an optional trade | One tap sizes the segments and picks which default catalogue to polish first. |
 | 2026-09-29 | Waitlist asks seven one-tap questions (trade, client count, phone platform, current records, how reminders are sent, clients lost, willingness to pay) plus an optional call-back number | Answers decide what to build first (Android or iPhone, which trades, whether the price holds) before any app code exists. Stored as option keys in `answers` jsonb; `trade` stays for the older payload. |
-| 2026-09-30 | Site on Cloudflare Workers static assets, DNS at Cloudflare (`rewizyta.rsapps.org`); mail stays on Brevo | Free with no traffic cap, and the DNS was there already. A US company is acceptable because a static site holds no user data. Firebase Hosting was rejected for its free daily transfer cap (about 1,200 first visits); Bunny/Hetzner stay the fully-EU fallback. Mailgun EU (100 mails a day free) and MailerLite (no API sending on free) were looked at and not taken. |
+| 2026-09-30 | Site on Cloudflare Workers static assets, DNS at Cloudflare (`rewizyta.rsapps.org`); mail stays on Brevo | Free with no traffic cap, and the DNS was there already. A US company is acceptable because form data never reaches a static host; it sees request metadata only, which the privacy notice discloses. Firebase Hosting was rejected for its free daily transfer cap (about 1,200 first visits); Bunny/Hetzner stay the fully-EU fallback. Mailgun EU (100 mails a day free) and MailerLite (no API sending on free) were looked at and not taken. |
 | 2026-09-28 | Trunk-based git: protected `main`, squash-only PRs, `v*` tags as releases; staging deploys on merge, production on tag with approval | One contributor, an app-store gate already exists, and a `develop` branch would only add merges. |
 | 2026-09-28 | Migrations must keep the previous app release working (expand, then contract) | Offline-first phones lag the server by weeks. |
 | 2026-09-28 | No hosted secrets manager; `.env` files, GitHub environment secrets and Supabase function secrets | Doppler is US-hosted and would be a fourth account for self-hosters; the app's keys ship in the binary anyway. |

@@ -92,9 +92,10 @@ format → analyze matters; `melos run check` does it right.
     leaves. A cubit never imports a repository; only `dependencies.dart` in
     the app may. `melos run layering` fails otherwise.
 11. **EU first.** Every hosted service we add must offer EU data residency or
-    be self-hostable in the EU. A service that holds no user data may be
-    elsewhere (Cloudflare serves the static site; the forms post straight to
-    Supabase). See `docs/ARCHITECTURE.md`, "EU stance".
+    be self-hostable in the EU. A service that nothing people enter reaches may
+    be elsewhere: Cloudflare serves the static site and sees only request
+    metadata such as IP addresses (disclosed on `/prywatnosc/`), while the forms
+    post straight to Supabase. See `docs/ARCHITECTURE.md`, "EU stance".
 12. **A migration must keep working for the previous app release.** Phones are
     offline-first and can run last month's build; the server cannot wait for
     them. Expand, then contract: add columns with defaults, add tables, add
@@ -246,8 +247,8 @@ format → analyze matters; `melos run check` does it right.
   PostHog EU cloud. Push: FCM behind the adapter (no EU alternative reaches
   Android reliably). E-mail: Brevo (free plan) now, Scaleway TEM at volume.
 - The site: Cloudflare Workers static assets, DNS at Cloudflare for
-  `rsapps.org` (2026-09-30). US, but it holds no user data, the free plan has no
-  traffic cap, and the DNS was there already. Firebase Hosting was rejected (a
+  `rsapps.org` (2026-09-30). US, but form data never reaches it (it sees request
+  metadata only), the free plan has no traffic cap, and the DNS was there already. Firebase Hosting was rejected (a
   daily transfer cap on the free plan); Bunny.net (about $1/month) is the
   fully-EU fallback.
 - Trades and service types are per-user rows seeded from a Dart default
