@@ -76,6 +76,27 @@ jobs:
       # This is what `supabase db push` will do to staging on merge.
       - run: supabase db start
       - run: supabase db lint --level warning --fail-on error
+      # pgTAP tests under supabase/tests/ (RLS, grants, the SQL functions).
+      - run: supabase test db
+
+  functions:
+    name: Edge functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: supabase
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.7 # the version verified locally; bump on purpose
+
+      # fmt, lint, type-check and the unit + contract tests (supabase/deno.json).
+      - run: deno task check
 
   sites:
     name: Jaspr site (${{ matrix.site }})

@@ -22,6 +22,7 @@
 - [Remote-only tables](#remote-only-tables)
   - [`purchases` – store receipts](#purchases--store-receipts)
   - [`waitlist_signups` – the mailing list and the promo codes](#waitlist_signups--the-mailing-list-and-the-promo-codes)
+  - [`rate_limits` – counters for public endpoints](#rate_limits--counters-for-public-endpoints)
 - [Row Level Security](#row-level-security)
   - [`tombstones` – ids that were purged](#tombstones--ids-that-were-purged)
   - [`account_deletions` – audit trail without personal data](#account_deletions--audit-trail-without-personal-data)
@@ -63,7 +64,7 @@ data; the server keeps a copy for reminders and restore. See
      └── * devices  (push tokens)
 
  local only:  outbox, sync_state, app_settings
- remote only: waitlist_signups
+ remote only: waitlist_signups, rate_limits
 ```
 
 ## Synced tables
@@ -307,25 +308,48 @@ RLS: the user can `select` their own rows; only the service role writes.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK default `gen_random_uuid()` | |
-| `email` | `text` not null, unique (lower) | |
+| `email` | `text` not null, unique | Stored trimmed and lower-cased (a check enforces it), so the plain unique constraint is case-insensitive. |
 | `trade` | `text` | `chimney`, `gas`, `boiler`, `other`; optional. |
 | `source` | `text` | UTM / referrer. |
 | `confirm_token` | `text` unique | Random 32 bytes, base64url. Cleared on confirmation. |
+| `signup_mailed_at` | `timestamptz` | When the last confirmation or code-reminder mail went out. A repeat sign-up within 15 minutes sends nothing. |
 | `confirmed_at` | `timestamptz` | Double opt-in. Null = never mail again except the confirmation itself. |
 | `unsubscribe_token` | `text` not null unique | Lives for the row's lifetime; every mail links to it. |
 | `unsubscribed_at` | `timestamptz` | Set by `waitlist-unsubscribe`; the row is kept as the opt-out record. |
 | `last_mailed_at` | `timestamptz` | Set by the launch/newsletter function. |
-| `promo_code` | `text` not null unique | Human-typeable, e.g. `REWI-7K3M-9QZT` (Crockford base32, no vowels). Generated on sign-up and shown on the page. |
-| `promo_reward` | `text` | `sms_100`, `trial_90d`; the campaign decides. |
+| `promo_code` | `text` not null unique | Human-typeable, e.g. `REWI-7K3M-9QZT`: Crockford base32 without the vowels A and E, 30^8 codes. Generated on sign-up and shown on the page, only to a new address. |
+| `promo_reward` | `text` | `sms_100`, `trial_90d`; the campaign decides. Null until then: the page promises "a bonus for early users" without naming it. |
 | `redeemed_at` | `timestamptz` | Set by `redeem-promo`. |
 | `redeemed_by` | `uuid` → `auth.users` | The account that used it. One code, one account. |
 | `created_at` | `timestamptz` default `now()` | |
 
-No user rows. RLS enabled with **no** policy for the anon/authenticated roles;
-only the `waitlist-*` and `redeem-promo` edge functions (service role) touch it.
-Tokens and codes are compared with a constant-time function in SQL. The reward
-lands on `profiles` (`sms_balance` or `paid_until`) inside the same
-transaction as `redeemed_at`.
+No user rows. RLS enabled and forced with **no** policy, and every grant to
+`anon` and `authenticated` revoked; only the `waitlist-*` and `redeem-promo`
+edge functions (service role) touch it, through SQL functions that are
+executable by `service_role` alone:
+
+| Function | Does |
+|---|---|
+| `waitlist_signup(email, trade, source)` | Inserts or finds the address and says which mail to send: `confirm` (new, pending or re-subscribing), `code` (already confirmed) or none (throttled). Re-subscribing after an opt-out clears `confirmed_at`, so consent is given again. |
+| `waitlist_confirm(token)` | Sets `confirmed_at` and clears the token; false for a used or unknown token. |
+| `waitlist_unsubscribe(token)` | Sets `unsubscribed_at` (idempotent) and clears any pending confirm token. |
+
+Tokens are 256-bit random values looked up through their unique index, so
+there is nothing to learn from timing. The reward lands on `profiles`
+(`sms_balance` or `paid_until`) inside the same transaction as `redeemed_at`.
+
+### `rate_limits` – counters for public endpoints
+
+| Column | Type | Notes |
+|---|---|---|
+| `key` | `text` | `<endpoint>:<hmac>`: an HMAC-SHA-256 of the caller's IP under the `WAITLIST_IP_SALT` function secret, never the address. `<endpoint>:*` counts everyone together. |
+| `window_start` | `timestamptz` | Start of the fixed window (`date_bin`). |
+| `hits` | `integer` | |
+
+Primary key `(key, window_start)`. `rate_limit_hit(key, max, window)` counts a
+hit and returns whether the caller is still within `max`; it deletes windows
+older than a day as it goes, so the table never holds more than a day of
+pseudonymous keys. Service role only, like `waitlist_signups`.
 
 ## Row Level Security
 
@@ -340,7 +364,7 @@ create policy "<t>: own rows" on public.<t>
   with check (user_id = auth.uid());
 ```
 
-`profiles` uses `user_id` as well. `waitlist_signups` gets RLS with no policy.
+`profiles` uses `user_id` as well. `waitlist_signups` and `rate_limits` get RLS with no policy.
 `public.keepalive()` is the one function granted to `anon`; it returns `'ok'`
 and exists only so the scheduled workflow can keep a free-tier project awake.
 The API roles never get `bypassrls`, table ownership or superuser. A
@@ -411,6 +435,8 @@ self-hoster who prefers E2EE can run the reminder job on the phone instead
 - `waitlist_signups` rows are deleted 12 months after launch or on unsubscribe
   plus 30 days, whichever is later; the unsubscribed e-mail is kept as a
   salted hash only, to honour the opt-out.
+- `rate_limits` rows (keyed hashes of IP addresses) live for one day; every
+  call to `rate_limit_hit` deletes the older ones.
 - Platform backups roll off after 7 days (Pro) – stated in the privacy policy.
 
 **A client of the technician asks to be forgotten.** The technician deletes the

@@ -60,15 +60,16 @@ existing migration or the database by hand.
 
 `main` is protected by a ruleset: nobody pushes to it directly, not even the
 maintainer. Every change is a branch and a pull request, and the PR can only be
-merged when the five CI checks are green:
+merged when the required CI checks are green:
 
 | Check | What it runs |
 |---|---|
 | Secret and personal-data scan | gitleaks over the tree and the whole history, plus the PII greps |
-| Backend migrations | every migration applied to a fresh Postgres, then `supabase db lint` |
+| Backend migrations | every migration applied to a fresh Postgres, `supabase db lint`, then the pgTAP tests (`supabase test db`) |
 | Flutter workspace | `melos run gen`, `l10n`, `format`, `analyze`, `layering`, `test` |
 | Jaspr site (waitlist) | `dart format`, `dart analyze --fatal-infos`, `jaspr build` |
 | Jaspr site (website) | the same for the product website |
+| Edge functions | `deno task check` in `supabase/`: fmt, lint, type check, unit and contract tests |
 
 - One change per pull request. Refactors and features go in separate PRs.
 - Branch names: `feat/…`, `fix/…`, `chore/…`, `docs/…`. The branch is deleted

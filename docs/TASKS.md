@@ -89,9 +89,16 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M8 – Waitlist site and mailing
 
-- [ ] `apps/waitlist`: one page, Polish, email + optional trade form → `waitlist-signup`, shows the promo code.
-- [ ] `EmailGateway` adapter (`functions/_shared/email/`) selected by `EMAIL_PROVIDER` (brevo | scaleway | console): Brevo implementation first (free plan), console stub, contract test; Supabase Auth custom SMTP pointed at the same account.
-- [ ] `waitlist-confirm`, `waitlist-unsubscribe` (link + `List-Unsubscribe` one-click), launch-mail function with batching and `last_mailed_at`.
+Moved ahead of M1 on 2026-09-29: the waitlist goes live first, to measure
+interest before the app is built.
+
+- [x] `waitlist_signups` + `rate_limits` migration with service-role-only SQL functions and pgTAP tests; `waitlist-signup` edge function (origin check, decoy field, per-caller and overall rate limits, 15-minute mail throttle) (2026-09-29).
+- [x] `EmailGateway` adapter (`functions/_shared/email/`) selected by `EMAIL_PROVIDER` (brevo | console): Brevo implementation, console stub, shared contract test (2026-09-29).
+- [x] `waitlist-confirm`, `waitlist-unsubscribe` (page button + `List-Unsubscribe` one-click; GET never acts) (2026-09-29).
+- [ ] `apps/waitlist`: one page, Polish, email + optional trade form → `waitlist-signup`, shows the promo code; `/potwierdz/` and `/wypisz/` pages with the buttons; privacy notice.
+- [ ] Real Brevo send before launch: verify the sender domain (SPF, DKIM, DMARC) and check whether our `List-Unsubscribe` or Brevo's own reaches the inbox; if Brevo's, mirror its unsubscribes through a webhook.
+- [ ] Supabase Auth custom SMTP pointed at the same Brevo account.
+- [ ] Launch-mail function with batching and `last_mailed_at`; `scaleway` adapter when volume outgrows Brevo's free plan.
 - [ ] `redeem-promo` function and the onboarding step that calls it.
 - [ ] Hosting on Bunny.net or Hetzner Object Storage, DNS at OVH.
 
