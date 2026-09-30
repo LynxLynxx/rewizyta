@@ -57,13 +57,16 @@ void main() {
     expect(find.text('Wyślij i odbierz kod'), findsOneComponent);
   });
 
-  testComponents('sending an empty contact step shows the e-mail error instead of posting', (tester) async {
+  testComponents('sending an empty contact step shows the e-mail and consent errors instead of posting', (
+    tester,
+  ) async {
     tester.pumpComponent(const SignupForm());
     await answerEveryQuestion(tester);
 
     await tester.click(buttonWithText('Wyślij i odbierz kod'));
 
     expect(find.text('Sprawdź adres e-mail.'), findsOneComponent);
+    expect(find.text('Zaznacz zgodę, żeby się zapisać.'), findsOneComponent);
     expect(find.text('Wysyłam…'), findsNothing);
   });
 }
