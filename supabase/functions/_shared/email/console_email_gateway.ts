@@ -27,6 +27,7 @@ export class ConsoleEmailGateway implements EmailGateway {
         `[email:console] ${providerMessageId}`,
         `From: ${format(message.from)}`,
         `To: ${format(message.to)}`,
+        ...(message.replyTo === undefined ? [] : [`Reply-To: ${format(message.replyTo)}`]),
         `Subject: ${message.subject}`,
         ...Object.entries(headers).map(([name, value]) => `${name}: ${value}`),
         '',

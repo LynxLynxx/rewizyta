@@ -8,6 +8,7 @@ export interface DeliveredEmail {
   subject: string;
   text: string;
   html: string;
+  replyTo?: { email: string; name?: string };
   headers: Record<string, string>;
 }
 
@@ -46,6 +47,14 @@ export function emailGatewayContract(name: string, harness: () => GatewayHarness
     assertEquals(delivered.subject, message.subject);
     assertEquals(delivered.text, message.text);
     assertEquals(delivered.html, message.html);
+  });
+
+  Deno.test(`${name} (contract): a reply-to address is delivered, and none without one`, async () => {
+    const h = harness();
+    await h.gateway.send(message);
+    assertEquals(h.lastDelivered().replyTo, undefined);
+    await h.gateway.send({ ...message, replyTo: { email: 'kontakt@example.com' } });
+    assertEquals(h.lastDelivered().replyTo, { email: 'kontakt@example.com' });
   });
 
   Deno.test(`${name} (contract): an unsubscribe URL becomes the RFC 8058 header pair`, async () => {

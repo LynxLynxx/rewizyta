@@ -339,6 +339,17 @@ it. Both are EU companies with EU data centres; the swap is one adapter class
 and an env var. No US providers (Resend, Postmark, SendGrid, Mailgun US) for
 user data. Brevo's own contact lists are not used: the list is ours.
 
+Brevo, as set up for the waitlist: the sending domain is `rewizyta.rsapps.org`
+(Brevo code, DKIM and DMARC records at Cloudflare, all DNS-only; tracked
+links go through the branded subdomain `em.rewizyta.rsapps.org`), the sender
+`lista@rewizyta.rsapps.org` has no mailbox, and `WAITLIST_REPLY_TO` sends
+replies to a real one. Two Brevo behaviours to know: API keys block unknown IPs
+30 days after first use unless IP blocking is switched off, and edge functions
+have no fixed IPs, so it is off; and transactional mail always carries an open
+pixel and rewritten (redirected) links, which only Brevo support can switch
+off. The privacy notice says so, and the confirm and unsubscribe links must be
+checked to arrive with their `#t=` fragment after the redirect.
+
 We keep the mailing list ourselves so no vendor owns it:
 
 1. **Sign-up.** The waitlist form posts `{email, answers, phone, consent,

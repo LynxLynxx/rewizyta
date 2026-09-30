@@ -19,6 +19,8 @@ export interface EmailMessage {
   subject: string;
   text: string;
   html: string;
+  /** Where replies go, for a [from] address with no mailbox behind it. */
+  replyTo?: EmailAddress;
   /**
    * HTTPS endpoint that unsubscribes the recipient on POST. Adapters send it as
    * `List-Unsubscribe: <url>` plus `List-Unsubscribe-Post: List-Unsubscribe=One-Click`

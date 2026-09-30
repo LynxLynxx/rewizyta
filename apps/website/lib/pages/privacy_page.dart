@@ -97,7 +97,11 @@ class PrivacyPage extends StatelessComponent {
               'Supabase Inc. (USA)',
               'baza danych i funkcje serwera. Dane są przechowywane we Frankfurcie (Niemcy).',
             ),
-            _item('Brevo (Francja)', 'wysyłka e-maili.'),
+            _item(
+              'Brevo (Francja)',
+              'wysyłka e-maili. Brevo odnotowuje otwarcie wiadomości i kliknięcia w linki (linki '
+                  'prowadzą przez jego serwer); nie korzystamy z tych informacji.',
+            ),
             _item(
               'Cloudflare, Inc. (USA)',
               'DNS i hosting tej strony. Formularz wysyła dane prosto do Supabase, z pominięciem Cloudflare.',

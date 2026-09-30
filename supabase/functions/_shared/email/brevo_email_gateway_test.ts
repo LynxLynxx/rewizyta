@@ -24,6 +24,7 @@ emailGatewayContract('BrevoEmailGateway', () => {
       subject: payload.subject,
       text: payload.textContent,
       html: payload.htmlContent,
+      replyTo: payload.replyTo,
       headers: payload.headers,
     });
     return brevo.fetchFn(input, init);

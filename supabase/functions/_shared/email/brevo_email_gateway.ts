@@ -35,6 +35,7 @@ export class BrevoEmailGateway implements EmailGateway {
           subject: message.subject,
           textContent: message.text,
           htmlContent: message.html,
+          ...(message.replyTo === undefined ? {} : { replyTo: message.replyTo }),
           headers: unsubscribeHeaders(message),
         }),
       });

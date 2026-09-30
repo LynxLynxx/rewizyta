@@ -35,6 +35,7 @@ Deno.test('a new address is stored, mailed and gets its promo code back', async 
   const mail = email.sent[0];
   assertEquals(mail.to, { email: 'jan@example.com' });
   assertEquals(mail.from, testConfig.from);
+  assertEquals(mail.replyTo, testConfig.replyTo);
   assertEquals(mail.subject, 'Potwierdź zapis na listę Rewizyty');
   assertStringIncludes(mail.text, `https://waitlist.example.com/potwierdz/#t=${confirmToken}`);
   assertStringIncludes(mail.text, 'REWI-7K3M-9QZT');

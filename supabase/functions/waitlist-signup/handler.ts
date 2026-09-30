@@ -116,6 +116,7 @@ async function sendMail(
   try {
     await deps.email.send({
       from: deps.config.from,
+      replyTo: deps.config.replyTo,
       to: { email },
       ...mail,
       unsubscribeUrl: links.unsubscribeEndpoint,
