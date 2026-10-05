@@ -28,6 +28,7 @@
 - [Environments and deployment](#environments-and-deployment)
 - [EU stance](#eu-stance)
 - [Websites](#websites)
+- [Client portal](#client-portal)
 - [Open source and self-hosting](#open-source-and-self-hosting)
 - [Platform notes](#platform-notes)
 - [Decisions log](#decisions-log)
@@ -112,7 +113,7 @@ apps/mobile                 bootstrap, AppConfig, Dependencies (DI), router, pag
 | Layer | Owns | Never |
 |---|---|---|
 | models | entities (`with Equatable`), value objects, typed exceptions, enums, pure rules | JSON, Flutter, I/O |
-| repositories | drift tables and queries, DTOs (json_serializable) for sync payloads, DTO ↔ model mapping, the outbox write | caching policy, orchestration, validation |
+| repositories | drift tables and queries, DTOs (json_serializable) for sync payloads, DTO ↔ model and row ↔ model mapping, the outbox write | caching policy, orchestration, validation |
 | services | validation, ids and timestamps, orchestration across repositories, shared state (observers), sync managers, adapter interfaces | Flutter types, presentation formatting |
 | blocs | one state class per screen, cubit methods as the screen's API, domain → view model mapping, error wrapping | widgets, direct data access |
 | view_models | UI-shaped data, presentation enums, formatters (dates, phones, plurals), `LocalizedException` | business logic |
@@ -132,9 +133,9 @@ for the rest: `packages/rewizyta_models/lib/src/client/`,
   the screen rebuilds when the row changes, whether the change came from the
   user or from a pull. There is no "loading from network" state anywhere.
 - **Writes:** a service validates, stamps `id`/`updated_at`, and calls the
-  repository, which runs one drift transaction that (1) upserts the row(s),
-  (2) recomputes any cached values (`equipment.next_due_at`), (3) appends
-  `outbox` rows. Then it pokes `SyncService`, which tries to push immediately
+  repositories inside one `TransactionRunner.run`: (1) upserts the row(s),
+  (2) recomputes any cached values (`equipment.next_due_at`); every repository
+  write (3) appends its `outbox` row in the same transaction. Then it pokes `SyncService`, which tries to push immediately
   and gives up silently if offline.
 - **Errors:** repositories throw typed exceptions from `rewizyta_models`; the
   cubit wraps them with `LocalizedException.create` and pushes them through
@@ -232,13 +233,18 @@ addresses another device.
 Each local write appends `outbox(entity, entity_id, op, payload, created_at)`.
 `op` is `upsert` or `delete` (a delete is an upsert with `deleted_at` set; the
 distinction is only for logging). The payload is the full row as its DTO, so
-pushes are idempotent and order-independent within one entity.
+pushes are idempotent and order-independent within one entity, and a newer
+write to the same row replaces its pending entry instead of queueing a second
+one. Foreign keys on both sides are checked at commit, so neither the push nor
+the pull has to order rows by dependency within a transaction.
 
 ### Push
 
 `SyncService.push()` groups the outbox by entity, sends batches to the
 `sync_push(changes jsonb)` RPC and deletes the outbox rows that the server
-acknowledged. The RPC upserts each row with `on conflict (id) do update ... where
+acknowledged, by their local `id`. A write during the push replaces the row's
+pending entry with a new one (`upsertSynced`); deleting by `(entity,
+entity_id)` would drop that newer change unsent. The RPC upserts each row with `on conflict (id) do update ... where
 excluded.updated_at > existing.updated_at`, so a stale phone cannot overwrite a
 newer server row. Rows the server rejected (older `updated_at`) come back in the
 response and are applied locally, which resolves the conflict the same way on
@@ -327,8 +333,9 @@ Google monthly with reverse charge and issue no customer invoices.
 
 One transactional e-mail provider, EU-hosted, used for two things:
 
-- **Supabase Auth mail** (confirmation, magic link, password reset) through the
-  project's custom SMTP settings. Supabase's built-in sender is rate-limited
+- **Supabase Auth mail** (confirmation, magic link, password reset; after MVP
+  also the client portal's sign-in codes) through the project's custom SMTP
+  settings. Supabase's built-in sender is rate-limited
   and not for production.
 - **Waitlist mail**, sent by edge functions through an `EmailGateway` adapter
   (`functions/_shared/email/`) with a `console` stub for local development.
@@ -589,7 +596,8 @@ banner.
   the promo code. `/potwierdz/` and `/wypisz/` carry the buttons the mail links
   to; `/prywatnosc/` is the privacy notice. The site has no Supabase key; the
   functions' URLs are public and the table is written only through the
-  functions' service role.
+  functions' service role. (The client portal, after MVP, is the first page to
+  carry the publishable key, which is public by design; see "Client portal".)
 - **From launch – the app's information and support site.** Not a web version
   of the app (the app is phone-only), but the pages the store listings need:
 
@@ -600,6 +608,7 @@ banner.
   | Privacy policy, with the sub-processors and the retention table | "Privacy Policy URL" in both stores (required); the Play caller-ID review reads it |
   | Account deletion: how to delete in the app, and how to ask by e-mail without reinstalling | Play "Delete account URL" in the Data safety form (required for apps with accounts); App Store needs the in-app path only |
   | Terms with the DPA (umowa powierzenia) | The technician is the controller of their clients' data; we are the processor |
+  | Client portal, `/klient/` (after MVP) | Not a store requirement; the one client-facing surface, see "Client portal" |
 
   `/potwierdz/`, `/wypisz/` and `/prywatnosc/` keep their paths, because every
   mail already sent links to them.
@@ -618,6 +627,84 @@ deploys on the backend's triggers: staging (`staging.rewizyta.rsapps.org`,
 `X-Robots-Tag: noindex`) on every merge touching `apps/website/`, production
 (`rewizyta.rsapps.org`) on a `v*` tag after approval. So each site always
 talks to its own backend, whose `WAITLIST_SITE_URL` must be that site's origin.
+
+## Client portal
+
+Decided 2026-10-01 (`PRODUCT.md`, "Client portal"): after the MVP, the
+technician's clients get a page on the website, `/klient/`, that lists every
+technician who services them, with due dates, the next booked visit and the
+visit history. It is the one client-facing surface; there is no client app.
+This section is the design; nothing of it exists yet.
+
+**Accounts.** Portal users are ordinary Supabase Auth users without a
+`profiles` row, so Goal 3 still holds: one technician per account, and a
+technician who is also somebody's client signs in to the portal with the same
+account. Sign-in is an e-mail one-time code (`signInWithOtp`, then `verifyOtp`
+with `type: email`; the magic-link template carries `{{ .Token }}`), not a
+link: a link opens in the mail app's own browser, where the PKCE verifier of
+the page that asked for it is missing, and fails. The code is typed into the
+page that requested it, which always works. Stage 2 adds a password or a
+passkey and a phone number verified by SMS code through Supabase's send-SMS
+hook, pointed at the same `SmsGateway` adapter, so a self-hoster's gateway
+serves it too. The sign-in mail goes through the project's custom SMTP
+(Brevo), which the waitlist and the app's auth share; the free plan's daily
+cap and Auth's e-mail rate limit (`config.toml`) bound how many codes a day
+can go out.
+
+**Linking a sign-in to a client card.** Three sources, all recorded in
+`client_links` (`DATABASE.md`), which the server writes and the phone only
+reads:
+
+| Source | How the link is made | Who opted in |
+|---|---|---|
+| `email` | The technician types the client's e-mail on the card; the first sign-in with that address, or the first page load after the e-mail was saved, claims the card (`portal_claim_links()`). | The technician, per card; the field says what it is for. |
+| `invite` | The reminder template contains `{portal}`; the daily job mints a short token per card and renders `rewizyta.rsapps.org/k/#<token>` (the fragment never reaches a server log, as with the mail pages). Whoever opens it and signs in with an e-mail binds that e-mail to the card (`portal_claim_invite(token)`, rate-limited per account). Needs M6. | The technician, by putting the placeholder in the template; the client, by opening the link sent to their own phone. |
+| `phone` (stage 2) | The portal user verifies a phone number; every card with that number is claimed. | The technician, through `profiles.portal_enabled` only, which is why that switch exists. |
+
+Clearing or changing the e-mail on a card soft-deletes its `email` links
+(trigger); deleting the card hides it (`deleted_at`) and the purge removes the
+links with it; `portal_enabled = false` hides every card of that technician at
+once. A reassigned e-mail or phone number can show a stranger the previous
+holder's due dates; the reminder SMS to that number already carries the same
+information, so the exposure is not new, and the privacy notice says so.
+
+**Reading.** The portal never selects from a table. It calls
+`portal_overview()`, a `security definer` function for `authenticated` that
+claims pending e-mail links, then returns, for each technician with
+`portal_enabled` and at least one live link to the caller: business and owner
+name, phone, the linked cards with their equipment (service type name,
+`last_visit_at`, `next_due_at`), `planned` appointments from today on, and
+visits with the labels of what was serviced. Never `price_grosze`, notes, the
+address or coordinates, and never anything about another client. No synced
+table gets a second RLS policy; the own-rows rule in `DATABASE.md` stays the
+only one. When V1's per-user column encryption lands, the function is the
+second server-side reader of ciphertext after the reminder job and decrypts
+with the card owner's key, for linked cards only.
+
+**Writing.** Stage 1 writes nothing of the technician's. Stage 2 adds
+`portal_requests` (ask for a date, confirm or cancel an appointment, correct
+the contact details): rows the portal user owns, which the technician's app
+pulls and accepts or declines with one tap; accepting writes the appointment
+or the client change on the phone, through the normal outbox. The phone stays
+the source of truth, and the request covers what two-way SMS was meant to do
+without a receiving number and without giving up the alphanumeric sender.
+
+**On the site.** `/klient/` and `/k/` are pre-rendered shells with a
+`@client` component for sign-in and the overview, `noindex` like the mail
+pages. They are the first pages to carry the publishable key and the project
+URL, injected at build time like `FUNCTIONS_URL`; the CSP already allows
+`https://*.supabase.co`. The calls are three (`/auth/v1/otp`, `/auth/v1/verify`,
+`/rest/v1/rpc/portal_overview`), so a hand-written client next to
+`waitlist_client.dart` is enough; the pure-Dart `supabase` package is the
+alternative if it builds under Jaspr's analyzer pin. The session lives in
+`localStorage`, with a sign-out button. Cloudflare still sees request metadata
+only; the data goes between the browser and Supabase.
+
+**Deleting.** A portal-only account is deleted from the page:
+`auth.admin.deleteUser` and its `client_links`, nothing else, because it owns
+nothing else. The technician's card is untouched. The privacy notice gets a
+section for the portal account, where we are the controller; the DPA states
+that the portal shows a card on the technician's instruction.
 
 ## Open source and self-hosting
 
@@ -681,3 +768,4 @@ talks to its own backend, whose `WAITLIST_SITE_URL` must be that site's origin.
 | 2026-09-28 | No hosted secrets manager; `.env` files, GitHub environment secrets and Supabase function secrets | Doppler is US-hosted and would be a fourth account for self-hosters; the app's keys ship in the binary anyway. |
 | 2026-09-28 | CodeRabbit on every PR, advisory only | Free for open source; a second reviewer for a one-person project; the repo is public so no EU concern. |
 | 2026-09-28 | Two-way SMS stays in "Later"; reminders carry `{telefon}` | A receiving number is a fixed monthly cost, but an alphanumeric sender cannot receive replies, so two-way costs the `KOMINIARZ` branding. |
+| 2026-10-01 | Client portal on the website after MVP, in two stages: e-mail code sign-in and a read-only list of the client's technicians, due dates and visits; then an account with phone verification and requests the technician accepts in the app | Replaces "no client-facing portal": the client-side half of "no client gets lost", a selling point, and a way in for technicians invited by their clients. Portal users are plain Auth users without a profile; links live in `client_links`, reads go through `security definer` functions, so no synced table gets a second RLS policy and the phone stays the source of truth. A web page, not an app, so the store listings are untouched. |

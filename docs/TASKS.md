@@ -13,6 +13,7 @@
 - [M8 – Waitlist site and mailing](#m8--waitlist-site-and-mailing)
 - [M9 – Product website](#m9--product-website)
 - [V1 (after MVP ships)](#v1-after-mvp-ships)
+- [Client portal (after MVP)](#client-portal-after-mvp)
 - [Later](#later)
 
 Milestones in build order. Each one is meant to be a working, testable slice.
@@ -32,15 +33,17 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M1 – Local data layer
 
-- [ ] drift tables for every entity in `docs/DATABASE.md` (`trades`, `service_types`, `equipment`, `visits`, `visit_items`, `appointments`, `reminders`, `devices`, `sync_state`, `app_settings`).
-- [ ] Equatable models + DTOs + repositories per entity, following the `Client` slice.
+- [x] drift tables for every entity in `docs/DATABASE.md` (`trades`, `service_types`, `equipment`, `visits`, `visit_items`, `appointments`, `reminders`, `devices`, `sync_state`, `app_settings`); `clients` brought up to the documented columns (`address_line`, `postal_code`, `lat`/`lng`, `contact_id`). Foreign keys enforced and deferred to commit, enums as snake_case text, calendar days as `YYYY-MM-DD` (2026-10-01). `profiles` waits for M5: its key is the auth user id. `client_links` and `clients.email` belong to the client portal.
+- [x] Equatable models + DTOs + repositories per entity, following the `Client` slice; `OutboxWriter.upsertSynced` writes the row and its outbox entry in one transaction, replacing a pending entry for the same row (2026-10-01).
 - [ ] `DefaultCatalog` in `rewizyta_models` (trades → service types) and the onboarding seed service that copies it into the user's rows with `template_key`.
-- [ ] Due-date recompute in the services that touch visits, visit items, equipment and cycles (`nextDue` exists and is tested).
-- [ ] Repository tests on `NativeDatabase.memory()`, service tests with mocktail.
+- [ ] Due-date recompute in the services that touch visits, visit items, equipment and cycles (`nextDue` exists and is tested; `VisitsRepository.lastDoneAt` and `EquipmentRepository.findByServiceType` are the queries it needs). Services wrap multi-repository writes in `TransactionRunner.run` (added 2026-10-01; drift stays below the services, `melos run layering` checks it).
+- [ ] Repository tests on `NativeDatabase.memory()` (done for every repository, 2026-10-01), service tests with mocktail.
+- [ ] Register the new repositories and `TransactionRunner` in `dependencies.dart` with the services that use them.
+- [ ] Before the first release: snapshot drift schema v1 with `make-migrations` (see `DATABASE.md`, "Migrations").
 
 ## M2 – Clients
 
-- [ ] List with search (name, phone, town), detail, add/edit form with inline validation, soft delete.
+- [ ] List with search (name, phone, town), detail, add/edit form with inline validation, soft delete. Sort with Polish collation: SQLite's `ORDER BY name` puts Ł, Ś and Ż after Z.
 - [ ] Equipment on a client, each with a service type from the user's catalogue.
 - [ ] Import from phone contacts (`flutter_contacts`), paste a number.
 - [ ] Phone formatting (E.164 in, Polish display out – `formatPhone`), call and SMS via `url_launcher`.
@@ -61,7 +64,7 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M5 – Backend and sync
 
-- [ ] Supabase project in `eu-central-1`; migrations for every table, RLS forced, `sync_push` / `sync_pull` RPCs.
+- [ ] Supabase project in `eu-central-1`; migrations for every table, RLS forced, `sync_push` / `sync_pull` RPCs. `sync_push` enforces the server-owned `reminders` columns, and the phone's pull skips and reports a row it cannot decode (an unknown enum value) instead of storing it (`DATABASE.md`, "Principles" and "Sync support in Postgres").
 - [ ] Auth (email + password or magic link), custom SMTP (Scaleway TEM), profile.
 - [ ] `SyncApi` (Supabase impl + no-op) in the network tier; `SyncService`: outbox push, incremental pull, last-write-wins, connectivity and app-start triggers; `SyncStatusObserver`.
 - [ ] `devices` upload from `PushNotificationsService.onTokenRefresh`.
@@ -138,6 +141,30 @@ web version of the app (see `ARCHITECTURE.md`, "Websites").
 - [ ] Per-user data key in Supabase Vault, `pii_encrypt`/`pii_decrypt`, encrypted personal-data columns, key drop on deletion.
 - [ ] Optional SQLCipher for the local database, key in the platform keystore.
 - [ ] `reminders` 12-month purge.
+
+## Client portal (after MVP)
+
+Decided 2026-10-01; see `PRODUCT.md`, "Client portal" for what and why and
+`ARCHITECTURE.md`, "Client portal" for the design. Needs M5 (the server holds
+the clients), M9 (the site) and, for the invitation link, M6. Two stages; the
+second only if the first is used.
+
+### Stage 1 – see my technicians
+
+- [ ] Expand-only migration: `clients.email` (nullable, lower-cased by a check, indexed), `profiles.portal_enabled` (default true), `client_links` with the standard technician policy, `portal_claim_links()`, `portal_claim_invite(token)` and `portal_overview()` as `security definer` functions for `authenticated`, the trigger that revokes `email` links when a card's e-mail changes; pgTAP: a portal user sees only linked, non-deleted cards of technicians with the portal on, never prices, notes or addresses, and nothing of a technician who switched it off.
+- [ ] Drift: `clients.email`, read-only `client_links` pulled like `reminders` and never pushed; `schemaVersion` bump.
+- [ ] App: e-mail field on the client form ("E-mail – portal klienta"), a "Portal" badge on a linked card, the switch in Settings, the `{portal}` placeholder in the template editor; the daily job mints or refreshes the invite token when it renders a message containing it.
+- [ ] Supabase Auth for the portal: e-mail OTP as a six-digit code (`{{ .Token }}` in the magic-link template; a link would break in the mail app's browser), custom SMTP through Brevo shared with the app's auth and the waitlist (watch the free plan's daily cap), `otp_expiry` and the send rate limit in `config.toml`.
+- [ ] Site: `/klient/` and `/k/` (`noindex`) with a `@client` sign-in and overview component; the publishable key and project URL at build time like `FUNCTIONS_URL`; a small GoTrue + PostgREST client next to `waitlist_client.dart` (or the pure-Dart `supabase` package if it builds under Jaspr's analyzer pin); session in `localStorage`, sign-out; "your technician is not on Rewizyta?" link to send.
+- [ ] Privacy notice and terms: a section for the portal account (we are the controller), the DPA line that the portal shows a card on the technician's instruction, the reassigned-number caveat; portal account deletion from the page (`auth.admin.deleteUser` and the links).
+- [ ] Analytics: sign-ins and linked cards per technician, to decide whether stage 2 is worth building.
+
+### Stage 2 – an account
+
+- [ ] Account: name, password or passkey, phone verified by SMS code (Supabase send-SMS hook through the `SmsGateway` adapter, so a self-hoster's gateway works) and phone-based linking; decide the default of `portal_enabled` for existing technicians before this ships.
+- [ ] `portal_requests` (ask for a date, confirm or cancel an appointment, correct the contact details), pulled by the app; accept or decline with one tap, a push when one arrives.
+- [ ] Service-history download for the client.
+- [ ] If this is used, drop two-way SMS from Later.
 
 ## Later
 

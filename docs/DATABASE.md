@@ -15,6 +15,7 @@
   - [`appointments`](#appointments)
   - [`devices` – push registrations](#devices--push-registrations)
   - [`reminders` – every SMS, automatic or manual](#reminders--every-sms-automatic-or-manual)
+  - [`client_links` – a client's portal sign-in](#client_links--a-clients-portal-sign-in)
 - [Local-only tables (drift)](#local-only-tables-drift)
   - [`outbox`](#outbox)
   - [`sync_state`](#sync_state)
@@ -46,9 +47,29 @@ data; the server keeps a copy for reminders and restore. See
 | Calendar dates (visit day, due day) are `YYYY-MM-DD`. | `TEXT` | `date` |
 | Money is an integer in grosze. | `INTEGER` | `integer` |
 | Phone numbers are E.164 (`+48601234567`). Formatting happens in the UI. | `TEXT` | `text` |
-| Enumerations are short lowercase strings, checked by a constraint. | `TEXT` | `text check (...)` |
+| Enumerations are short lowercase snake_case strings (`no_show`), checked by a constraint. | `TEXT` | `text check (...)` |
 | Deletes are soft (`deleted_at`). | same | same; nothing is physically deleted |
+| Foreign keys are enforced and checked at commit, so a sync can apply rows in any order. | `DEFERRABLE INITIALLY DEFERRED`, `PRAGMA foreign_keys = ON` | `deferrable initially deferred` |
 | Every remote table has RLS enabled **and forced**, with one policy: `user_id = auth.uid()`. | – | in the creating migration |
+
+Foreign-key actions matter only for the 30-day purge and account deletion,
+the two physical deletes. Rows a client owns go with it (`equipment`, `visits`,
+`appointments`, `reminders` cascade from `clients`; `visit_items` from `visits`
+and `equipment`); optional links are cleared (`service_types.trade_id`,
+`visits.appointment_id`, `reminders.equipment_id` and `appointment_id` set
+null); `equipment.service_type_id` has no action, so a service type in use is
+archived, never deleted.
+
+The local database holds one account, so its indexes leave out `user_id` and
+serve the phone's own queries; the indexes listed below are the server's.
+
+**A new enumeration value is an app change first.** The phone decodes every
+pulled row before storing it, and a value it does not know fails the decode
+(`EnumConverter` throws `ArgumentError`), so it never reaches a local table or
+a screen. Under rule 12 that makes adding a value expand-then-contract: ship
+the build that knows it, and let the server or the other phones write it only
+once older builds are gone. Until then the pull skips such a row and reports
+it rather than storing it.
 
 ## Entity overview
 
@@ -60,7 +81,8 @@ data; the server keeps a copy for reminders and restore. See
      │        │                └──── * visit_items * ─── 1 visits ─── 1 clients
      │        ├──── * visits
      │        ├──── * appointments  (a visit may close an appointment)
-     │        └──── * reminders     (kind: due → equipment, appointment → appointments, manual)
+     │        ├──── * reminders     (kind: due → equipment, appointment → appointments, manual)
+     │        └──── * client_links  (portal sign-ins; written by the server, read by the phone)
      └── * devices  (push tokens)
 
  local only:  outbox, sync_state, app_settings
@@ -92,6 +114,7 @@ Column types are given as Postgres; the drift mapping follows the table above.
 | `travel_speed_kmh` | `integer` | Default 40. Turns straight-line distance into a travel estimate. |
 | `route_mode` | `text` | `nearest_neighbour` (default), `manual`. |
 | `paid_until` | `date` | Reminders are sent while `paid_until >= today`. Extended by `redeem-promo` (trial) and `verify-purchase` (passes). Only the server changes it. |
+| `portal_enabled` | `boolean` default true | Whether the client portal may show this technician's cards at all (see `client_links`). The switch in Settings. |
 | `created_at, updated_at, deleted_at` | | |
 
 The planning columns are the user's settings for the day planner (see
@@ -111,8 +134,10 @@ phone gets them back.
 | `lat`, `lng` | `double precision` | Geocoded on the phone when address is saved; used for route order. |
 | `note` | `text` | Free text: gate code, dog, "call before". |
 | `contact_id` | `text` | Device contact identifier if imported; helps re-import. |
+| `email` | `text` | Typed by the technician for the client portal, and nothing else; stored trimmed and lower-cased (a check enforces it). Null for most clients. |
 
-Indexes: `(user_id, name)`, `(user_id, phone)` for caller lookup.
+Indexes: `(user_id, name)`, `(user_id, phone)` for caller lookup, `(email)` for
+the portal's claim (it matches across technicians).
 
 ### `trades` – the user's job lines (branże)
 
@@ -255,6 +280,50 @@ makes the daily job idempotent. Index `(user_id, status, send_at)` for the sende
 Automatic reminders are created by the server, manual ones by the app; both
 sync like any other row, so the app can show the full message history.
 
+The server owns delivery. The phone may create `manual` reminders and change a
+reminder only while it is `pending` (edit a manual message, or cancel); it
+never writes `provider_message_id`, `sent_at` or `error`, and never moves
+`status` anywhere but `pending` → `cancelled`. `sync_push` enforces this rather
+than trusting last-write-wins, so a phone cancelling a stale copy cannot undo a
+`sent` or `delivered` status.
+
+### `client_links` – a client's portal sign-in
+
+One row per (client card, portal sign-in). Planned with the client portal
+(after MVP, see `ARCHITECTURE.md`, "Client portal"). Written by the server
+only, by the functions below and the daily reminder job; the phone pulls it
+like `reminders` and never pushes it (`sync_push` ignores the table).
+
+| Column | Type | Notes |
+|---|---|---|
+| (std) | | `user_id` is the technician who owns the card. `deleted_at` revokes the link. |
+| `client_id` | `uuid` → `clients` not null | |
+| `portal_user_id` | `uuid` → `auth.users` | The client's portal sign-in; null while an invitation is unclaimed. |
+| `source` | `text` | `email` (the card's `email` matched the sign-in's verified address), `invite` (the link in the reminder SMS), `phone` (stage 2: a verified number matched `clients.phone`). |
+| `invite_token` | `text` unique | For `invite`: eight characters of Crockford base32 like `promo_code`, minted by the daily job when it renders a message with `{portal}` and reused by later messages to the same card; cleared on claim. |
+| `invite_expires_at` | `timestamptz` | Pushed forward on each send; an expired, unclaimed invitation is purged. |
+| `claimed_at` | `timestamptz` | When `portal_user_id` was set. |
+
+Unique partial indexes `(client_id) where source = 'invite' and portal_user_id is null`
+(one open invitation per card) and `(client_id, portal_user_id) where deleted_at is null`
+(one live link per pair). Index `(portal_user_id)` for the overview.
+
+RLS is the standard technician policy, so the phone pulls its own links. A
+portal user has no policy on any table and reaches rows only through these
+functions, `security definer` with a pinned `search_path`, executable by
+`authenticated`:
+
+| Function | Does |
+|---|---|
+| `portal_claim_links()` | Inserts an `email` link for every non-deleted card whose `email` equals the caller's verified address (`auth.users.email_confirmed_at` set) and has no live link to the caller. |
+| `portal_claim_invite(token)` | Binds an open invitation to the caller: sets `portal_user_id` and `claimed_at`, clears the token. False for an unknown, claimed or expired token. At most ten attempts per account per hour through `rate_limit_hit('portal_claim:<uid>', …)`, so the short token cannot be enumerated. |
+| `portal_overview()` | Calls `portal_claim_links()`, then returns JSON: for each technician with `profiles.portal_enabled` and a live link to the caller, `business_name`, `owner_name`, `phone`, and their linked, non-deleted cards with equipment (`label`, service type `name`, `last_visit_at`, `next_due_at`), `planned` appointments with `starts_at >= today`, and visits (`done_at` plus the labels of their items). Never `price_grosze`, any `note`, the address, `lat/lng` or anything about another client. |
+
+A trigger on `clients` soft-deletes the card's `email` links whenever `email`
+changes, so clearing the field is how the technician revokes one link;
+`profiles.portal_enabled = false` hides all of them at once. None of this adds
+a second policy to a synced table: the own-rows rule below stays the only one.
+
 ## Local-only tables (drift)
 
 ### `outbox`
@@ -269,6 +338,10 @@ sync like any other row, so the app can show the full message history.
 | `created_at` | `TEXT` | |
 | `attempts` | `INTEGER` default 0 | |
 | `last_error` | `TEXT` | |
+
+Written with the row in one transaction (`OutboxWriter.upsertSynced`). A newer
+write to the same row replaces its pending entry: the payload is the whole
+row, so only the latest one has to reach the server.
 
 ### `sync_state`
 
@@ -368,6 +441,8 @@ create policy "<t>: own rows" on public.<t>
 ```
 
 `profiles` uses `user_id` as well. `waitlist_signups` and `rate_limits` get RLS with no policy.
+A portal user (client portal, after MVP) matches no policy anywhere and reads
+only through the `portal_*` functions described under `client_links`.
 `public.keepalive()` is the one function granted to `anon`; it returns `'ok'`
 and exists only so the scheduled workflow can keep a free-tier project awake.
 The API roles never get `bypassrls`, table ownership or superuser. A
@@ -405,9 +480,11 @@ provider are sub-processors and are listed in the privacy policy with their
 DPAs. What that means for the schema:
 
 **Personal data columns.** `clients.name/phone/address_line/town/postal_code/
-lat/lng/note/contact_id`, `equipment.label/note`, `visits.note`,
-`appointments.note`, `reminders.to_phone/body`, `profiles.owner_name/phone`
-and `waitlist_signups.email`. Nothing else identifies a person.
+lat/lng/note/contact_id/email`, `equipment.label/note`, `visits.note`,
+`appointments.note`, `reminders.phone/body`, `profiles.owner_name/phone`,
+`waitlist_signups.email`, and for the client portal the sign-in's e-mail and
+phone in `auth.users` (`client_links` holds only ids). Nothing else identifies
+a person.
 
 **Encryption.**
 
@@ -415,7 +492,7 @@ and `waitlist_signups.email`. Nothing else identifies a person.
 |---|---|---|
 | Transport | TLS everywhere; the app pins nothing extra. | always |
 | At rest, platform | Supabase encrypts disks and backups (AES-256). | always |
-| At rest, per user (**planned, V1**) | The personal-data columns above are stored as `bytea` produced by `pgp_sym_encrypt` with a **per-user data key** kept in Supabase Vault, created by a trigger on sign-up. Two `security definer` functions, `pii_encrypt(text)` and `pii_decrypt(bytea)`, look up the key for `auth.uid()` only, so a user can never reach another user's key and the key never leaves Postgres. `sync_push`/`sync_pull` call them; the reminder job calls `pii_decrypt` at render time. Studio, dumps and logical backups then contain ciphertext, and deleting the key is a crypto-shred of every backup copy. | V1 |
+| At rest, per user (**planned, V1**) | The personal-data columns above are stored as `bytea` produced by `pgp_sym_encrypt` with a **per-user data key** kept in Supabase Vault, created by a trigger on sign-up. Two `security definer` functions, `pii_encrypt(text)` and `pii_decrypt(bytea)`, look up the key for `auth.uid()` only, so a user can never reach another user's key and the key never leaves Postgres. `sync_push`/`sync_pull` call them; the reminder job calls `pii_decrypt` at render time, and so does `portal_overview()` (the client portal), which decrypts with the card owner's key for linked cards only, the second server-side reader of ciphertext. Studio, dumps and logical backups then contain ciphertext, and deleting the key is a crypto-shred of every backup copy. | V1 |
 | On the phone | SQLite in the app sandbox; optional SQLCipher (`sqlcipher_flutter_libs` with drift) behind a setting for technicians who want it, key in the platform keystore. | V1, optional |
 
 **What we do not do: end-to-end encryption.** The server has to read a phone
@@ -441,6 +518,10 @@ self-hoster who prefers E2EE can run the reminder job on the phone instead
   this to the reader.
 - `rate_limits` rows (keyed hashes of IP addresses) live for one day; every
   call to `rate_limit_hit` deletes the older ones.
+- `client_links`: an unclaimed invitation is deleted when it expires; a
+  claimed link goes with the card (the 30-day purge) or with the portal
+  account (its deletion removes the `auth.users` row and the links, nothing
+  else, because a portal account owns nothing else).
 - Platform backups roll off after 7 days (Pro) – stated in the privacy policy.
 
 **A client of the technician asks to be forgotten.** The technician deletes the
@@ -464,6 +545,12 @@ export and deletion".
   plus `server_now`.
 - `sync_push` rejects ids present in `tombstones` (returned as `purged` so the
   phone deletes its copy).
+- `sync_push` ignores `client_links` (server-written); `sync_pull` returns it
+  like any other table.
+- For `reminders`, `sync_push` inserts new `manual` rows and applies a change
+  to an existing row only while the server's copy is `pending`; it never takes
+  `provider_message_id`, `sent_at` or `error` from the phone. A refused change
+  comes back like a stale row, so the phone applies the server's version.
 - Both run as `security invoker`, so RLS still applies inside them.
 
 ## Due dates
@@ -495,4 +582,8 @@ Due-list buckets: `overdue` (`next_due_at < today`), `soon` (within 60 days),
 - A table's DDL, RLS, policies, indexes and triggers live in the same file.
 - Local drift schema versions track the same changes; bump `schemaVersion` and
   add a migration step in `AppDatabase` in the same PR as the SQL file.
+- Until the first app release no phone has a database to upgrade, so drift
+  schema version 1 is edited in place. Before that release, snapshot it with
+  `dart run drift_dev make-migrations` (schema files and generated migration
+  tests are committed); from then on every local change bumps `schemaVersion`.
 - Never edit an applied migration; add a new one.

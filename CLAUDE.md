@@ -12,7 +12,7 @@ the thing they describe.
 | Path | What | Toolchain |
 |---|---|---|
 | `apps/mobile` | The Flutter app (package `rewizyta`): bootstrap, DI container, router, pages, theme. | Flutter 3.47 / Dart 3.13, flutter_bloc, go_router, drift_flutter, supabase_flutter |
-| `packages/rewizyta_models` | Domain: Equatable entities, typed exceptions, pure rules (`nextDue`). Leaf, pure Dart. | equatable |
+| `packages/rewizyta_models` | Domain: Equatable entities, typed exceptions, pure rules (`nextDue`). Pure Dart; depends only on the `shared` leaf (`Optional`). | equatable |
 | `packages/rewizyta_repositories` | Data: drift `AppDatabase`, tables, DTOs, repository interfaces + impls, outbox. Pure Dart. | drift, json_serializable |
 | `packages/rewizyta_services` | Domain services (the only thing cubits inject), observers, sync managers, and the adapter interfaces for analytics, crash reporting and push. Pure Dart. | uuid |
 | `packages/rewizyta_blocs` | Cubits + Equatable states, error/signal side-channel mixins, `AppBlocObserver`. Re-exports flutter_bloc. | flutter_bloc, bloc_test |
@@ -113,7 +113,9 @@ format → analyze matters; `melos run check` does it right.
   transformers (debounce, drop-while-busy). States are `final class … with
   Equatable`: a single class with `copyWith` when the UI needs several facts at
   once, a `sealed` hierarchy when states are mutually exclusive. `Optional<T>`
-  from `rewizyta_shared` clears nullable fields in `copyWith`. Cubits are plain
+  from `rewizyta_shared` clears nullable fields in `copyWith`, in states and
+  domain models alike (`deletedAt: const Optional.empty()` restores a
+  soft-deleted row). Cubits are plain
   `class` (not `final`) so widget tests can mock them.
 - **No code generation for models or state.** Equatable + primary
   constructors + hand-written `copyWith`; no freezed. Codegen is limited to DTOs (json_serializable),
@@ -129,8 +131,14 @@ format → analyze matters; `melos run check` does it right.
   A view model earns its place with real transforms (formatting, derived flags)
   or 2+ domain models; otherwise pass parameters.
 - **Services are the only tier cubits inject.** Repositories are API/DB-only
-  and do the DTO ↔ model mapping; caching, orchestration and validation live in
-  services. Interfaces are `abstract interface class X`, implementations
+  and do the mapping: DTO ↔ model on the DTO (`fromDomain` / `toDomain`), drift
+  row ↔ model as extensions in `<entity>_row_mapping.dart` (`row.toDomain()`,
+  `model.toCompanion()`) that every query on the table shares, never as private
+  methods of one repository. Caching, orchestration and validation live in
+  services. A service that writes through several repositories wraps the calls
+  in `TransactionRunner.run`, so the rows, derived caches and outbox entries
+  commit together; drift is never imported above the repositories
+  (`melos run layering` checks it). Interfaces are `abstract interface class X`, implementations
   `final class XImpl implements X` in the same folder; barrels export both
   (the DI container needs the impl).
 - **DI is manual get_it** behind `DependencyProvider`; the one container is

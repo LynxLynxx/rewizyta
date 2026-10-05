@@ -9,13 +9,15 @@ abstract interface class ClientsService() {
 
   /// Creates (no [id]) or updates a client. Throws
   /// [ClientValidationException] when the name is empty or the phone is not
-  /// E.164.
+  /// E.164. An update keeps the contact link, and the coordinates while the
+  /// address stays the same (a new address has to be geocoded again).
   Future<Client> saveClient({
     String? id,
     required String name,
     String? phone,
-    String? address,
+    String? addressLine,
     String? town,
+    String? postalCode,
     String? note,
   });
 

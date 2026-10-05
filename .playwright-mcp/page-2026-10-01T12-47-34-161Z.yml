@@ -1,0 +1,133 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "Rewizyta" [ref=e4] [cursor=pointer]:
+      - /url: /
+    - link "Zapisz się" [ref=e8] [cursor=pointer]:
+      - /url: /#ankieta
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: DLA KOMINIARZY, SERWISANTÓW I INSPEKTORÓW
+        - heading "Klient dzwoni. Ty już wiesz, kiedy u niego byłeś." [level=1] [ref=e13]
+        - paragraph [ref=e14]: Książka klientów w telefonie. Pamięta każdy termin przeglądu, sama wysyła klientom SMS przed wizytą i pokazuje historię, gdy klient dzwoni. Działa w kotłowni, w piwnicy, bez zasięgu.
+        - generic [ref=e15]:
+          - link "Zapisz się na listę" [ref=e16] [cursor=pointer]:
+            - /url: "#ankieta"
+          - generic [ref=e17]:
+            - strong [ref=e18]: 3 miesiące za darmo
+            - text: "na start · 7 krótkich pytańStart aplikacji: wiosna 2027"
+      - 'img "Połączenie przychodzące, a na ekranie karta klienta: adres, urządzenia, ostatnie wizyty i notatka." [ref=e20]':
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]: 9:41
+            - generic [ref=e24]: brak zasięgu
+          - generic [ref=e25]:
+            - generic [ref=e26]: Połączenie przychodzące
+            - generic [ref=e27]: Henryk Wiśniewski
+            - generic [ref=e28]: 601 234 567
+          - generic [ref=e29]:
+            - generic [ref=e30]:
+              - generic [ref=e31]: KARTA KLIENTA
+              - generic [ref=e32]: przegląd za 12 dni
+            - generic [ref=e33]: ul. Leśna 12, Nowy Targ
+            - generic [ref=e34]:
+              - generic [ref=e35]: 2 × komin
+              - generic [ref=e36]: kocioł gazowy
+            - generic [ref=e37]:
+              - generic [ref=e38]:
+                - generic [ref=e39]: 14.10.2025
+                - generic [ref=e40]: Czyszczenie przewodów, protokół. 180 zł.
+              - generic [ref=e41]:
+                - generic [ref=e42]: 09.10.2024
+                - generic [ref=e43]: Czyszczenie, wymiana wkładu.
+            - generic [ref=e44]: Pies na podwórku. Wejście od garażu.
+          - generic [ref=e45]:
+            - generic [ref=e46]: Odrzuć
+            - generic [ref=e49]: Odbierz
+    - generic [ref=e53]:
+      - heading "Jak to działa" [level=2] [ref=e54]
+      - list [ref=e55]:
+        - listitem [ref=e56]:
+          - generic [aria-hidden] [ref=e57]: "1"
+          - heading "Wpisujesz klientów" [level=3] [ref=e58]
+          - paragraph [ref=e59]: Import z kontaktów albo wklej numer. Adres, urządzenia, notatki, co i kiedy zrobione.
+        - listitem [ref=e60]:
+          - generic [aria-hidden] [ref=e61]: "2"
+          - heading "Ustawiasz cykl" [level=3] [ref=e62]
+          - paragraph [ref=e63]: 12 miesięcy komin i gaz, 60 miesięcy pomiary. Terminy liczą się same, widzisz, kto wypada w tym miesiącu.
+        - listitem [ref=e64]:
+          - generic [aria-hidden] [ref=e65]: "3"
+          - heading "Klient sam dzwoni" [level=3] [ref=e66]
+          - paragraph [ref=e67]: SMS 30 i 7 dni przed terminem, z Twoim numerem. Gdy dzwoni, widzisz jego kartę. Tylko umawiasz.
+    - generic [ref=e68]:
+      - heading "Dla kogo" [level=2] [ref=e69]
+      - list [ref=e70]:
+        - listitem [ref=e71]: Kominiarze
+        - listitem [ref=e72]: Przeglądy gazowe
+        - listitem [ref=e73]: Kotły i pompy ciepła
+        - listitem [ref=e74]: Klimatyzacja
+        - listitem [ref=e75]: Wywóz szamb
+        - listitem [ref=e76]: Filtry wody
+        - listitem [ref=e77]: Alarmy i gaśnice
+        - listitem [ref=e78]: Pomiary elektryczne
+      - paragraph [ref=e79]: Jedna osoba, kilkaset stałych klientów, którzy wracają co rok albo co pięć lat.
+    - generic [ref=e80]:
+      - heading "Zeszyt i Excel kontra Rewizyta" [level=2] [ref=e81]
+      - table [ref=e82]:
+        - rowgroup [ref=e83]:
+          - row [ref=e84]:
+            - columnheader "ZESZYT / EXCEL" [ref=e85]
+            - columnheader "REWIZYTA" [ref=e86]
+        - rowgroup [ref=e87]:
+          - row [ref=e88]:
+            - rowheader "Przypomnienie dla klienta" [ref=e89]
+          - row [ref=e90]:
+            - cell "Nie ma. Klient zapomina, idzie do kogoś innego." [ref=e91]
+            - cell "SMS 30 i 7 dni przed terminem, z Twoim numerem." [ref=e92]
+        - rowgroup [ref=e93]:
+          - row [ref=e94]:
+            - rowheader "Klient dzwoni" [ref=e95]
+          - row [ref=e96]:
+            - cell "Szukasz w zeszycie albo pytasz, kiedy byłeś." [ref=e97]
+            - cell "Karta z historią na ekranie, zanim odbierzesz." [ref=e98]
+        - rowgroup [ref=e99]:
+          - row [ref=e100]:
+            - rowheader "Kto w tym miesiącu" [ref=e101]
+          - row [ref=e102]:
+            - cell "Przeglądanie stron i kolumn." [ref=e103]
+            - 'cell "Jedna lista: termin w tym miesiącu." [ref=e104]'
+        - rowgroup [ref=e105]:
+          - row [ref=e106]:
+            - rowheader "Piwnica bez zasięgu" [ref=e107]
+          - row [ref=e108]:
+            - cell "Excel w domu na komputerze." [ref=e109]
+            - cell "Wszystko w telefonie, synchronizacja później." [ref=e110]
+    - generic [ref=e112]:
+      - heading "Twoi klienci są Twoi." [level=2] [ref=e113]
+      - paragraph [ref=e114]: Otwarty kod. Możesz postawić Rewizytę na własnym serwerze i w każdej chwili wyeksportować wszystkich klientów do pliku. Nie sprzedajemy danych i nie zamykamy ich u siebie.
+    - generic [ref=e115]:
+      - generic [ref=e116]:
+        - heading "Zapisz się na listę" [level=2] [ref=e117]
+        - paragraph [ref=e118]:
+          - text: Siedem pytań, około minuty. Odpowiedzi mówią nam, co zrobić najpierw. Na koniec dostajesz kod na
+          - strong [ref=e119]: 3 miesiące za darmo
+          - text: — na ekranie i e-mailem.
+        - paragraph [ref=e120]: Start planujemy wiosną 2027. Wtedy wyślemy jeden e-mail. Bez newslettera.
+      - generic [ref=e121]:
+        - generic [ref=e122]: Pytanie 1 z 7
+        - group "Jaką usługę wykonujesz? Można zaznaczyć kilka." [ref=e126]:
+          - generic [ref=e127]:
+            - heading "Jaką usługę wykonujesz?" [level=3] [ref=e128]
+            - generic [ref=e129]: Można zaznaczyć kilka.
+          - generic [ref=e130]:
+            - checkbox "Kominiarz" [ref=e131] [cursor=pointer]
+            - checkbox "Gaz, kotły" [ref=e134] [cursor=pointer]
+            - checkbox "Klimatyzacja, pompy ciepła" [ref=e137] [cursor=pointer]
+            - checkbox "Inne" [ref=e140] [cursor=pointer]
+        - button "Dalej" [ref=e143] [cursor=pointer]
+  - contentinfo [ref=e144]:
+    - generic [ref=e145]:
+      - strong [ref=e146]: Czym Rewizyta nie jest
+      - generic [ref=e147]: "Nie giełdą zleceń, nie CRM-em, nie programem do faktur, nie narzędziem dla firm z zespołem. Jedna osoba, jeden telefon, jedno zadanie: żeby żaden klient nie przepadł."
+      - link "Polityka prywatności" [ref=e148] [cursor=pointer]:
+        - /url: /prywatnosc/
