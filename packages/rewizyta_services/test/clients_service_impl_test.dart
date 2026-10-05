@@ -31,6 +31,22 @@ void main() {
       verify(() => repository.upsert(client)).called(1);
     });
 
+    test('stores blank optional fields as null', () async {
+      final client = await service.saveClient(
+        name: 'Jan',
+        phone: ' ',
+        addressLine: '',
+        town: '  ',
+        postalCode: '',
+        note: ' ',
+      );
+
+      expect(
+        [client.phone, client.addressLine, client.town, client.postalCode, client.note],
+        everyElement(isNull),
+      );
+    });
+
     test('rejects an empty name', () {
       expect(
         () => service.saveClient(name: '   '),
@@ -51,18 +67,92 @@ void main() {
       );
     });
 
-    test('keeps createdAt when updating', () async {
+    group('updating', () {
       final created = DateTime.utc(2025);
-      when(() => repository.find('c1')).thenAnswer(
-        (_) async => Client(id: 'c1', name: 'Old', createdAt: created, updatedAt: created),
-      );
 
-      final client = await service.saveClient(id: 'c1', name: 'New');
+      setUp(() {
+        when(() => repository.find('c1')).thenAnswer(
+          (_) async => Client(
+            id: 'c1',
+            name: 'Old',
+            addressLine: 'ul. Leśna 12',
+            town: 'Nowy Targ',
+            postalCode: '34-400',
+            lat: 49.48,
+            lng: 20.03,
+            contactId: 'contact-1',
+            createdAt: created,
+            updatedAt: created,
+          ),
+        );
+      });
 
-      expect(client.id, 'c1');
-      expect(client.createdAt, created);
-      expect(client.updatedAt, now);
+      test('keeps createdAt, the contact link and the coordinates of the same address', () async {
+        final client = await service.saveClient(
+          id: 'c1',
+          name: 'New',
+          addressLine: ' ul. Leśna 12 ',
+          town: 'Nowy Targ',
+          postalCode: '34-400',
+        );
+
+        expect(client.id, 'c1');
+        expect(client.name, 'New');
+        expect(client.addressLine, 'ul. Leśna 12');
+        expect(client.lat, 49.48);
+        expect(client.lng, 20.03);
+        expect(client.contactId, 'contact-1');
+        expect(client.createdAt, created);
+        expect(client.updatedAt, now);
+      });
+
+      test('keeps the coordinates when the form sends blanks for missing fields', () async {
+        when(() => repository.find('c2')).thenAnswer(
+          (_) async => Client(
+            id: 'c2',
+            name: 'Anna',
+            town: 'Nowy Targ',
+            lat: 49.48,
+            lng: 20.03,
+            createdAt: created,
+            updatedAt: created,
+          ),
+        );
+
+        final client = await service.saveClient(
+          id: 'c2',
+          name: 'Anna',
+          addressLine: '',
+          town: 'Nowy Targ',
+          postalCode: ' ',
+        );
+
+        expect(client.addressLine, isNull);
+        expect(client.lat, 49.48);
+        expect(client.lng, 20.03);
+      });
+
+      test('drops the coordinates when the address changes', () async {
+        final client = await service.saveClient(
+          id: 'c1',
+          name: 'Old',
+          addressLine: 'ul. Leśna 14',
+          town: 'Nowy Targ',
+          postalCode: '34-400',
+        );
+
+        expect(client.lat, isNull);
+        expect(client.lng, isNull);
+        expect(client.contactId, 'contact-1');
+      });
     });
+  });
+
+  test('watchClients passes the repository stream through', () async {
+    final clients = [Client(id: 'c1', name: 'Jan', createdAt: now, updatedAt: now)];
+    when(() => repository.watchAll()).thenAnswer((_) => Stream.value(clients));
+
+    await expectLater(service.watchClients(), emits(clients));
   });
 
   test('deleteClient soft-deletes through the repository', () async {

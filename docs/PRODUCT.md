@@ -11,9 +11,13 @@
   - [Later](#later)
   - [Not in scope](#not-in-scope)
 - [Key flows](#key-flows)
+- [Client portal](#client-portal)
+  - [Stage 1 – see my technicians](#stage-1--see-my-technicians)
+  - [Stage 2 – an account](#stage-2--an-account)
+  - [Open points](#open-points)
 - [Pricing](#pricing)
   - [How it is sold](#how-it-is-sold)
-  - [Why these numbers](#why-these-numbers)
+  - [Why this shape](#why-this-shape)
 - [Platform decisions and risks](#platform-decisions-and-risks)
 - [Open questions](#open-questions)
 
@@ -35,6 +39,9 @@ due dates in his head, a paper notebook or phone contacts.
   Not a power user; wants fewer taps, not more features.
 - **Secondary (later):** an accountant who receives a monthly summary; a second
   technician in the same business.
+- **The technician's client (after MVP):** a homeowner or a building manager
+  with one or more technicians. Opens the client portal from a reminder SMS or
+  with an e-mail code, in whatever browser is at hand, and installs nothing.
 
 ## Core promise
 
@@ -68,14 +75,20 @@ Everything else is measured against that sentence.
 
 - PDF service report with the client's signature on the phone.
 - Multiple technicians per business.
-- Two-way SMS: the client replies "TAK" and is booked into the proposed slot.
+- Two-way SMS: the client replies "TAK" and is booked into the proposed slot
+  (or confirms in the client portal, stage 2, which needs no receiving number).
 - Web dashboard for the accountant / office.
+- Client portal on the website (see "Client portal"): the client signs in
+  with an e-mail code and sees every technician who services them, the due
+  dates, the next booked visit and the history; stage 2 adds an account,
+  phone verification and booking requests.
 
 ### Not in scope
 
 - Invoicing and accounting (export to the accountant is enough).
 - Inventory, parts, warehouse.
-- A client-facing app or portal.
+- A client-facing app. The web portal for clients (see "Client portal") is
+  the one client-facing surface, and only after the MVP ships.
 - Anything that requires signal in the field.
 
 ## Key flows
@@ -92,6 +105,80 @@ Everything else is measured against that sentence.
    record the visit on the doorstep.
 5. **Client calls** (V1) → caller card pops with everything the technician needs
    to sound like he remembers them.
+6. **Client checks the portal** (after MVP) → opens the link from the reminder
+   SMS or types an e-mail and the code it receives; sees the technicians, the
+   due dates and the next visit; (stage 2) asks for a date or confirms one.
+
+## Client portal
+
+Added 2026-10-01; until then "a client-facing app or portal" was out of scope.
+A web page, not an app, for the technician's clients: one place where a
+homeowner or a building manager sees every technician who services them and
+when each next visit is due. Built in stages after the MVP ships, on the synced
+data the server already holds for reminders. The design is in
+`ARCHITECTURE.md`, "Client portal"; the tables in `DATABASE.md`, `client_links`.
+
+**Why.** Three reasons, in order:
+
+1. A client with a chimney sweep, a gas serviceman and a boiler serviceman
+   has three due dates to remember and three people to call. A page that lists
+   them is the client's half of "no client gets lost".
+2. It is a selling point no flat-fee competitor offers, and it answers "when
+   were you last here?" without a call.
+3. It is a way in: every client who signs in sees the Rewizyta name, and a
+   technician who is not on it can be invited by their own client.
+
+**What it must not do.** Add work for the technician. Everything the portal
+shows is already entered for reminders; the only extras are optional, an
+e-mail on the client card and a `{portal}` placeholder in the SMS template.
+Nothing on the portal ever writes to the technician's data; the phone stays
+the source of truth.
+
+### Stage 1 – see my technicians
+
+- The client opens `/klient/` on the website, types an e-mail address and
+  receives a six-digit code; typing the code signs them in. No password, no
+  app to install.
+- The page lists the technicians who have that e-mail on one of their client
+  cards, or who invited this client: business name, a phone to call, each
+  serviced item with its service type, last visit and next due date, the next
+  booked appointment, and the visit history (dates and what was serviced). No
+  prices, no notes, nothing about other clients.
+- Two ways a client gets linked to a technician: the technician saves the
+  client's e-mail on the client card (the field says it is for the portal),
+  or the reminder SMS carries a short personal link and the first e-mail that
+  signs in through it is linked to that card. The technician can switch the
+  portal off for the whole account in Settings.
+- A technician who is not on Rewizyta cannot appear; the page says so and
+  offers a link to send them.
+
+### Stage 2 – an account
+
+- The client can turn the sign-in into an account: a name, a password or a
+  passkey instead of a code each time, and a phone number verified by SMS
+  code, which links every client card with that number, so technicians no
+  longer have to type e-mails.
+- Self-service that reaches the technician as a request, never as a change:
+  "ask for a date", confirm or cancel a booked appointment, propose a
+  correction to the contact details. The technician accepts in the app with
+  one tap. This covers what two-way SMS was meant to do, without a receiving
+  number and without giving up the alphanumeric sender.
+- Download the own service history (an access request answered by
+  self-service).
+- Delete the portal account; the technician's card is untouched.
+
+### Open points
+
+- Phone-number matching (stage 2) links cards the technician never marked for
+  the portal, which is why the account-wide switch exists. Decide whether it
+  defaults on or off for existing technicians when stage 2 ships.
+- A reassigned e-mail or phone number would show a stranger the previous
+  holder's due dates. The reminder SMS to that number already carries the
+  same information, so the exposure is not new, but the privacy notice has to
+  say it.
+- Whether the invitation link in the SMS is worth its length (about 30 to 40
+  characters of a 160-character message) before stage 2's phone matching
+  makes it unnecessary.
 
 ## Pricing
 
@@ -184,7 +271,11 @@ top-ups instead of the price rising for everyone. The numbers behind this
   functions, 30-day purge of deleted rows, and (V1) per-user encryption keys
   so dumps and backups hold ciphertext. Full end-to-end encryption is ruled
   out because the server must read a name and a number to send an SMS while
-  the phone is off. See `DATABASE.md`, "Personal data, encryption and retention".
+  the phone is off. The client portal shows a client their own card on the
+  technician's instruction (the e-mail typed on the card, the link put in the
+  SMS, the account-wide switch); for the portal sign-in itself we are the
+  controller, with its own section in the privacy notice. See `DATABASE.md`,
+  "Personal data, encryption and retention".
 - **Backup and account loss.** Since the phone is the source of truth and sync is
   the backup, a technician who loses the phone must be able to log in on a new one
   and pull everything back. This is a first-class requirement of the sync design.

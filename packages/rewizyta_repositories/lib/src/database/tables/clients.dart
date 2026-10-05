@@ -1,19 +1,19 @@
 import 'package:drift/drift.dart';
+import 'package:rewizyta_repositories/src/database/tables/synced_columns.dart';
 
-/// Mirrors `public.clients` (docs/DATABASE.md). Text dates via build.yaml.
+/// Mirrors `public.clients` (docs/DATABASE.md). The phone indexes for its own
+/// queries: the list by name, the caller lookup by phone.
 @DataClassName('ClientRow')
-class Clients() extends Table {
-  TextColumn get id => text()();
-  TextColumn get userId => text().nullable()();
+@TableIndex(name: 'clients_name', columns: {#name})
+@TableIndex(name: 'clients_phone', columns: {#phone})
+class Clients() extends Table with SyncedColumns {
   TextColumn get name => text()();
   TextColumn get phone => text().nullable()();
-  TextColumn get address => text().nullable()();
+  TextColumn get addressLine => text().nullable()();
   TextColumn get town => text().nullable()();
+  TextColumn get postalCode => text().nullable()();
+  RealColumn get lat => real().nullable()();
+  RealColumn get lng => real().nullable()();
   TextColumn get note => text().nullable()();
-  DateTimeColumn get createdAt => dateTime()();
-  DateTimeColumn get updatedAt => dateTime()();
-  DateTimeColumn get deletedAt => dateTime().nullable()();
-
-  @override
-  Set<Column<Object>> get primaryKey => {id};
+  TextColumn get contactId => text().nullable()();
 }

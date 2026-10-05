@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:rewizyta_models/rewizyta_models.dart';
+import 'package:rewizyta_repositories/src/database/converters.dart';
 
 part 'client_dto.g.dart';
 
@@ -13,9 +14,13 @@ final class const ClientDto({
   required final String updatedAt,
   final String? userId,
   final String? phone,
-  final String? address,
+  final String? addressLine,
   final String? town,
+  final String? postalCode,
+  final double? lat,
+  final double? lng,
   final String? note,
+  final String? contactId,
   final String? deletedAt,
 }) {
   factory fromJson(Map<String, dynamic> json) => _$ClientDtoFromJson(json);
@@ -25,12 +30,16 @@ final class const ClientDto({
     userId: userId,
     name: client.name,
     phone: client.phone,
-    address: client.address,
+    addressLine: client.addressLine,
     town: client.town,
+    postalCode: client.postalCode,
+    lat: client.lat,
+    lng: client.lng,
     note: client.note,
-    createdAt: client.createdAt.toUtc().toIso8601String(),
-    updatedAt: client.updatedAt.toUtc().toIso8601String(),
-    deletedAt: client.deletedAt?.toUtc().toIso8601String(),
+    contactId: client.contactId,
+    createdAt: formatTimestamp(client.createdAt),
+    updatedAt: formatTimestamp(client.updatedAt),
+    deletedAt: client.deletedAt == null ? null : formatTimestamp(client.deletedAt!),
   );
 
   Map<String, dynamic> toJson() => _$ClientDtoToJson(this);
@@ -39,11 +48,15 @@ final class const ClientDto({
     id: id,
     name: name,
     phone: phone,
-    address: address,
+    addressLine: addressLine,
     town: town,
+    postalCode: postalCode,
+    lat: lat,
+    lng: lng,
     note: note,
-    createdAt: DateTime.parse(createdAt),
-    updatedAt: DateTime.parse(updatedAt),
-    deletedAt: deletedAt == null ? null : DateTime.parse(deletedAt!),
+    contactId: contactId,
+    createdAt: parseTimestamp(createdAt),
+    updatedAt: parseTimestamp(updatedAt),
+    deletedAt: deletedAt == null ? null : parseTimestamp(deletedAt!),
   );
 }
