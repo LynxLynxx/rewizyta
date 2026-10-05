@@ -132,6 +132,31 @@ void main() {
         expect(client.lng, 20.03);
       });
 
+      test('keeps the coordinates when a stored address only loses its whitespace', () async {
+        when(() => repository.find('c3')).thenAnswer(
+          (_) async => Client(
+            id: 'c3',
+            name: 'Jan',
+            addressLine: ' ul. Leśna 12 ',
+            town: 'Nowy Targ ',
+            lat: 49.48,
+            lng: 20.03,
+            createdAt: created,
+            updatedAt: created,
+          ),
+        );
+
+        final client = await service.saveClient(
+          id: 'c3',
+          name: 'Jan',
+          addressLine: 'ul. Leśna 12',
+          town: 'Nowy Targ',
+        );
+
+        expect(client.lat, 49.48);
+        expect(client.lng, 20.03);
+      });
+
       test('drops the coordinates when the address changes', () async {
         final client = await service.saveClient(
           id: 'c1',

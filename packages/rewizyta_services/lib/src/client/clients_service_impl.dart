@@ -52,9 +52,9 @@ final class ClientsServiceImpl(
     final cleanPostalCode = _clean(postalCode);
     final keepsCoordinates =
         existing != null &&
-        existing.addressLine == cleanAddressLine &&
-        existing.town == cleanTown &&
-        existing.postalCode == cleanPostalCode;
+        _clean(existing.addressLine) == cleanAddressLine &&
+        _clean(existing.town) == cleanTown &&
+        _clean(existing.postalCode) == cleanPostalCode;
     final client = Client(
       id: existing?.id ?? _uuid.v4(),
       name: trimmedName,

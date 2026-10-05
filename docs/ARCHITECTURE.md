@@ -242,7 +242,9 @@ the pull has to order rows by dependency within a transaction.
 
 `SyncService.push()` groups the outbox by entity, sends batches to the
 `sync_push(changes jsonb)` RPC and deletes the outbox rows that the server
-acknowledged. The RPC upserts each row with `on conflict (id) do update ... where
+acknowledged, by their local `id`. A write during the push replaces the row's
+pending entry with a new one (`upsertSynced`); deleting by `(entity,
+entity_id)` would drop that newer change unsent. The RPC upserts each row with `on conflict (id) do update ... where
 excluded.updated_at > existing.updated_at`, so a stale phone cannot overwrite a
 newer server row. Rows the server rejected (older `updated_at`) come back in the
 response and are applied locally, which resolves the conflict the same way on
