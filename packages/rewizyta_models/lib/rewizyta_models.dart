@@ -3,6 +3,7 @@
 library;
 
 export 'src/appointment/appointment.dart';
+export 'src/catalog/default_catalog.dart';
 export 'src/catalog/service_type.dart';
 export 'src/catalog/trade.dart';
 export 'src/client/client.dart';

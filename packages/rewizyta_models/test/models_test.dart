@@ -49,21 +49,37 @@ void main() {
     });
 
     test('soft-deletes and restores a row', () {
-      final trade = Trade(
-        id: 't1',
-        name: 'Kominiarz',
-        templateKey: 'chimney',
-        createdAt: t0,
-        updatedAt: t0,
-      );
+      final trade = Trade(id: 't1', template: TradeTemplate.chimney, createdAt: t0, updatedAt: t0);
 
       final deleted = trade.copyWith(deletedAt: Optional(t1), updatedAt: t1);
       expect(deleted.isDeleted, isTrue);
-      expect(deleted.templateKey, 'chimney');
+      expect(deleted.template, TradeTemplate.chimney);
 
       final restored = deleted.copyWith(deletedAt: const Optional.empty());
       expect(restored.isDeleted, isFalse);
       expect(restored.updatedAt, t1);
+    });
+
+    test('a renamed default can go back to its localized name', () {
+      final trade = Trade(id: 't1', template: TradeTemplate.gas, createdAt: t0, updatedAt: t0);
+
+      final renamed = trade.copyWith(name: const Optional('Gaz'));
+      expect(renamed.name, 'Gaz');
+      expect(renamed.copyWith(name: const Optional.empty()).name, isNull);
+    });
+
+    test("a row of the user's own cannot lose its name", () {
+      final trade = Trade(id: 't1', name: 'Hydraulik', createdAt: t0, updatedAt: t0);
+      final type = ServiceType(
+        id: 's1',
+        name: 'Przegląd',
+        cycleMonths: 12,
+        createdAt: t0,
+        updatedAt: t0,
+      );
+
+      expect(() => trade.copyWith(name: const Optional.empty()), throwsA(isA<AssertionError>()));
+      expect(() => type.copyWith(name: const Optional.empty()), throwsA(isA<AssertionError>()));
     });
 
     test('clears the optional links of every model that has them', () {

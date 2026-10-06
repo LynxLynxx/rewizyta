@@ -39,7 +39,17 @@ void main() {
         client(),
       );
       expect(TradeDto.fromJson(wire(TradeDto.fromDomain(trade()).toJson())).toDomain(), trade());
-      final pricedType = serviceType(tradeId: 't1', defaultPriceGrosze: 25000);
+      final defaultTrade = trade(name: null, template: TradeTemplate.chimney);
+      final defaultTradeJson = TradeDto.fromDomain(defaultTrade).toJson();
+      expect(defaultTradeJson['template_key'], 'chimney');
+      expect(TradeDto.fromJson(wire(defaultTradeJson)).toDomain(), defaultTrade);
+      final pricedType = serviceType(
+        tradeId: 't1',
+        defaultPriceGrosze: 25000,
+        name: null,
+        template: ServiceTypeTemplate.chimneySweepSolid,
+      );
+      expect(ServiceTypeDto.fromDomain(pricedType).toJson()['template_key'], 'chimney_sweep_solid');
       expect(
         ServiceTypeDto.fromJson(wire(ServiceTypeDto.fromDomain(pricedType).toJson())).toDomain(),
         pricedType,
@@ -121,6 +131,24 @@ void main() {
       final json = AppointmentDto.fromDomain(appointment()).toJson()..['status'] = 'rescheduled';
 
       expect(() => AppointmentDto.fromJson(json).toDomain(), throwsArgumentError);
+    });
+
+    test('every catalogue template has its own template_key and round-trips', () {
+      for (final template in TradeTemplate.values) {
+        final json = wire(TradeDto.fromDomain(trade(name: null, template: template)).toJson());
+        expect(TradeDto.fromJson(json).toDomain().template, template);
+      }
+      for (final template in ServiceTypeTemplate.values) {
+        final type = serviceType(name: null, template: template);
+        final json = wire(ServiceTypeDto.fromDomain(type).toJson());
+        expect(ServiceTypeDto.fromJson(json).toDomain().template, template);
+      }
+    });
+
+    test('a template_key from a newer catalogue fails loudly, so the pull can skip the row', () {
+      final json = TradeDto.fromDomain(trade()).toJson()..['template_key'] = 'plumber';
+
+      expect(() => TradeDto.fromJson(json).toDomain(), throwsArgumentError);
     });
   });
 }

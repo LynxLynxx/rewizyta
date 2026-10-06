@@ -12,7 +12,11 @@ final class const ServiceTypesRepositoryImpl(final AppDatabase _db)
   Stream<List<ServiceType>> watchAll() {
     final query = _db.select(_db.serviceTypes)
       ..where((s) => s.deletedAt.isNull())
-      ..orderBy([(s) => OrderingTerm.asc(s.sortOrder), (s) => OrderingTerm.asc(s.name)]);
+      ..orderBy([
+        (s) => OrderingTerm.asc(s.sortOrder),
+        (s) => OrderingTerm.asc(s.createdAt),
+        (s) => OrderingTerm.asc(s.id),
+      ]);
     return query.watch().map((rows) => rows.map((row) => row.toDomain()).toList());
   }
 
@@ -24,8 +28,8 @@ final class const ServiceTypesRepositoryImpl(final AppDatabase _db)
   }
 
   @override
-  Future<ServiceType?> findByTemplateKey(String templateKey) async {
-    final query = _db.select(_db.serviceTypes)..where((s) => s.templateKey.equals(templateKey));
+  Future<ServiceType?> findByTemplate(ServiceTypeTemplate template) async {
+    final query = _db.select(_db.serviceTypes)..where((s) => s.templateKey.equalsValue(template));
     final row = await query.getSingleOrNull();
     return row?.toDomain();
   }

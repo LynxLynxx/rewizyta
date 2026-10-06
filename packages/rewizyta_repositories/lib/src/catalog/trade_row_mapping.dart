@@ -10,7 +10,7 @@ extension TradeRowMapping on TradeRow {
   Trade toDomain() => Trade(
     id: id,
     name: name,
-    templateKey: templateKey,
+    template: templateKey,
     sortOrder: sortOrder,
     isArchived: isArchived,
     createdAt: createdAt,
@@ -22,8 +22,8 @@ extension TradeRowMapping on TradeRow {
 extension TradeCompanionMapping on Trade {
   TradesCompanion toCompanion() => TradesCompanion.insert(
     id: id,
-    name: name,
-    templateKey: Value(templateKey),
+    name: Value(name),
+    templateKey: Value(template),
     sortOrder: Value(sortOrder),
     isArchived: Value(isArchived),
     createdAt: createdAt.toUtc(),

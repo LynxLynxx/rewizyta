@@ -8,27 +8,28 @@ Client client({String id = 'c1', String name = 'Jan Kowalski', DateTime? deleted
 
 Trade trade({
   String id = 't1',
-  String name = 'Kominiarz',
-  String? templateKey,
+  String? name = 'Kominiarz',
+  TradeTemplate? template,
   int sortOrder = 0,
+  DateTime? createdAt,
   DateTime? deletedAt,
 }) => Trade(
   id: id,
   name: name,
-  templateKey: templateKey,
+  template: template,
   sortOrder: sortOrder,
-  createdAt: t0,
+  createdAt: createdAt ?? t0,
   updatedAt: t0,
   deletedAt: deletedAt,
 );
 
 ServiceType serviceType({
   String id = 's1',
-  String name = 'Przegląd przewodów kominowych',
+  String? name = 'Przegląd przewodów kominowych',
   int cycleMonths = 12,
   String? tradeId,
   int? defaultPriceGrosze,
-  String? templateKey,
+  ServiceTypeTemplate? template,
   int sortOrder = 0,
   DateTime? deletedAt,
 }) => ServiceType(
@@ -37,7 +38,7 @@ ServiceType serviceType({
   cycleMonths: cycleMonths,
   tradeId: tradeId,
   defaultPriceGrosze: defaultPriceGrosze,
-  templateKey: templateKey,
+  template: template,
   sortOrder: sortOrder,
   createdAt: t0,
   updatedAt: t0,
