@@ -8,10 +8,10 @@ already there. This page covers the process; the rules for the code live in
 ## Before you start
 
 - **Open an issue first for anything bigger than a bug fix.** The product scope
-  (`docs/PRODUCT.md`) and the architecture (`docs/ARCHITECTURE.md`) are deliberate,
+  (`docs/PRD.md`) and the architecture (`docs/TRD.md`) are deliberate,
   and `CLAUDE.md` lists decisions that are already made. A short issue saves both of
   us a pull request that cannot be merged.
-- **Check `docs/TASKS.md`.** It says what is being built next and what is already
+- **Check `docs/IMPLEMENTATION_PLAN.md`.** It says what is being built next and what is already
   in progress.
 - Issues and discussions may be written in Polish or English. Code, comments,
   commit messages and documentation are in English; user-facing strings are Polish
@@ -49,8 +49,8 @@ commit that contains a credential, a real phone number or an e-mail address. See
      with defaults now; rename or drop in a later release).
 4. Add tests. Every service method, cubit and page has one; repositories run
    against an in-memory database.
-5. Update the document that describes what you changed (`docs/DATABASE.md` for
-   schema, `docs/ARCHITECTURE.md` for flows, `docs/TASKS.md` for status).
+5. Update the document that describes what you changed (`docs/BACKEND_SCHEMA.md` for
+   schema, `docs/TRD.md` for flows, `docs/IMPLEMENTATION_PLAN.md` for status).
 6. Run `melos run check` and `melos run layering`. Both must pass.
 
 Schema changes are always a new file under `supabase/migrations/`; never edit an

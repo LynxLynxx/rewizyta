@@ -1,7 +1,7 @@
 # Root of the Melos workspace. `melos bootstrap` here sets up every package.
 #
 # Pub-workspace members (shared lockfile): the Flutter app and the layer
-# packages under packages/ (see docs/ARCHITECTURE.md, "Packages").
+# packages under packages/ (see docs/TRD.md, "Packages").
 #
 # The Jaspr site (apps/website, which carries the waitlist until launch) is
 # deliberately NOT a pub-workspace member: jaspr_builder pins an older `analyzer`
@@ -96,7 +96,7 @@ melos:
       packageFilters:
         scope: rewizyta_localization
     layering:
-      description: Fails if any package imports across a layer boundary (see docs/ARCHITECTURE.md).
+      description: Fails if any package imports across a layer boundary (see docs/TRD.md).
       run: bash tool/check_layering.sh
 
     # ---- Backend (supabase/) ----------------------------------------------

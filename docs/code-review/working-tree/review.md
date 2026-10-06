@@ -40,12 +40,12 @@ Give models a way to clear nullable fields, including deletedAt.
 ### FINDING-02 · `vgv/enum-forward-compatibility` · `packages/rewizyta_repositories/lib/src/database/converters.dart:42`
 Stop unknown server enum values from breaking older builds' pulls.
 - **Why**: `EnumConverter.fromSql` throws on an unknown value, and `dto_test.dart` pins that. Adding an enum value on the server is an "expand" change under hard rule 12, yet it would make every older app's pull fail and crash its watch streams.
-- **Fix**: Pick a policy and write it in DATABASE.md: either a fallback or unknown value with the row skipped or flagged on pull, or treat a new enum value as a contract change that ships in the app before the server writes it. Change the test to match.
+- **Fix**: Pick a policy and write it in BACKEND_SCHEMA.md: either a fallback or unknown value with the row skipped or flagged on pull, or treat a new enum value as a contract change that ships in the app before the server writes it. Change the test to match.
 - **Reported by**: vgv-review-agent · [details](raw/vgv-review.md); architecture-review-agent (`architecture/expand-contract-compat`) · [details](raw/architecture-review.md)
 
 ### FINDING-03 · `vgv/missing-transaction-seam` · `packages/rewizyta_repositories/lib/src/database/outbox_writer.dart:28`
 Add a transaction interface services can use without importing drift.
-- **Why**: TASKS.md says services wrap multi-repository writes in one drift transaction, but they can only do that through `AppDatabase`. That leaks drift into the service tier, and `check_layering.sh` would not catch it. Skipping the transaction instead risks a stale `next_due_at` (hard rule 3).
+- **Why**: IMPLEMENTATION_PLAN.md says services wrap multi-repository writes in one drift transaction, but they can only do that through `AppDatabase`. That leaks drift into the service tier, and `check_layering.sh` would not catch it. Skipping the transaction instead risks a stale `next_due_at` (hard rule 3).
 - **Fix**: Add a `TransactionRunner` interface with a drift implementation in rewizyta_repositories, register it in DI, inject it into the services, use a pass-through fake in tests, and add a layering rule that rejects `package:drift` in `rewizyta_services/lib`.
 - **Reported by**: vgv-review-agent · [details](raw/vgv-review.md); architecture-review-agent (`architecture/transaction-boundary`) · [details](raw/architecture-review.md)
 
@@ -120,7 +120,7 @@ Create the enumToSql regex once instead of on every call.
 ### FINDING-15 · `architecture/outbox-ack-contract` · `packages/rewizyta_repositories/lib/src/database/outbox_writer.dart:30`
 Document that outbox acks delete by outbox id.
 - **Why**: A write during a push replaces the in-flight entry, so an ack keyed on (entity, entity_id) would drop the newer change.
-- **Fix**: State the rule in the `upsertSynced` doc and in ARCHITECTURE.md "Push", and add a test when SyncService lands.
+- **Fix**: State the rule in the `upsertSynced` doc and in TRD.md "Push", and add a test when SyncService lands.
 - **Reported by**: architecture-review-agent · [details](raw/architecture-review.md)
 
 ### FINDING-16 · `vgv/dead-plumbing` · `packages/rewizyta_repositories/lib/src/database/tables/synced_columns.dart:5`
@@ -132,7 +132,7 @@ Remove or finish the user_id path in the DTOs and local tables.
 ### FINDING-17 · `vgv/seed-sync-conflict` · `packages/rewizyta_repositories/lib/src/database/tables/trades.dart:7`
 Prevent default-catalog seeding from conflicting with synced defaults.
 - **Why**: A second phone that seeds defaults before its first pull creates different ids for the same template_key, so the unique index rejects the pull locally and the server rejects the push.
-- **Fix**: In the DefaultCatalog seed service, seed only after the first pull or derive ids deterministically; record the choice in DATABASE.md.
+- **Fix**: In the DefaultCatalog seed service, seed only after the first pull or derive ids deterministically; record the choice in BACKEND_SCHEMA.md.
 - **Reported by**: vgv-review-agent · [details](raw/vgv-review.md)
 
 ### FINDING-18 · `simplicity/duplicate-key-value-repository` · `packages/rewizyta_repositories/lib/src/settings/app_settings_repository_impl.dart`

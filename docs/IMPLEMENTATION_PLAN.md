@@ -1,4 +1,4 @@
-# Rewizyta – Tasks
+# Rewizyta – Implementation plan
 
 ## Contents
 
@@ -26,20 +26,22 @@ Tick items as they land; add a short note when a decision changes.
 - [x] `leancode_lint` through one root `analysis_options.yaml`; `melos run layering` audit.
 - [x] First vertical slice (`Client`) in every layer with tests, as the template for M1+.
 - [x] Adapter interfaces + no-ops for analytics, crash reporting, push.
-- [x] `README.md`, `CLAUDE.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/DATABASE.md`.
+- [x] `README.md`, `CLAUDE.md`, `docs/PRD.md`, `docs/TRD.md`, `docs/BACKEND_SCHEMA.md`.
+- [x] Docs renamed to PRD / TRD / BACKEND_SCHEMA / IMPLEMENTATION_PLAN; `docs/APP_FLOW.md` and `docs/DESIGN_BRIEF.md` added (2026-10-06).
+- [x] App theme from the design tokens: hand-built `ColorScheme`, component themes, `AppColors` status pairs, `AppRadius`, bundled IBM Plex; dark theme dropped until designed (2026-10-06).
 - [x] CI skeleton, keepalive workflow + `keepalive()` migration, MIT licence, `CONTRIBUTING.md`, `SECURITY.md`, code of conduct, issue and PR templates, `.env.example`.
 - [x] Environments: `supabase/config.toml` committed, `Backend migrations` CI job, `deploy-supabase.yml` (staging on merge, production on `v*` tag with approval), `staging` / `production` GitHub environments, `.coderabbit.yaml` (2026-09-28).
 - [x] `main` protected by a ruleset: PR required, the five CI checks required, squash-only, linear history, no force-push; Dependabot for the GitHub Actions (2026-09-28).
 
 ## M1 – Local data layer
 
-- [x] drift tables for every entity in `docs/DATABASE.md` (`trades`, `service_types`, `equipment`, `visits`, `visit_items`, `appointments`, `reminders`, `devices`, `sync_state`, `app_settings`); `clients` brought up to the documented columns (`address_line`, `postal_code`, `lat`/`lng`, `contact_id`). Foreign keys enforced and deferred to commit, enums as snake_case text, calendar days as `YYYY-MM-DD` (2026-10-01). `profiles` waits for M5: its key is the auth user id. `client_links` and `clients.email` belong to the client portal.
+- [x] drift tables for every entity in `docs/BACKEND_SCHEMA.md` (`trades`, `service_types`, `equipment`, `visits`, `visit_items`, `appointments`, `reminders`, `devices`, `sync_state`, `app_settings`); `clients` brought up to the documented columns (`address_line`, `postal_code`, `lat`/`lng`, `contact_id`). Foreign keys enforced and deferred to commit, enums as snake_case text, calendar days as `YYYY-MM-DD` (2026-10-01). `profiles` waits for M5: its key is the auth user id. `client_links` and `clients.email` belong to the client portal.
 - [x] Equatable models + DTOs + repositories per entity, following the `Client` slice; `OutboxWriter.upsertSynced` writes the row and its outbox entry in one transaction, replacing a pending entry for the same row (2026-10-01).
 - [x] Default catalogue in `rewizyta_models` (`TradeTemplate` → `ServiceTypeTemplate` enums) and `CatalogService.copyDefaults` that copies the picked trades into the user's rows with `template_key` and no name (the UI localizes the enum through `localizedName(context.l10n)` until the user renames the row; `name` is nullable, a check requires a name or a template), for onboarding and "restore defaults" alike (restores soft-deleted templates, skips existing ones). No suggested prices: `default_price_grosze` stays null until the user sets one (2026-10-06). Still open: a second phone that seeds before its first pull creates other ids for the same `template_key` (code review FINDING-17); seed after the first pull or derive ids from the user id, decided in M5.
 - [ ] Due-date recompute in the services that touch visits, visit items, equipment and cycles (`nextDue` exists and is tested; `VisitsRepository.lastDoneAt` and `EquipmentRepository.findByServiceType` are the queries it needs). Services wrap multi-repository writes in `TransactionRunner.run` (added 2026-10-01; drift stays below the services, `melos run layering` checks it).
 - [ ] Repository tests on `NativeDatabase.memory()` (done for every repository, 2026-10-01), service tests with mocktail.
 - [ ] Register the new repositories and `TransactionRunner` in `dependencies.dart` with the services that use them.
-- [ ] Before the first release: snapshot drift schema v1 with `make-migrations` (see `DATABASE.md`, "Migrations").
+- [ ] Before the first release: snapshot drift schema v1 with `make-migrations` (see `BACKEND_SCHEMA.md`, "Migrations").
 
 ## M2 – Clients
 
@@ -64,7 +66,7 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M5 – Backend and sync
 
-- [ ] Supabase project in `eu-central-1`; migrations for every table, RLS forced, `sync_push` / `sync_pull` RPCs. `sync_push` enforces the server-owned `reminders` columns, and the phone's pull skips and reports a row it cannot decode (an unknown enum value, a `template_key` from a newer catalogue included) instead of storing it (`DATABASE.md`, "Principles" and "Sync support in Postgres").
+- [ ] Supabase project in `eu-central-1`; migrations for every table, RLS forced, `sync_push` / `sync_pull` RPCs. `sync_push` enforces the server-owned `reminders` columns, and the phone's pull skips and reports a row it cannot decode (an unknown enum value, a `template_key` from a newer catalogue included) instead of storing it (`BACKEND_SCHEMA.md`, "Principles" and "Sync support in Postgres").
 - [ ] Auth (email + password or magic link), custom SMTP (Scaleway TEM), profile.
 - [ ] `SyncApi` (Supabase impl + no-op) in the network tier; `SyncService`: outbox push, incremental pull, last-write-wins, connectivity and app-start triggers; `SyncStatusObserver`.
 - [ ] `devices` upload from `PushNotificationsService.onTokenRefresh`.
@@ -75,7 +77,7 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M6 – SMS reminders
 
-- [ ] **Decide before the first server-rendered message:** how the SMS and e-mail renderers name a default trade or service type. Since 2026-10-06 a default row stores only the enum in `template_key` and a null `name`; the app localizes it from `app_pl.arb`, but the server (`{usluga}`, the client portal, any mail naming a service) has no l10n. Options: (a) a server-side copy of the template names per language in `functions/_shared/`, kept in step with the ARB by a CI check; (b) the app writes the localized name into `name` when it copies a default (simple, but a later language change does not rename copied rows); (c) the app pushes a rendered name into a separate column or the reminder row itself. Record the choice in `DATABASE.md` ("service_types") and `ARCHITECTURE.md`.
+- [ ] **Decide before the first server-rendered message:** how the SMS and e-mail renderers name a default trade or service type. Since 2026-10-06 a default row stores only the enum in `template_key` and a null `name`; the app localizes it from `app_pl.arb`, but the server (`{usluga}`, the client portal, any mail naming a service) has no l10n. Options: (a) a server-side copy of the template names per language in `functions/_shared/`, kept in step with the ARB by a CI check; (b) the app writes the localized name into `name` when it copies a default (simple, but a later language change does not rename copied rows); (c) the app pushes a rendered name into a separate column or the reminder row itself. Record the choice in `BACKEND_SCHEMA.md` ("service_types") and `TRD.md`.
 - [ ] `send-due-reminders` (daily) and `send-pending-sms` (every 5 min) edge functions.
 - [ ] `SmsGateway` adapter selected by `SMS_PROVIDER` (smsapi | serwersms | console): SMSAPI implementation, console stub, shared contract test; start on SMSAPI pay-as-you-go.
 - [ ] Template editor with placeholders and live preview; offsets in settings.
@@ -105,7 +107,7 @@ interest before the app is built.
 - [x] `/potwierdz/` and `/wypisz/` pages (`noindex`), one `@client` button each that posts the `#t=` token to `waitlist-confirm` / `waitlist-unsubscribe`; `/prywatnosc/` notice (GDPR art. 13) (2026-09-30).
 - [x] Controller and contact on the site: USŁUGI IT Ryszard Schossler, NIP and `r.schossler@rsapps.org` in `apps/website/lib/constants/site.dart` (2026-09-30).
 - [x] Before the site goes live: a legal read of `/prywatnosc/` (Supabase's transfer wording in particular).
-- [ ] Waitlist retention job before the site goes live, because `/wypisz/` and `/prywatnosc/` promise it: delete a row 30 days after `unsubscribed_at` and everything 12 months after launch, keeping only a salted hash of the address that `waitlist_signup` checks, so the opt-out holds (see `DATABASE.md`, "Retention and purge"). Moved from V1 on 2026-09-30.
+- [ ] Waitlist retention job before the site goes live, because `/wypisz/` and `/prywatnosc/` promise it: delete a row 30 days after `unsubscribed_at` and everything 12 months after launch, keeping only a salted hash of the address that `waitlist_signup` checks, so the opt-out holds (see `BACKEND_SCHEMA.md`, "Retention and purge"). Moved from V1 on 2026-09-30.
 - [x] `promo_reward` defaults to `trial_90d`, earlier rows backfilled (`*_waitlist_promo_reward.sql`, pgTAP): the page promises "3 miesiące za darmo" (2026-09-30).
 - [x] Both mails name the reward ("3 miesiące za darmo"), as the page does (2026-09-30).
 - [x] Brevo sending domain `rewizyta.rsapps.org` authenticated (Brevo code, DKIM, DMARC `p=none`, branded link subdomain `em.rewizyta`; all DNS-only in Cloudflare) (2026-09-30).
@@ -126,18 +128,18 @@ Not needed to go public, only for the app launch:
 ## M9 – Product website
 
 The app's information and support site that the store listings link to, not a
-web version of the app (see `ARCHITECTURE.md`, "Websites").
+web version of the app (see `TRD.md`, "Websites").
 
 - [ ] Home at launch: replace the waitlist hero with what the app does, pricing and store badges; keep `/potwierdz/`, `/wypisz/`, `/prywatnosc/`. PL + EN.
 - [ ] Support page: FAQ and contact address (App Store "Support URL").
-- [ ] Privacy policy (both stores' "Privacy Policy URL") and terms with the DPA (umowa powierzenia), the sub-processor list (Supabase EU, SMSAPI/SerwerSMS, Scaleway, Sentry EU, PostHog EU, FCM) and the retention table from `DATABASE.md`.
+- [ ] Privacy policy (both stores' "Privacy Policy URL") and terms with the DPA (umowa powierzenia), the sub-processor list (Supabase EU, SMSAPI/SerwerSMS, Scaleway, Sentry EU, PostHog EU, FCM) and the retention table from `BACKEND_SCHEMA.md`.
 - [ ] Account deletion page: the in-app path and an e-mail request route that works without reinstalling (Play Data safety "Delete account URL").
 
 ## V1 (after MVP ships)
 
 - [ ] Android caller card (`CallScreeningService` / overlay).
 - [ ] Monthly summary and export.
-- [ ] "Przypomnienia" passes and SMS top-ups: Play one-time products (`pass_12m`, `pass_1m`, `sms_200`) with `in_app_purchase`, `verify-purchase` function (Play Developer API, `purchases` table, `paid_until` / `sms_balance`), 300 SMS/month fair-use check in `send-pending-sms`, expiry push + e-mail, `BILLING_ENABLED` off for self-hosters. See `docs/PRODUCT.md`, "Pricing" and `docs/ARCHITECTURE.md`, "Billing".
+- [ ] "Przypomnienia" passes and SMS top-ups: Play one-time products (`pass_12m`, `pass_1m`, `sms_200`) with `in_app_purchase`, `verify-purchase` function (Play Developer API, `purchases` table, `paid_until` / `sms_balance`), 300 SMS/month fair-use check in `send-pending-sms`, expiry push + e-mail, `BILLING_ENABLED` off for self-hosters. See `docs/PRD.md`, "Pricing" and `docs/TRD.md`, "Billing".
 - [ ] Push notifications from the server ("3 clients due this week", low balance) through `devices`; `PushSender` adapter with `PUSH_PROVIDER` (fcm | ntfy | console).
 - [ ] Per-user data key in Supabase Vault, `pii_encrypt`/`pii_decrypt`, encrypted personal-data columns, key drop on deletion.
 - [ ] Optional SQLCipher for the local database, key in the platform keystore.
@@ -145,8 +147,8 @@ web version of the app (see `ARCHITECTURE.md`, "Websites").
 
 ## Client portal (after MVP)
 
-Decided 2026-10-01; see `PRODUCT.md`, "Client portal" for what and why and
-`ARCHITECTURE.md`, "Client portal" for the design. Needs M5 (the server holds
+Decided 2026-10-01; see `PRD.md`, "Client portal" for what and why and
+`TRD.md`, "Client portal" for the design. Needs M5 (the server holds
 the clients), M9 (the site) and, for the invitation link, M6. Two stages; the
 second only if the first is used.
 

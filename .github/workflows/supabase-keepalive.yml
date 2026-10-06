@@ -5,7 +5,7 @@
 # twice a week, which counts as activity. It is meant for the dev/staging
 # project only: production must be on the Pro plan (never pauses, daily
 # backups) or self-hosted, because a paused project also stops the reminder
-# jobs. See docs/ARCHITECTURE.md, "Hosting and the free-tier pause".
+# jobs. See docs/TRD.md, "Hosting and the free-tier pause".
 #
 # Secrets, on the "staging" GitHub environment (never repo-level, so a future
 # production project keeps its own values apart): SUPABASE_URL

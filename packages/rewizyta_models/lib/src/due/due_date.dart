@@ -3,7 +3,7 @@
 /// (31 January + 1 month = 28/29 February).
 ///
 /// `next_due_at` is derived, never authored: every place that stores it is a
-/// cache computed by this function (see docs/DATABASE.md, "Due dates").
+/// cache computed by this function (see docs/BACKEND_SCHEMA.md, "Due dates").
 DateTime nextDue(DateTime lastVisit, int cycleMonths) {
   assert(cycleMonths > 0, 'cycleMonths must be positive');
   final totalMonths = lastVisit.month - 1 + cycleMonths;

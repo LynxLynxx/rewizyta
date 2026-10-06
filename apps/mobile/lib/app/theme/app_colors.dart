@@ -1,39 +1,69 @@
 import 'package:flutter/material.dart';
 
-/// Semantic colours the Material scheme has no slot for. Widgets read them
-/// through `context.appColors`; `Colors.*` literals never appear in widgets.
+/// Design tokens the Material scheme has no slot for (`docs/DESIGN_BRIEF.md`,
+/// "Tokens"). Widgets read them through `context.appColors`; colour literals
+/// never appear in widgets. The values are set in `AppTheme`.
 @immutable
 final class const AppColors({
-  required final Color overdue,
-  required final Color dueSoon,
-  required final Color booked,
+  required final Color accent,
+  required final Color accentText,
+  required final Color selectedBackground,
+  required final Color text2,
+  required final Color overdueBackground,
+  required final Color overdueForeground,
+  required final Color soonBackground,
+  required final Color soonForeground,
+  required final Color laterBackground,
+  required final Color laterForeground,
+  required final Color doneBackground,
+  required final Color doneForeground,
 }) extends ThemeExtension<AppColors> {
-  static const light = AppColors(
-    overdue: Color(0xFFB3261E),
-    dueSoon: Color(0xFFB26A00),
-    booked: Color(0xFF1B6E3A),
-  );
-
-  static const dark = AppColors(
-    overdue: Color(0xFFF2B8B5),
-    dueSoon: Color(0xFFFFD59A),
-    booked: Color(0xFF9BDDB0),
-  );
-
   @override
-  AppColors copyWith({Color? overdue, Color? dueSoon, Color? booked}) => AppColors(
-    overdue: overdue ?? this.overdue,
-    dueSoon: dueSoon ?? this.dueSoon,
-    booked: booked ?? this.booked,
+  AppColors copyWith({
+    Color? accent,
+    Color? accentText,
+    Color? selectedBackground,
+    Color? text2,
+    Color? overdueBackground,
+    Color? overdueForeground,
+    Color? soonBackground,
+    Color? soonForeground,
+    Color? laterBackground,
+    Color? laterForeground,
+    Color? doneBackground,
+    Color? doneForeground,
+  }) => AppColors(
+    accent: accent ?? this.accent,
+    accentText: accentText ?? this.accentText,
+    selectedBackground: selectedBackground ?? this.selectedBackground,
+    text2: text2 ?? this.text2,
+    overdueBackground: overdueBackground ?? this.overdueBackground,
+    overdueForeground: overdueForeground ?? this.overdueForeground,
+    soonBackground: soonBackground ?? this.soonBackground,
+    soonForeground: soonForeground ?? this.soonForeground,
+    laterBackground: laterBackground ?? this.laterBackground,
+    laterForeground: laterForeground ?? this.laterForeground,
+    doneBackground: doneBackground ?? this.doneBackground,
+    doneForeground: doneForeground ?? this.doneForeground,
   );
 
   @override
   AppColors lerp(AppColors? other, double t) {
     if (other == null) return this;
+    Color mix(Color a, Color b) => Color.lerp(a, b, t)!;
     return AppColors(
-      overdue: Color.lerp(overdue, other.overdue, t)!,
-      dueSoon: Color.lerp(dueSoon, other.dueSoon, t)!,
-      booked: Color.lerp(booked, other.booked, t)!,
+      accent: mix(accent, other.accent),
+      accentText: mix(accentText, other.accentText),
+      selectedBackground: mix(selectedBackground, other.selectedBackground),
+      text2: mix(text2, other.text2),
+      overdueBackground: mix(overdueBackground, other.overdueBackground),
+      overdueForeground: mix(overdueForeground, other.overdueForeground),
+      soonBackground: mix(soonBackground, other.soonBackground),
+      soonForeground: mix(soonForeground, other.soonForeground),
+      laterBackground: mix(laterBackground, other.laterBackground),
+      laterForeground: mix(laterForeground, other.laterForeground),
+      doneBackground: mix(doneBackground, other.doneBackground),
+      doneForeground: mix(doneForeground, other.doneForeground),
     );
   }
 }

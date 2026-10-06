@@ -17,16 +17,18 @@ go out even when the phone is off. It is open source and the backend is meant to
 self-hosted with one command.
 
 > Status: pre-MVP. The repository contains the structure and the design documents.
-> See [`docs/TASKS.md`](docs/TASKS.md) for what is being built next.
+> See [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for what is being built next.
 
 ## Documents
 
 | Document | Read it for |
 |---|---|
-| [`docs/PRODUCT.md`](docs/PRODUCT.md) | The problem, the users, the feature set (MVP, V1, later) and the known risks. |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the app, the backend, the SMS pipeline and the websites fit together; the offline-first sync design. |
-| [`docs/DATABASE.md`](docs/DATABASE.md) | Every table, locally (drift/SQLite) and remotely (Postgres), plus the sync and RLS rules. |
-| [`docs/TASKS.md`](docs/TASKS.md) | Milestones and their status. |
+| [`docs/PRD.md`](docs/PRD.md) | The problem, the users, the feature set (MVP, V1, later) and the known risks. |
+| [`docs/TRD.md`](docs/TRD.md) | How the app, the backend, the SMS pipeline and the websites fit together; the offline-first sync design. |
+| [`docs/APP_FLOW.md`](docs/APP_FLOW.md) | Every screen of the app, the navigation and the key journeys as tap paths. |
+| [`docs/DESIGN_BRIEF.md`](docs/DESIGN_BRIEF.md) | The user's setting, design principles, brand, copy and accessibility rules. |
+| [`docs/BACKEND_SCHEMA.md`](docs/BACKEND_SCHEMA.md) | Every table, locally (drift/SQLite) and remotely (Postgres), plus the sync and RLS rules. |
+| [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | Milestones and their status. |
 | [`CLAUDE.md`](CLAUDE.md) | Conventions and hard rules for anyone (human or AI) changing the code. |
 
 ## Repository layout
@@ -80,7 +82,7 @@ cp .env.example .env           # then paste the URL and publishable key from `su
 
 `supabase/config.toml` is committed, so there is no `supabase init` step. Staging
 and production are hosted projects deployed by GitHub Actions; see
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#environments-and-deployment).
+[`docs/TRD.md`](docs/TRD.md#environments-and-deployment).
 
 `melos run --list` shows every script. The Jaspr sites keep their own lockfiles
 (see the note in `pubspec.yaml`), which is why `melos bootstrap` runs their
