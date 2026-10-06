@@ -16,4 +16,4 @@ down only; `melos run layering` fails on an upward import.
 Every package has `lib/<name>.dart` as its only public file and `lib/src/<feature>/`
 for the code, an `analysis_options.yaml` that includes the root one, and a
 `test/` folder that mirrors `lib/src`. Read the `Client` slice across all of
-them before adding a new entity; `docs/ARCHITECTURE.md` explains the layers.
+them before adding a new entity; `docs/TRD.md` explains the layers.

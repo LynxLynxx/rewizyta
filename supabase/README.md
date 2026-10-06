@@ -4,7 +4,7 @@ The backend. Everything a self-hoster needs is in this folder:
 
 | Path | Contents |
 |---|---|
-| `migrations/` | Plain SQL, applied in filename order by `supabase db push` / `supabase db reset`. Schema is documented in [`../docs/DATABASE.md`](../docs/DATABASE.md). |
+| `migrations/` | Plain SQL, applied in filename order by `supabase db push` / `supabase db reset`. Schema is documented in [`../docs/BACKEND_SCHEMA.md`](../docs/BACKEND_SCHEMA.md). |
 | `functions/` | Edge functions (Deno/TypeScript). Now: `waitlist-signup`, `waitlist-confirm`, `waitlist-unsubscribe`. Later: `send-due-reminders` (daily cron), `send-pending-sms`, `sms-webhook`. Shared code (e-mail adapters, HTTP helpers) under `functions/_shared/`. |
 | `tests/` | pgTAP tests for the SQL side (RLS, grants, functions), run by `supabase test db`. |
 | `deno.json` | fmt, lint and test settings for the functions; `deno task check` runs them all. |

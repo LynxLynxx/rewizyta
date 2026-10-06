@@ -6,7 +6,7 @@ import '../constants/site.dart';
 import '../constants/theme.dart';
 
 /// `/prywatnosc/`: the privacy notice for the site and the waitlist (GDPR
-/// art. 13). What it promises must match `docs/DATABASE.md`, "Personal data,
+/// art. 13). What it promises must match `docs/BACKEND_SCHEMA.md`, "Personal data,
 /// encryption and retention"; from launch it grows the app's policy.
 class PrivacyPage extends StatelessComponent {
   const PrivacyPage({super.key});

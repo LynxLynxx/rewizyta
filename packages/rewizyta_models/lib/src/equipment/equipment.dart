@@ -5,7 +5,7 @@ import 'package:rewizyta_shared/rewizyta_shared.dart';
 /// type that sets its cycle. [count] covers identical items (three flues).
 ///
 /// [lastVisitAt] and [nextDueAt] are a cache of the visit history, never
-/// typed by the user (docs/DATABASE.md, "Due dates"): the latest visit that
+/// typed by the user (docs/BACKEND_SCHEMA.md, "Due dates"): the latest visit that
 /// serviced this item, and that day plus the cycle. Both are null until the
 /// first visit, which the due list shows as "due now". They change only
 /// through [withDue]. Dates are `DateTime.utc(y, m, d)`.

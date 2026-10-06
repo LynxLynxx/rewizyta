@@ -1,7 +1,7 @@
 /**
  * What every e-mail vendor can do: send one message. Vendor extras (templates,
  * contact lists, campaigns) are deliberately left out so switching vendors is
- * one class and one secret (docs/ARCHITECTURE.md, "Messaging: start free, swap
+ * one class and one secret (docs/TRD.md, "Messaging: start free, swap
  * by config"). Adapters are chosen by `EMAIL_PROVIDER` in `create_email_gateway.ts`.
  */
 export interface EmailGateway {

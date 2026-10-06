@@ -1,8 +1,8 @@
 # Architecture Review: working tree (M1 local data layer)
 
 Scope: the 81 paths in `docs/code-review/working-tree/scope.txt`. Read against `CLAUDE.md`
-(layers, hard rules 1-12, Flutter conventions), `docs/DATABASE.md`, `docs/ARCHITECTURE.md`
-("Offline-first sync") and `docs/TASKS.md` (M1, M5).
+(layers, hard rules 1-12, Flutter conventions), `docs/BACKEND_SCHEMA.md`, `docs/TRD.md`
+("Offline-first sync") and `docs/IMPLEMENTATION_PLAN.md` (M1, M5).
 
 Verification run during the review:
 
@@ -30,7 +30,7 @@ where `CLAUDE.md` puts them.
 ## Dependency Direction
 
 - Direction violations: 0. Every dependency points down: services -> repositories -> models.
-- One planned violation path (finding I1): `docs/TASKS.md` M1 says "Services wrap
+- One planned violation path (finding I1): `docs/IMPLEMENTATION_PLAN.md` M1 says "Services wrap
   multi-repository writes in one drift transaction". No abstraction exists for that, so the
   services would have to call `AppDatabase.transaction` and import drift. `check_layering.sh`
   would not catch it.
@@ -55,7 +55,7 @@ where `CLAUDE.md` puts them.
   `EquipmentTable` correctly reports `equipment`. A newer write replaces the pending entry.
 - `SyncedColumns` keeps `id/user_id/created_at/updated_at/deleted_at` identical on every table.
 - The foreign keys are deferred (`initiallyDeferred`) with `PRAGMA foreign_keys = ON`, and the
-  cascade and set-null actions match DATABASE.md's purge rules. `app_database_test.dart` proves
+  cascade and set-null actions match BACKEND_SCHEMA.md's purge rules. `app_database_test.dart` proves
   both the commit-time check and the rollback.
 - `insertOnConflictUpdate` compiles to `INSERT ... ON CONFLICT DO UPDATE`, not `REPLACE`, so a
   re-upsert never fires the `ON DELETE CASCADE` actions.
@@ -70,9 +70,9 @@ where `CLAUDE.md` puts them.
 ### Important
 
 **I1. Missing transaction abstraction for multi-repository writes**
-(`packages/rewizyta_repositories/lib/src/database/outbox_writer.dart:28`; plan in `docs/TASKS.md` M1)
-Hard rule 3 and DATABASE.md "Due dates" require a visit, its items and the equipment cache
-recompute to commit together ("inside the writing transaction"). TASKS.md says services will
+(`packages/rewizyta_repositories/lib/src/database/outbox_writer.dart:28`; plan in `docs/IMPLEMENTATION_PLAN.md` M1)
+Hard rule 3 and BACKEND_SCHEMA.md "Due dates" require a visit, its items and the equipment cache
+recompute to commit together ("inside the writing transaction"). IMPLEMENTATION_PLAN.md says services will
 "wrap multi-repository writes in one drift transaction". The repository layer exposes only
 `AppDatabase` for that, and `app_database_test.dart:16` already composes repositories through
 `db.transaction`. A service would then import drift and the concrete database, so the
@@ -86,14 +86,14 @@ rule that fails on `package:drift` under `packages/rewizyta_services/lib`.
 (`packages/rewizyta_repositories/lib/src/reminder/dto/reminder_dto.dart:31-50`,
 `reminders_repository_impl.dart:25`)
 The server alone moves `status` past `pending` and writes `provider_message_id`, `sent_at`
-and `error` (ARCHITECTURE.md "Send", "Delivery"). The outbox payload is the whole row, and
+and `error` (TRD.md "Send", "Delivery"). The outbox payload is the whole row, and
 `sync_push` resolves conflicts per row by `updated_at`. Suppose the phone cancels or edits a
 manual reminder before pulling the server's `sent` state. Its newer `updated_at` then wins,
 writing `status = cancelled` and nulls over the server's delivery record of a message already
 sent. Equipment caches are fine to push because only the phone writes them; reminders have
 mixed ownership.
 Fix: give reminders a push payload limited to phone-writable columns, or have `sync_push`
-ignore the server-owned columns for `reminders`. Record the rule in DATABASE.md under
+ignore the server-owned columns for `reminders`. Record the rule in BACKEND_SCHEMA.md under
 `reminders`.
 
 **I3. An unknown enum value from the server throws in the read path**
@@ -106,7 +106,7 @@ migration. Widening a check constraint, say a new `ReminderStatus` such as `queu
 throws while mapping the pull, or inside a `watch()` stream, where it would break the whole
 list.
 Fix: make enum decoding tolerant (an `unknown` member or a fallback per enum; skip or
-quarantine the row on pull). Otherwise document in DATABASE.md "Migrations" that a new enum
+quarantine the row on pull). Otherwise document in BACKEND_SCHEMA.md "Migrations" that a new enum
 value is a contract change that ships in the app before the server writes it.
 
 **I4. Model `copyWith` cannot clear nullable fields or restore a soft delete**
@@ -137,12 +137,12 @@ an `applyPulled(...)`-style method for the sync to call.
 A write that lands during a push deletes the in-flight entry and inserts a new one. That is
 safe only if `SyncService` acknowledges by outbox row `id`. An ack by `(entity, entity_id)`
 would silently drop the newer change.
-Fix: state this in the `upsertSynced` doc comment and in ARCHITECTURE.md "Push", and add a
+Fix: state this in the `upsertSynced` doc comment and in TRD.md "Push", and add a
 test for it when `SyncService` lands (M5).
 
 **S3. `Equipment.copyWith(serviceTypeId:)` keeps a stale due-date cache**
 (`packages/rewizyta_models/lib/src/equipment/equipment.dart:26-46`)
-DATABASE.md requires a recompute when `service_type_id` changes. Yet `copyWith` carries the
+BACKEND_SCHEMA.md requires a recompute when `service_type_id` changes. Yet `copyWith` carries the
 old `nextDueAt`, which was computed from the old cycle, and the repository persists whatever
 it receives. Rule 3 then depends on every caller remembering `withDue`.
 Fix: null the caches in `copyWith` when `serviceTypeId` changes, or move the type change into
@@ -160,14 +160,14 @@ text field.
 (`packages/rewizyta_repositories/lib/src/database/tables/synced_columns.dart:5-10`; `fromDomain({String? userId})` in every DTO)
 The comment says a pull fills `user_id` in. The models carry no `userId`, though, so the only
 path (DTO -> domain -> `toCompanion()`) drops it, and no repository passes `userId` to
-`fromDomain`. The server forces `user_id = auth.uid()` anyway (DATABASE.md, "Sync support").
+`fromDomain`. The server forces `user_id = auth.uid()` anyway (BACKEND_SCHEMA.md, "Sync support").
 Fix: drop the local column and the unused `userId` parameter (YAGNI). Otherwise give the pull
 a DTO -> companion path that keeps it, and fix the comment.
 
 ## Notes (not findings)
 
 - The new repositories are not registered in `apps/mobile/lib/app/dependency/dependencies.dart`.
-  TASKS.md M1 tracks this, and nothing consumes them yet.
+  IMPLEMENTATION_PLAN.md M1 tracks this, and nothing consumes them yet.
 - `rewizyta_repositories/pubspec.yaml` lists `rewizyta_shared`, which nothing in `lib/` imports.
   The file is outside the scope.
 

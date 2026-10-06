@@ -12,7 +12,7 @@ enum OutboxOp() {
 
 extension OutboxWriter on AppDatabase {
   /// Writes a synced row and queues it for the push in one transaction
-  /// (docs/ARCHITECTURE.md, "Outbox"). The outbox entity is the table name,
+  /// (docs/TRD.md, "Outbox"). The outbox entity is the table name,
   /// which is also the Postgres table name.
   ///
   /// A pending entry for the same row is replaced: the payload is the whole

@@ -4,7 +4,7 @@ targets:
       drift_dev:
         options:
           # ISO-8601 text instead of unix seconds, so local rows carry the same
-          # timestamp representation as the Postgres side (docs/DATABASE.md).
+          # timestamp representation as the Postgres side (docs/BACKEND_SCHEMA.md).
           store_date_time_values_as_text: true
       json_serializable:
         options:

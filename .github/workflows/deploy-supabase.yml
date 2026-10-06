@@ -14,7 +14,7 @@
 # Function secrets (SMS_PROVIDER, gateway tokens, BILLING_ENABLED) are set once by
 # hand with `supabase secrets set --project-ref <ref>` and are not part of the
 # deploy. Hosted auth settings are configured in the dashboard, not pushed from
-# config.toml. See docs/ARCHITECTURE.md, "Environments and deployment".
+# config.toml. See docs/TRD.md, "Environments and deployment".
 name: Deploy Supabase
 
 on:

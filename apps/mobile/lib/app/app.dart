@@ -9,7 +9,6 @@ class const App({super.key}) extends StatelessWidget {
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appTitle,
       theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: AppRouter.router,
