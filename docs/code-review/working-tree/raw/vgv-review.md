@@ -29,7 +29,7 @@ soft-deleted default cannot be restored and an appointment cannot be un-ordered.
 enum values from the server throw, which conflicts with the expand-then-contract rule. The
 reminder push payload carries server-owned delivery columns under last-write-wins. Blank
 address fields are not normalised, so the new keep-coordinates rule misfires. Services also
-lack a seam for the multi-repository transaction that TASKS.md promises.
+lack a seam for the multi-repository transaction that IMPLEMENTATION_PLAN.md promises.
 
 ## Critical: Must Fix Before Merge
 
@@ -60,7 +60,7 @@ None.
     on the server (a new `reminders.status`, a third `push_provider`, an appointment
     `rescheduled`) is an "expand" change, yet every older build would throw inside the
     pull's DTO decoding, and the whole pull would fail on one row.
-  - Fix: decide the policy and write it down in DATABASE.md. Either give each enum a
+  - Fix: decide the policy and write it down in BACKEND_SCHEMA.md. Either give each enum a
     fallback (for example `unknown`, or map to a safe existing value) and skip or flag the
     row, or declare new enum values a contract change that must wait for the old build to
     disappear. Then make the test assert that policy.
@@ -85,12 +85,12 @@ None.
     gateway's message id with stale values. The domain comment says that only the server
     moves a reminder past `pending`, but nothing in the data path enforces it.
   - Fix: record the rule that `sync_push` ignores server-owned reminder columns and accepts
-    only `pending → cancelled` (or only manual inserts) from the phone, in DATABASE.md
+    only `pending → cancelled` (or only manual inserts) from the phone, in BACKEND_SCHEMA.md
     ("Sync functions"). Alternatively, add a push-specific payload without those fields.
     Either way, do it before M5 builds `sync_push`.
 
 - **packages/rewizyta_repositories/lib/src/database/outbox_writer.dart:28**: no
-  transaction seam exists for services. TASKS.md now says that services wrap
+  transaction seam exists for services. IMPLEMENTATION_PLAN.md now says that services wrap
   multi-repository writes in one drift transaction (a visit, its items and the equipment
   due-date caches).
   - Why: services see only repository interfaces. A transaction would therefore force them
@@ -141,7 +141,7 @@ None.
   unique index rejects the push the other way round.
   - Suggestion: when the `DefaultCatalog` seed service is designed, seed only after the first
     pull has completed (or derive default ids deterministically from `template_key` and the
-    user). Note the decision in DATABASE.md.
+    user). Note the decision in BACKEND_SCHEMA.md.
 
 - **packages/rewizyta_models/lib/src/client/client.dart:6**: the doc says that `lat`/`lng`
   "are geocoded on the phone when the address is saved", but nothing sets them yet, and

@@ -54,4 +54,4 @@ The project is pre-release. Only the `main` branch receives fixes.
 - Secrets never enter the repository; the app reads them from a local `.env`
   and the functions from Supabase secrets. See `CLAUDE.md`, rule 5.
 - Every remote table has Row Level Security enabled and forced with a policy on
-  `user_id = auth.uid()`. See `docs/DATABASE.md`, "Row Level Security".
+  `user_id = auth.uid()`. See `docs/BACKEND_SCHEMA.md`, "Row Level Security".

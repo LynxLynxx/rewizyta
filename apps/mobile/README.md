@@ -2,7 +2,7 @@
 
 Flutter app for Android (first) and iOS. Offline-first: cubits read drift
 streams through services, and a sync service reconciles with Supabase when
-there is a connection. See [`../../docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
+there is a connection. See [`../../docs/TRD.md`](../../docs/TRD.md).
 
 ```
 lib/

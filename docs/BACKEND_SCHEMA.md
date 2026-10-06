@@ -1,4 +1,4 @@
-# Rewizyta – Database
+# Rewizyta – Backend schema
 
 ## Contents
 
@@ -35,7 +35,7 @@
 Two databases with the same shape: SQLite on the phone (drift) and Postgres on
 the server (Supabase). The phone is the source of truth for the technician's
 data; the server keeps a copy for reminders and restore. See
-[`ARCHITECTURE.md`](ARCHITECTURE.md) for the sync protocol.
+[`TRD.md`](TRD.md) for the sync protocol.
 
 ## Principles
 
@@ -118,7 +118,7 @@ Column types are given as Postgres; the drift mapping follows the table above.
 | `created_at, updated_at, deleted_at` | | |
 
 The planning columns are the user's settings for the day planner (see
-`ARCHITECTURE.md`, "Day planning"); they sync like everything else so a new
+`TRD.md`, "Day planning"); they sync like everything else so a new
 phone gets them back.
 
 ### `clients`
@@ -290,7 +290,7 @@ than trusting last-write-wins, so a phone cancelling a stale copy cannot undo a
 ### `client_links` – a client's portal sign-in
 
 One row per (client card, portal sign-in). Planned with the client portal
-(after MVP, see `ARCHITECTURE.md`, "Client portal"). Written by the server
+(after MVP, see `TRD.md`, "Client portal"). Written by the server
 only, by the functions below and the daily reminder job; the phone pulls it
 like `reminders` and never pushes it (`sync_push` ignores the table).
 
@@ -530,7 +530,7 @@ cancelled by the same service call, and the purge removes the rows after 30
 days. The app has an "export this client" action so the technician can answer
 an access request.
 
-**The technician deletes the account** – see `ARCHITECTURE.md`, "Account
+**The technician deletes the account** – see `TRD.md`, "Account
 export and deletion".
 
 ## Sync support in Postgres

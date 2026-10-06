@@ -1,4 +1,4 @@
-# Rewizyta – Architecture
+# Rewizyta – Technical requirements (TRD)
 
 ## Contents
 
@@ -306,7 +306,7 @@ step documented in `supabase/README.md` once done.
 
 Passes and top-ups are Google Play one-time products (`pass_12m`, `pass_1m`,
 `sms_200`), bought in-app with `in_app_purchase` and granted only by the server.
-See `docs/PRODUCT.md`, "Pricing", for why this and not a web checkout.
+See `docs/PRD.md`, "Pricing", for why this and not a web checkout.
 
 1. The app completes the Play purchase flow and posts the purchase token and
    product id to `verify-purchase` (authenticated as the user).
@@ -630,7 +630,7 @@ talks to its own backend, whose `WAITLIST_SITE_URL` must be that site's origin.
 
 ## Client portal
 
-Decided 2026-10-01 (`PRODUCT.md`, "Client portal"): after the MVP, the
+Decided 2026-10-01 (`PRD.md`, "Client portal"): after the MVP, the
 technician's clients get a page on the website, `/klient/`, that lists every
 technician who services them, with due dates, the next booked visit and the
 visit history. It is the one client-facing surface; there is no client app.
@@ -652,7 +652,7 @@ cap and Auth's e-mail rate limit (`config.toml`) bound how many codes a day
 can go out.
 
 **Linking a sign-in to a client card.** Three sources, all recorded in
-`client_links` (`DATABASE.md`), which the server writes and the phone only
+`client_links` (`BACKEND_SCHEMA.md`), which the server writes and the phone only
 reads:
 
 | Source | How the link is made | Who opted in |
@@ -676,7 +676,7 @@ name, phone, the linked cards with their equipment (service type name,
 `last_visit_at`, `next_due_at`), `planned` appointments from today on, and
 visits with the labels of what was serviced. Never `price_grosze`, notes, the
 address or coordinates, and never anything about another client. No synced
-table gets a second RLS policy; the own-rows rule in `DATABASE.md` stays the
+table gets a second RLS policy; the own-rows rule in `BACKEND_SCHEMA.md` stays the
 only one. When V1's per-user column encryption lands, the function is the
 second server-side reader of ciphertext after the reminder job and decrypts
 with the card owner's key, for linked cards only.
@@ -725,7 +725,7 @@ that the portal shows a card on the technician's instruction.
   `sms_balance`, `verify-purchase` is never called and no Play products exist;
   every message goes to the self-hoster's own gateway account. The hosted
   service turns it on; the app and the functions are otherwise identical. See
-  "Billing" above and `docs/PRODUCT.md`, "Pricing".
+  "Billing" above and `docs/PRD.md`, "Pricing".
 
 ## Platform notes
 

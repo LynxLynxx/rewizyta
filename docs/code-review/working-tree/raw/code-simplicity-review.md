@@ -7,7 +7,7 @@ tests, plus `tool/check_layering.sh`.
 ## Core purpose
 
 Give the app an offline-first local data layer for M1: domain models for
-every entity in `docs/DATABASE.md`, drift tables that mirror the Postgres
+every entity in `docs/BACKEND_SCHEMA.md`, drift tables that mirror the Postgres
 schema, DTOs for the sync wire format, and repositories that read/write
 drift while queuing an outbox row in the same transaction. Nothing here
 talks to the network or does orchestration — that is M2+ (services).
@@ -68,7 +68,7 @@ Everything else in scope is as lean as the conventions allow:
   stated in their doc comments (nullable fields that `copyWith`'s
   `??`-pattern cannot clear) — not speculative API surface.
 - **Repository interfaces**: every method is used by a real M1–M5 need
-  (`docs/DATABASE.md`'s "Due dates" section explains `lastDoneAt`;
+  (`docs/BACKEND_SCHEMA.md`'s "Due dates" section explains `lastDoneAt`;
   `findByTemplateKey` matches the documented "restore defaults" flow for
   trades/service types). No interface exposes more than the single impl
   needs; no unused generic query builder or repository base class was

@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:rewizyta_repositories/src/database/tables/synced_columns.dart';
 
-/// Mirrors `public.clients` (docs/DATABASE.md). The phone indexes for its own
+/// Mirrors `public.clients` (docs/BACKEND_SCHEMA.md). The phone indexes for its own
 /// queries: the list by name, the caller lookup by phone.
 @DataClassName('ClientRow')
 @TableIndex(name: 'clients_name', columns: {#name})

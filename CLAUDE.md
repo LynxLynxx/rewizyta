@@ -2,10 +2,12 @@
 
 Offline-first Flutter app (plus a Jaspr website and a Supabase backend) that
 keeps a one-person field technician's clients, service cycles, due dates,
-appointments and SMS reminders. Read `docs/PRODUCT.md` for what we are building
-and why, `docs/ARCHITECTURE.md` for how, `docs/DATABASE.md` for the schema and
-`docs/TASKS.md` for what is next. Keep those documents current when you change
-the thing they describe.
+appointments and SMS reminders. Read `docs/PRD.md` (product requirements) for
+what we are building and why, `docs/TRD.md` (technical requirements) for how,
+`docs/APP_FLOW.md` for the screens and journeys, `docs/DESIGN_BRIEF.md` for how
+they should look and read, `docs/BACKEND_SCHEMA.md` for the schema and
+`docs/IMPLEMENTATION_PLAN.md` for what is next. Keep those documents current
+when you change the thing they describe.
 
 ## Repo map
 
@@ -61,7 +63,7 @@ format → analyze matters; `melos run check` does it right.
 3. **`next_due_at` is derived, never authored.** It is `last_visit_at` plus the
    service type's cycle (`nextDue` in `rewizyta_models`). The column on
    `equipment` is a cache recomputed whenever a visit, a visit item, an
-   equipment row or a cycle changes. See `docs/DATABASE.md`, "Due dates".
+   equipment row or a cycle changes. See `docs/BACKEND_SCHEMA.md`, "Due dates".
 4. **Every remote table has RLS enabled and forced, with a policy on `user_id = auth.uid()`,
    in the same migration that creates it.** Schema changes are migrations under
    `supabase/migrations/`; never edit the database by hand.
@@ -95,7 +97,7 @@ format → analyze matters; `melos run check` does it right.
     be self-hostable in the EU. A service that nothing people enter reaches may
     be elsewhere: Cloudflare serves the static site and sees only request
     metadata such as IP addresses (disclosed on `/prywatnosc/`), while the forms
-    post straight to Supabase. See `docs/ARCHITECTURE.md`, "EU stance".
+    post straight to Supabase. See `docs/TRD.md`, "EU stance".
 12. **A migration must keep working for the previous app release.** Phones are
     offline-first and can run last month's build; the server cannot wait for
     them. Expand, then contract: add columns with defaults, add tables, add
@@ -219,7 +221,7 @@ format → analyze matters; `melos run check` does it right.
   expose only what every vendor offers, so switching to a cheaper vendor is
   one class plus a secret. Start free: Brevo, SMSAPI pay-as-you-go, FCM.
 - Scheduled work uses `pg_cron` calling the edge function over HTTP; the schedule
-  is documented in `docs/ARCHITECTURE.md`.
+  is documented in `docs/TRD.md`.
 - Everything must run locally with `supabase start`; a self-hoster must never
   need a vendor account beyond Supabase, an SMS gateway and an SMTP provider.
 - The Supabase project lives in an EU region (Frankfurt). Dev/staging on the
@@ -233,7 +235,16 @@ format → analyze matters; `melos run check` does it right.
   The access token, project ref and database password live as secrets on the
   GitHub environments; function secrets are set per project by hand. The app
   picks its backend with `.env`, `.env.staging` or `.env.production`, all
-  git-ignored. See `docs/ARCHITECTURE.md`, "Environments and deployment".
+  git-ignored. See `docs/TRD.md`, "Environments and deployment".
+
+## Ponytail in this repo
+
+The ponytail plugin (a YAGNI ruleset for AI assistants) is on. Its ladder applies
+*inside* the architecture above, not to it: the layers, the `X` / `XImpl`
+interface pairs, the per-feature file split, DI registration and "every service
+method, cubit and page gets a test" are required, not speculative. Apply YAGNI to
+features, fields, options and helpers. Don't add `ponytail:` comments; use a plain
+comment that names the limit.
 
 ## Decisions already made (don't relitigate without a reason)
 

@@ -1,6 +1,6 @@
 // The site on Cloudflare Workers: static assets only, no Worker script.
 // `jaspr build` fills build/jaspr; .github/workflows/deploy-website.yml
-// uploads it. Headers are in web/_headers. See docs/ARCHITECTURE.md, "Websites".
+// uploads it. Headers are in web/_headers. See docs/TRD.md, "Websites".
 {
   "name": "rewizyta-website",
   "compatibility_date": "2026-09-30",

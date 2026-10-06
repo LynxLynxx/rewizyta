@@ -22,7 +22,7 @@ part 'app_database.g.dart';
 /// Foreign keys are enforced and deferred to the end of each transaction, so a
 /// sync pull can apply rows in any order. No build has shipped yet, so schema
 /// version 1 is still edited in place; from the first release on, every change
-/// bumps [schemaVersion] with a migration (docs/DATABASE.md, "Migrations").
+/// bumps [schemaVersion] with a migration (docs/BACKEND_SCHEMA.md, "Migrations").
 @DriftDatabase(
   tables: [
     Clients,

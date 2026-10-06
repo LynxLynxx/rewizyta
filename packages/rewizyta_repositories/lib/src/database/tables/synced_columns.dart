@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-/// The columns every synced table carries (docs/DATABASE.md, "Principles").
+/// The columns every synced table carries (docs/BACKEND_SCHEMA.md, "Principles").
 ///
 /// `user_id` stays null on the phone until a pull fills it in; the server sets
 /// it from the session whatever the payload says. Timestamps are UTC text

@@ -1,4 +1,4 @@
-# Rewizyta – Product
+# Rewizyta – Product requirements (PRD)
 
 ## Contents
 
@@ -116,7 +116,7 @@ A web page, not an app, for the technician's clients: one place where a
 homeowner or a building manager sees every technician who services them and
 when each next visit is due. Built in stages after the MVP ships, on the synced
 data the server already holds for reminders. The design is in
-`ARCHITECTURE.md`, "Client portal"; the tables in `DATABASE.md`, `client_links`.
+`TRD.md`, "Client portal"; the tables in `BACKEND_SCHEMA.md`, `client_links`.
 
 **Why.** Three reasons, in order:
 
@@ -274,7 +274,7 @@ top-ups instead of the price rising for everyone. The numbers behind this
   the phone is off. The client portal shows a client their own card on the
   technician's instruction (the e-mail typed on the card, the link put in the
   SMS, the account-wide switch); for the portal sign-in itself we are the
-  controller, with its own section in the privacy notice. See `DATABASE.md`,
+  controller, with its own section in the privacy notice. See `BACKEND_SCHEMA.md`,
   "Personal data, encryption and retention".
 - **Backup and account loss.** Since the phone is the source of truth and sync is
   the backup, a technician who loses the phone must be able to log in on a new one

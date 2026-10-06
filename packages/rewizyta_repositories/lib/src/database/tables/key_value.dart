@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 /// Local-only bookkeeping of the sync: `last_pulled_at`, `last_push_at`,
-/// `device_id` (docs/DATABASE.md, "sync_state").
+/// `device_id` (docs/BACKEND_SCHEMA.md, "sync_state").
 @DataClassName('SyncStateRow')
 class SyncState() extends Table {
   TextColumn get key => text()();
@@ -11,7 +11,7 @@ class SyncState() extends Table {
   Set<Column<Object>> get primaryKey => {key};
 }
 
-/// Device-only preferences; never synced (docs/DATABASE.md, "app_settings").
+/// Device-only preferences; never synced (docs/BACKEND_SCHEMA.md, "app_settings").
 @DataClassName('AppSettingRow')
 class AppSettings() extends Table {
   TextColumn get key => text()();

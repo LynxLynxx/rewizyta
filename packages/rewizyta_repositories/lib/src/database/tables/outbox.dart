@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-/// Local-only queue of changes waiting to be pushed (docs/ARCHITECTURE.md,
+/// Local-only queue of changes waiting to be pushed (docs/TRD.md,
 /// "Outbox"). Every write to a synced table appends here in the same
 /// transaction (`OutboxWriter.upsertSynced`); SyncService drains it.
 @DataClassName('OutboxRow')

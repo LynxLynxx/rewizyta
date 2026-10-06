@@ -6,7 +6,7 @@ import 'package:rewizyta_repositories/src/database/tables/synced_columns.dart';
 
 /// Mirrors `public.equipment`; named `EquipmentTable` in Dart only so it does
 /// not clash with the `Equipment` model. `last_visit_at` and `next_due_at` are
-/// the due-date cache (docs/DATABASE.md, "Due dates"). A service type in use
+/// the due-date cache (docs/BACKEND_SCHEMA.md, "Due dates"). A service type in use
 /// cannot be deleted, only archived.
 @DataClassName('EquipmentRow')
 @TableIndex(name: 'equipment_client_id', columns: {#clientId})
