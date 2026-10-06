@@ -122,7 +122,7 @@ self-hosts them in `apps/website/web/fonts/`).
 | body | 17 / 400 | line height 1.5 |
 | listTitle | 16 / 600 | |
 | secondary | 15 / 400 | screen subtitles, in `muted` |
-| small | 14 / 400 | |
+| small | 14 / 400 | second lines of list rows and cards ("town · service"), in `muted` |
 | sectionLabel | 13 / 600 | uppercase, +0.04em |
 | tag | 12–13 / 600 | the only text allowed below 15 px |
 

@@ -13,6 +13,15 @@ void main() {
       expect(theme.textTheme.bodyLarge?.fontFamily, AppFonts.sans);
     });
 
+    test('gives component themes the app font', () {
+      expect(theme.appBarTheme.titleTextStyle?.fontFamily, AppFonts.sans);
+      expect(theme.listTileTheme.subtitleTextStyle?.fontFamily, AppFonts.sans);
+      expect(
+        theme.filledButtonTheme.style?.textStyle?.resolve({})?.fontFamily,
+        AppFonts.sans,
+      );
+    });
+
     test('registers AppColors', () {
       final colors = theme.extension<AppColors>()!;
       expect(colors.accent, const Color(0xFFEE8A3A));

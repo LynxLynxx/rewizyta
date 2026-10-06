@@ -78,8 +78,8 @@ abstract final class AppTheme() {
     const controlShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(AppRadius.control)),
     );
-    const buttonText = TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
     final textTheme = _textTheme();
+    final buttonText = textTheme.labelLarge;
 
     return ThemeData(
       colorScheme: scheme,
@@ -199,7 +199,9 @@ abstract final class AppTheme() {
   }
 
   /// The type scale in Material roles: screenTitle → headlineMedium, h3 →
-  /// titleLarge, cardName → titleMedium… Display and h2 are website-only.
+  /// titleLarge, listTitle → titleMedium… Display and h2 are website-only.
+  /// The family is set here, not only on `ThemeData`: component themes use
+  /// these styles as they are, and `ThemeData(fontFamily:)` never reaches them.
   static TextTheme _textTheme() {
     const ink = _Palette.ink;
     return const TextTheme(
@@ -222,7 +224,7 @@ abstract final class AppTheme() {
         color: ink,
       ),
       labelSmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ink),
-    );
+    ).apply(fontFamily: AppFonts.sans);
   }
 
   static OutlineInputBorder _inputBorder(Color color) => OutlineInputBorder(
