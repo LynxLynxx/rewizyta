@@ -149,16 +149,17 @@ for the rest: `packages/rewizyta_models/lib/src/client/`,
 
 ### Trades and service types
 
-Defaults are data the user owns, not global tables. `rewizyta_models` ships a
-`DefaultCatalog`: trades (`kominiarz`, `serwisant gazowy`, `serwisant kotłów`,
-…) each with default service types (name, cycle in months, suggested price).
+Defaults are data the user owns, not global tables. `rewizyta_models` ships the
+default catalogue as the `TradeTemplate` and `ServiceTypeTemplate` enums: trades
+(`chimney`, `gas`, `boiler`, …) each with default service types and their cycles in months. Rows store the enum and no name; the UI localizes it from
+`app_pl.arb` until the user renames the row.
 During onboarding the user picks one or more trades; the app copies those
 service types into the user's own `service_types` rows and the trade into
 `trades`, both stamped with `template_key` so "restore defaults" and
 de-duplication work. From then on everything is per user: rename, change the
 cycle, archive, add a service type, add a whole custom trade. Equipment points
 at the user's row, so two technicians can have different cycles for the same
-template. Self-hosters change the defaults in one Dart file.
+template. Self-hosters change the defaults in `default_catalog.dart` and the ARB file.
 
 ### Due dates
 

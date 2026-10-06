@@ -35,5 +35,37 @@
   "validationPhoneInvalid": "Nieprawidłowy numer telefonu.",
   "@validationPhoneInvalid": {
     "description": "Inline validation: phone number is not E.164."
+  },
+  "catalogTradeChimney": "Kominiarz",
+  "@catalogTradeChimney": {
+    "description": "Default trade (branża) copied into the user's trades at onboarding."
+  },
+  "catalogTradeGas": "Serwisant gazowy",
+  "@catalogTradeGas": {
+    "description": "Default trade (branża) copied into the user's trades at onboarding."
+  },
+  "catalogTradeBoiler": "Serwisant kotłów",
+  "@catalogTradeBoiler": {
+    "description": "Default trade (branża) copied into the user's trades at onboarding."
+  },
+  "catalogServiceTypeChimneyInspection": "Przegląd przewodów kominowych",
+  "@catalogServiceTypeChimneyInspection": {
+    "description": "Default service type of the chimney trade, 12-month cycle."
+  },
+  "catalogServiceTypeChimneySweepSolid": "Czyszczenie – paliwo stałe",
+  "@catalogServiceTypeChimneySweepSolid": {
+    "description": "Default service type of the chimney trade: sweeping a solid-fuel flue, 3-month cycle."
+  },
+  "catalogServiceTypeChimneySweepGas": "Czyszczenie – gaz",
+  "@catalogServiceTypeChimneySweepGas": {
+    "description": "Default service type of the chimney trade: sweeping a gas flue, 12-month cycle."
+  },
+  "catalogServiceTypeGasInstallationCheck": "Kontrola szczelności instalacji",
+  "@catalogServiceTypeGasInstallationCheck": {
+    "description": "Default service type of the gas trade: gas installation leak test, 12-month cycle."
+  },
+  "catalogServiceTypeBoilerService": "Przegląd kotła",
+  "@catalogServiceTypeBoilerService": {
+    "description": "Default service type of the boiler trade, 12-month cycle."
   }
 }

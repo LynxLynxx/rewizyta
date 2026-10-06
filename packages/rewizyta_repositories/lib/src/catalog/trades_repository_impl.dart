@@ -11,7 +11,11 @@ final class const TradesRepositoryImpl(final AppDatabase _db) implements TradesR
   Stream<List<Trade>> watchAll() {
     final query = _db.select(_db.trades)
       ..where((t) => t.deletedAt.isNull())
-      ..orderBy([(t) => OrderingTerm.asc(t.sortOrder), (t) => OrderingTerm.asc(t.name)]);
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.sortOrder),
+        (t) => OrderingTerm.asc(t.createdAt),
+        (t) => OrderingTerm.asc(t.id),
+      ]);
     return query.watch().map((rows) => rows.map((row) => row.toDomain()).toList());
   }
 
@@ -22,8 +26,8 @@ final class const TradesRepositoryImpl(final AppDatabase _db) implements TradesR
   }
 
   @override
-  Future<Trade?> findByTemplateKey(String templateKey) async {
-    final query = _db.select(_db.trades)..where((t) => t.templateKey.equals(templateKey));
+  Future<Trade?> findByTemplate(TradeTemplate template) async {
+    final query = _db.select(_db.trades)..where((t) => t.templateKey.equalsValue(template));
     final row = await query.getSingleOrNull();
     return row?.toDomain();
   }

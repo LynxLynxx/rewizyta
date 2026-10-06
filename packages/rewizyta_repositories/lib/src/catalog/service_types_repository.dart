@@ -8,8 +8,8 @@ abstract interface class ServiceTypesRepository() {
   /// Any service type by id, soft-deleted ones included.
   Future<ServiceType?> find(String id);
 
-  /// The type copied from the default [templateKey], soft-deleted or not.
-  Future<ServiceType?> findByTemplateKey(String templateKey);
+  /// The type copied from [template], soft-deleted or not.
+  Future<ServiceType?> findByTemplate(ServiceTypeTemplate template);
 
   /// Upserts the row and queues it for the push in one transaction.
   Future<void> upsert(ServiceType serviceType);

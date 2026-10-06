@@ -8,12 +8,12 @@ part 'trade_dto.g.dart';
 @JsonSerializable()
 final class const TradeDto({
   required final String id,
-  required final String name,
   required final int sortOrder,
   required final bool isArchived,
   required final String createdAt,
   required final String updatedAt,
   final String? userId,
+  final String? name,
   final String? templateKey,
   final String? deletedAt,
 }) {
@@ -23,7 +23,7 @@ final class const TradeDto({
     id: trade.id,
     userId: userId,
     name: trade.name,
-    templateKey: trade.templateKey,
+    templateKey: trade.template == null ? null : enumToSql(trade.template!),
     sortOrder: trade.sortOrder,
     isArchived: trade.isArchived,
     createdAt: formatTimestamp(trade.createdAt),
@@ -36,7 +36,9 @@ final class const TradeDto({
   Trade toDomain() => Trade(
     id: id,
     name: name,
-    templateKey: templateKey,
+    template: templateKey == null
+        ? null
+        : const EnumConverter(TradeTemplate.values).fromSql(templateKey!),
     sortOrder: sortOrder,
     isArchived: isArchived,
     createdAt: parseTimestamp(createdAt),

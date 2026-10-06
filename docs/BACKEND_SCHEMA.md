@@ -144,13 +144,13 @@ the portal's claim (it matches across technicians).
 | Column | Type | Notes |
 |---|---|---|
 | (std) | | |
-| `name` | `text` not null | e.g. `Kominiarz`, `Serwisant gazowy`, `Serwisant kotłów`. |
-| `template_key` | `text` | Key of the default it was copied from (`chimney`, `gas`, `boiler`); null for a user-created trade. |
+| `name` | `text` | The user's name for the trade. Null while a default keeps its localized name (`Kominiarz`); set when the user renames it or creates their own. |
+| `template_key` | `text` | The `TradeTemplate` it was copied from, snake_case (`chimney`, `gas`, `boiler`); null for a user-created trade. |
 | `sort_order` | `integer` | |
 | `is_archived` | `boolean` default false | |
 
 Unique `(user_id, template_key)` where `template_key is not null`, so a default
-is copied at most once per user.
+is copied at most once per user. Check: `name` or `template_key` is not null.
 
 ### `service_types` – the user's catalogue
 
@@ -158,32 +158,41 @@ is copied at most once per user.
 |---|---|---|
 | (std) | | |
 | `trade_id` | `uuid` → `trades` | Groups the pickers; null allowed for a loose type. |
-| `name` | `text` not null | e.g. `Przegląd kominiarski`. |
+| `name` | `text` | The user's name for the type; null while a default keeps its localized name. |
 | `cycle_months` | `integer` not null, `> 0` | 12, 3, 6 … |
 | `default_price_grosze` | `integer` | Pre-fills the visit form. |
-| `template_key` | `text` | Key of the default it was copied from (`chimney.inspection`); null for a user-created type. |
+| `template_key` | `text` | The `ServiceTypeTemplate` it was copied from, snake_case (`chimney_inspection`); null for a user-created type. |
 | `sort_order` | `integer` | |
 | `is_archived` | `boolean` default false | Hidden from pickers, kept for history. |
 
-Unique `(user_id, template_key)` where `template_key is not null`.
+Unique `(user_id, template_key)` where `template_key is not null`. Check: `name`
+or `template_key` is not null, and `cycle_months > 0`.
 
-**Defaults are not a table.** `rewizyta_models` ships a `DefaultCatalog` (Dart
-constants): each trade template with its service-type templates, Polish names,
-cycles and suggested prices. Onboarding lets the user tick trades; the app then
-inserts the user's own `trades` and `service_types` rows from the catalogue,
-stamped with `template_key`. After that every value is the user's: rename,
-change the cycle or price, archive, add types, add a custom trade. "Restore
-defaults" re-inserts only the templates whose `template_key` is missing. Two
-users can therefore have different cycles for the same template, and a
-self-hoster changes the defaults in one Dart file. Initial catalogue:
+**Defaults are not a table.** `rewizyta_models` ships the default catalogue as
+two enums, `TradeTemplate` and `ServiceTypeTemplate`: keys, which service types
+belong to which trade, and their cycles. Names are not stored: the
+row holds the enum in `template_key` and a null `name`, and the UI shows the
+localized name (`catalogTrade…` / `catalogServiceType…` in `app_pl.arb`, through
+`localizedName(context.l10n)` in `rewizyta_view_models`) until the user renames
+it; clearing the name brings the default back. Onboarding lets the user tick
+trades; `CatalogService.copyDefaults` then inserts the user's own `trades` and
+`service_types` rows. After that every value is the user's: rename, change the
+cycle or price, archive, add types, add a custom trade. Anything that renders
+outside the app (the SMS `{usluga}` placeholder, e-mails, the client portal)
+needs a name for a null `name` too; how the server gets it is an open decision
+(`IMPLEMENTATION_PLAN.md`, M6). "Restore defaults" re-inserts
+only the templates whose `template_key` is missing and restores soft-deleted
+ones. Two users can therefore have different cycles for the same template, and
+a self-hoster changes the defaults in `default_catalog.dart` and the ARB file.
+Initial catalogue:
 
 | Trade | Service type | Cycle |
 |---|---|---|
-| `chimney` Kominiarz | `chimney.inspection` Przegląd przewodów kominowych | 12 |
-| | `chimney.sweep_solid` Czyszczenie – paliwo stałe | 3 |
-| | `chimney.sweep_gas` Czyszczenie – gaz | 12 |
-| `gas` Serwisant gazowy | `gas.installation_check` Kontrola szczelności instalacji | 12 |
-| `boiler` Serwisant kotłów | `boiler.service` Przegląd kotła | 12 |
+| `chimney` Kominiarz | `chimney_inspection` Przegląd przewodów kominowych | 12 |
+| | `chimney_sweep_solid` Czyszczenie – paliwo stałe | 3 |
+| | `chimney_sweep_gas` Czyszczenie – gaz | 12 |
+| `gas` Serwisant gazowy | `gas_installation_check` Kontrola szczelności instalacji | 12 |
+| `boiler` Serwisant kotłów | `boiler_service` Przegląd kotła | 12 |
 
 ### `equipment` – one serviced item at a client
 

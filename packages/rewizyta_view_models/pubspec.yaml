@@ -23,3 +23,5 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   leancode_lint: ^27.0.0
+  rewizyta_shared:
+    path: ../rewizyta_shared

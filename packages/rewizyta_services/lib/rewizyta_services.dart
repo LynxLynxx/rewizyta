@@ -9,6 +9,8 @@ library;
 
 export 'src/analytics/analytics_service.dart';
 export 'src/analytics/noop_analytics_service.dart';
+export 'src/catalog/catalog_service.dart';
+export 'src/catalog/catalog_service_impl.dart';
 export 'src/client/clients_service.dart';
 export 'src/client/clients_service_impl.dart';
 export 'src/push/noop_push_notifications_service.dart';

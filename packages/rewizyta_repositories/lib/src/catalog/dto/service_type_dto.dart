@@ -8,13 +8,13 @@ part 'service_type_dto.g.dart';
 @JsonSerializable()
 final class const ServiceTypeDto({
   required final String id,
-  required final String name,
   required final int cycleMonths,
   required final int sortOrder,
   required final bool isArchived,
   required final String createdAt,
   required final String updatedAt,
   final String? userId,
+  final String? name,
   final String? tradeId,
   final int? defaultPriceGrosze,
   final String? templateKey,
@@ -29,7 +29,7 @@ final class const ServiceTypeDto({
     name: type.name,
     cycleMonths: type.cycleMonths,
     defaultPriceGrosze: type.defaultPriceGrosze,
-    templateKey: type.templateKey,
+    templateKey: type.template == null ? null : enumToSql(type.template!),
     sortOrder: type.sortOrder,
     isArchived: type.isArchived,
     createdAt: formatTimestamp(type.createdAt),
@@ -45,7 +45,9 @@ final class const ServiceTypeDto({
     name: name,
     cycleMonths: cycleMonths,
     defaultPriceGrosze: defaultPriceGrosze,
-    templateKey: templateKey,
+    template: templateKey == null
+        ? null
+        : const EnumConverter(ServiceTypeTemplate.values).fromSql(templateKey!),
     sortOrder: sortOrder,
     isArchived: isArchived,
     createdAt: parseTimestamp(createdAt),

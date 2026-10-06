@@ -8,9 +8,9 @@ abstract interface class TradesRepository() {
   /// Any trade by id, soft-deleted ones included.
   Future<Trade?> find(String id);
 
-  /// The trade copied from the default [templateKey], soft-deleted or not, so
-  /// "restore defaults" can bring it back instead of copying it twice.
-  Future<Trade?> findByTemplateKey(String templateKey);
+  /// The trade copied from [template], soft-deleted or not, so "restore
+  /// defaults" can bring it back instead of copying it twice.
+  Future<Trade?> findByTemplate(TradeTemplate template);
 
   /// Upserts the row and queues it for the push in one transaction.
   Future<void> upsert(Trade trade);

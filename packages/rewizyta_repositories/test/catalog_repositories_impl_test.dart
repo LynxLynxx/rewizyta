@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:rewizyta_models/rewizyta_models.dart';
 import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:test/test.dart';
 
@@ -19,36 +20,52 @@ void main() {
 
   group('TradesRepositoryImpl', () {
     test('upsert round-trips and queues the row', () async {
-      await trades.upsert(trade(templateKey: 'chimney'));
+      await trades.upsert(trade(template: TradeTemplate.chimney));
 
-      expect(await trades.find('t1'), trade(templateKey: 'chimney'));
+      expect(await trades.find('t1'), trade(template: TradeTemplate.chimney));
       final entry = await db.select(db.outbox).getSingle();
       expect(entry.entity, 'trades');
       expect(entry.payload, contains('"template_key":"chimney"'));
     });
 
-    test('watchAll hides deleted trades and follows sort order, then name', () async {
-      await trades.upsert(trade(id: 'b', name: 'Serwisant gazowy', sortOrder: 1));
-      await trades.upsert(trade(id: 'a', sortOrder: 1));
+    test('watchAll hides deleted trades and follows sort order, then creation', () async {
+      // A default has no name, so a name sort would put it first.
+      final later = t0.add(const Duration(hours: 1));
+      await trades.upsert(
+        trade(id: 'a', name: null, template: TradeTemplate.gas, sortOrder: 1, createdAt: later),
+      );
+      await trades.upsert(trade(id: 'b', name: 'Agregaty', sortOrder: 1));
       await trades.upsert(trade(id: 'z', name: 'Zduński'));
       await trades.upsert(trade(id: 'x', name: 'Usunięty', deletedAt: t0));
 
       final list = await trades.watchAll().first;
-      expect(list.map((t) => t.id), ['z', 'a', 'b']);
+      expect(list.map((t) => t.id), ['z', 'b', 'a']);
     });
 
-    test('findByTemplateKey finds a soft-deleted default too', () async {
-      await trades.upsert(trade(templateKey: 'chimney', deletedAt: t0));
+    test('findByTemplate finds a soft-deleted default too', () async {
+      await trades.upsert(trade(template: TradeTemplate.chimney, deletedAt: t0));
 
-      expect((await trades.findByTemplateKey('chimney'))?.id, 't1');
-      expect(await trades.findByTemplateKey('gas'), isNull);
+      expect((await trades.findByTemplate(TradeTemplate.chimney))?.id, 't1');
+      expect(await trades.findByTemplate(TradeTemplate.gas), isNull);
     });
 
     test('a default can be copied only once', () async {
-      await trades.upsert(trade(templateKey: 'chimney'));
+      await trades.upsert(trade(template: TradeTemplate.chimney));
 
       expect(
-        () => trades.upsert(trade(id: 't2', templateKey: 'chimney')),
+        () => trades.upsert(trade(id: 't2', template: TradeTemplate.chimney)),
+        throwsA(isA<SqliteException>()),
+      );
+    });
+
+    test('a trade needs a name or a template', () async {
+      await trades.upsert(trade(name: null, template: TradeTemplate.gas));
+
+      expect((await trades.find('t1'))?.name, isNull);
+      expect(
+        () => db
+            .into(db.trades)
+            .insert(TradesCompanion.insert(id: 't2', createdAt: t0, updatedAt: t0)),
         throwsA(isA<SqliteException>()),
       );
     });
@@ -66,7 +83,7 @@ void main() {
       await trades.upsert(trade());
       final type = serviceType(
         tradeId: 't1',
-        templateKey: 'chimney.inspection',
+        template: ServiceTypeTemplate.chimneyInspection,
         defaultPriceGrosze: 25000,
       );
 
@@ -88,10 +105,26 @@ void main() {
       expect((await serviceTypes.watchAll().first).map((s) => s.id), ['s1']);
     });
 
-    test('findByTemplateKey finds a soft-deleted default too', () async {
-      await serviceTypes.upsert(serviceType(templateKey: 'gas.installation_check', deletedAt: t0));
+    test('findByTemplate finds a soft-deleted default too', () async {
+      await serviceTypes.upsert(
+        serviceType(template: ServiceTypeTemplate.gasInstallationCheck, deletedAt: t0),
+      );
 
-      expect((await serviceTypes.findByTemplateKey('gas.installation_check'))?.id, 's1');
+      expect(
+        (await serviceTypes.findByTemplate(ServiceTypeTemplate.gasInstallationCheck))?.id,
+        's1',
+      );
+    });
+
+    test('a type needs a name or a template', () {
+      expect(
+        () => db
+            .into(db.serviceTypes)
+            .insert(
+              ServiceTypesCompanion.insert(id: 's1', cycleMonths: 12, createdAt: t0, updatedAt: t0),
+            ),
+        throwsA(isA<SqliteException>()),
+      );
     });
 
     test('a cycle must be positive', () {
