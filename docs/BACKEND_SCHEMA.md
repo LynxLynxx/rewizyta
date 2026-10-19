@@ -436,6 +436,13 @@ hit and returns whether the caller is still within `max`; it deletes windows
 older than a day as it goes, so the table never holds more than a day of
 pseudonymous keys. Service role only, like `waitlist_signups`.
 
+### `keepalive` – the last keepalive ping
+
+One row (`id boolean primary key check (id)`) with `pinged_at timestamptz`.
+`keepalive()` updates it, so the scheduled ping is a real table write that the
+free tier counts as activity, and `pinged_at` shows when the last ping landed.
+RLS forced, no policy, no grants to the API roles.
+
 ## Row Level Security
 
 Every table created in `supabase/migrations/` ends with:
@@ -452,8 +459,9 @@ create policy "<t>: own rows" on public.<t>
 `profiles` uses `user_id` as well. `waitlist_signups` and `rate_limits` get RLS with no policy.
 A portal user (client portal, after MVP) matches no policy anywhere and reads
 only through the `portal_*` functions described under `client_links`.
-`public.keepalive()` is the one function granted to `anon`; it returns `'ok'`
-and exists only so the scheduled workflow can keep a free-tier project awake.
+`public.keepalive()` is the one function granted to `anon`; it stamps the
+`keepalive` row (security definer, its only write) and returns `'ok'`. It
+exists only so the scheduled workflow can keep a free-tier project awake.
 The API roles never get `bypassrls`, table ownership or superuser. A
 `tool/check_rls.sql` (to be written in M5) fails if any table in `public` lacks
 forced RLS or has a `using (true)` policy.

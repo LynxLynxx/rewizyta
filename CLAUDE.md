@@ -224,13 +224,14 @@ format → analyze matters; `melos run check` does it right.
   is documented in `docs/TRD.md`.
 - Everything must run locally with `supabase start`; a self-hoster must never
   need a vendor account beyond Supabase, an SMS gateway and an SMTP provider.
-- The Supabase project lives in an EU region (Frankfurt). Dev/staging on the
-  free tier is kept awake by `.github/workflows/supabase-keepalive.yml`;
-  production is Pro or self-hosted, never free (a paused project stops reminders).
+- The Supabase project lives in an EU region (Frankfurt). Staging and, for now,
+  production are on the free tier, kept awake by
+  `.github/workflows/supabase-keepalive.yml`; production moves to Pro or
+  self-hosted before reminders ship (a paused project stops reminders).
 - Three targets, one set of migrations: **local** (`supabase start` from the
   repo root), **staging** (hosted, free tier, deployed by
   `.github/workflows/deploy-supabase.yml` on every merge to `main` that touches
-  `supabase/`) and **production** (hosted Pro or self-hosted, deployed by the same
+  `supabase/`) and **production** (hosted, free tier until reminders ship, deployed by the same
   workflow on a `v*` tag after approval on the `production` GitHub environment).
   The access token, project ref and database password live as secrets on the
   GitHub environments; function secrets are set per project by hand. The app
