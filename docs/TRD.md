@@ -463,7 +463,7 @@ why the mailing list lives in our own table.
 | E-mail (auth mail + waitlist) | `functions/_shared/email/EmailGateway`, `EMAIL_PROVIDER=brevo\|scaleway\|console`; Supabase Auth custom SMTP settings | **Brevo** free plan, 300 mails/day, EU (Paris), SMTP + API, covers auth mail and the waitlist for the first thousands of sign-ups | **Scaleway Transactional Email** (Paris): 300/month included, then about €0.25 per 1,000; or Brevo paid | one class (~60 lines) + two env vars; auth SMTP host/user/password in the Supabase dashboard |
 | SMS (reminders) | `functions/_shared/sms/SmsGateway`, `SMS_PROVIDER=smsapi\|serwersms\|console` | **SMSAPI** (Poland) pay-as-you-go, no subscription; "Eco" messages without a sender name for testing, "Pro" with the registered `KOMINIARZ` sender. New accounts get a few test messages free; there is no real free tier for SMS anywhere (rates in `docs/private/BUSINESS.md`) | **SerwerSMS** or **SMSPLANET** volume tiers – prices are close, so the deciding factor is the sender-name paperwork already done; migrate only if the difference pays for re-registering the sender | one class + `SMS_PROVIDER`; the delivery webhook is per vendor, so a second `sms-webhook-<vendor>` route |
 | Push | app: `PushNotificationsService`; server: `functions/_shared/push/PushSender`, `PUSH_PROVIDER=fcm\|ntfy\|console` | **FCM**: free, unlimited, the only reliable path on stock Android | stays free; self-hosters can run **ntfy** (free, EU-hostable) via UnifiedPush | one class each side |
-| Backend | – | Supabase free (EU) for dev, kept awake by the keepalive job | Pro $25/month, or self-hosted on a Hetzner VPS (~€5/month) | none: same migrations and functions |
+| Backend | – | Supabase free (EU) for staging and, until there are paying users, production; kept awake by the keepalive job | Pro $25/month, or self-hosted on a Hetzner VPS (~€5/month) | none: same migrations and functions |
 | Crash reporting | `ReportingService` | Sentry free tier (EU data residency), or GlitchTip self-hosted | Sentry Team, or keep GlitchTip | DSN only; same protocol |
 | Analytics | `AnalyticsService` | PostHog EU free tier (1M events/month) | PostHog usage-based | key only |
 
@@ -500,8 +500,8 @@ Three tiers, three answers:
 | Environment | Plan | Pause handling |
 |---|---|---|
 | local | `supabase start` | n/a |
-| dev / staging | free, EU region | `.github/workflows/supabase-keepalive.yml` calls the `keepalive()` RPC (a no-op SQL function exposed to `anon`) twice a week. That counts as API traffic. |
-| production | Pro, EU region – or self-hosted Supabase on Hetzner (DE/FI) | never pauses; Pro adds daily backups and PITR. A paused production project would silently stop every reminder, so the free tier is not an option there. |
+| dev / staging | free, EU region | `.github/workflows/supabase-keepalive.yml` calls the `keepalive()` RPC every second day; it updates the one row in `public.keepalive`. A no-op RPC twice a week did not stop staging from being paused in October 2026, so the ping now writes a real table and runs more often. |
+| production | free, EU region, while there are few users (2026-10-19); Pro or self-hosted Supabase on Hetzner (DE/FI) before reminders go live | the same keepalive job, from the unprotected `production-keepalive` environment. Free has no backups, so dump the waitlist yourself. A paused production project would silently stop every reminder, so move to Pro before reminders ship. |
 
 Self-hosting is the fully-EU route: the Supabase Docker stack on a Hetzner
 VPS (Falkenstein or Helsinki) with the same migrations and functions; the
@@ -517,7 +517,7 @@ hosted database.
 |---|---|---|---|
 | local | `supabase start` on the developer's machine | `supabase db reset` | `--dart-define-from-file=.env` |
 | staging | hosted, free tier, EU region (kept awake by the keepalive job) | `deploy-supabase.yml` on every merge to `main` that touches `supabase/` | `.env.staging` |
-| production | hosted Pro, EU region, or self-hosted on Hetzner | `deploy-supabase.yml` on a `v*` tag, after approval on the `production` GitHub environment | `.env.production` |
+| production | hosted, EU region; free tier for now (kept awake by the keepalive job), Pro or self-hosted on Hetzner before reminders ship | `deploy-supabase.yml` on a `v*` tag, after approval on the `production` GitHub environment | `.env.production` |
 
 **Trunk-based.** `main` is the only long-lived branch and is protected by a
 ruleset: pull request required, the CI checks required, squash-only merges,
@@ -537,8 +537,10 @@ its target, never at repository level, so staging and production can never be
 mixed up. The deploy workflow reads `SUPABASE_ACCESS_TOKEN`,
 `SUPABASE_PROJECT_REF` and `SUPABASE_DB_PASSWORD` (the ref is kept as a secret
 so the hosted project never appears in the public repo); the keepalive job reads
-`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `staging` only, since Pro
-never pauses. Function secrets (`SMS_PROVIDER`, gateway tokens, `BILLING_ENABLED`) are
+`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `staging` and from a separate,
+unprotected `production-keepalive` environment (a scheduled run from `main`
+can't pass the `production` reviewer and tag rules; both values ship in the
+site bundle anyway). Function secrets (`SMS_PROVIDER`, gateway tokens, `BILLING_ENABLED`) are
 set once per project with `supabase secrets set --project-ref`. The app's keys
 are in git-ignored `.env*` files and end up inside the binary, so anything that
 must stay private belongs behind an edge function, never in `.env`. There is no
@@ -755,6 +757,7 @@ that the portal shows a card on the technician's instruction.
 | 2026-09-28 | Adapters for reporting, analytics and push with no-op defaults | Self-hosters build without accounts; vendors are swappable; tests never touch an SDK. |
 | 2026-09-28 | EU first: Supabase Frankfurt, Sentry EU / GlitchTip, PostHog EU, Scaleway mail, Bunny/Hetzner hosting | Compliance and the author's preference; FCM is the one non-EU exception, behind an adapter. |
 | 2026-09-28 | Free tier only for dev/staging, kept awake by a scheduled keepalive; production on Pro or self-hosted | A paused project stops the reminder jobs. |
+| 2026-10-19 | Production on the free tier too, kept awake by the same keepalive, until reminders ship | Only the waitlist runs on it yet; Pro isn't worth $25/month for that. |
 | 2026-09-28 | Own mailing list with double opt-in and one-click unsubscribe; promo code per sign-up | GDPR consent trail without a marketing vendor owning the list. |
 | 2026-09-28 | Trades and service types per user, seeded from a Dart default catalogue | Works offline on first run, fully editable per user, self-hoster edits one file. |
 | 2026-09-28 | Day planning from user settings (slots, hours, speed, home), haversine distances, fixed vs flexible stops | Configurable without a routing API; still nearest-neighbour on the phone. |

@@ -49,7 +49,8 @@ melos run db:test           # pgTAP tests against the running local database
 The workflow runs `supabase link`, `supabase db push` and `supabase functions
 deploy`. It needs `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` and
 `SUPABASE_DB_PASSWORD` as secrets on the GitHub environment; the keepalive job
-reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `staging`. Nothing is
+reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `staging` and
+`production-keepalive`. Nothing is
 stored at repository level. Function secrets are set once per project by hand; `functions/.env.example`
 lists and explains every name:
 

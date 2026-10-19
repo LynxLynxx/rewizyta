@@ -1,20 +1,25 @@
-# Keeps a free-tier Supabase project from being paused for inactivity.
+# Keeps the free-tier Supabase projects (staging and, until it moves to Pro,
+# production) from being paused for inactivity.
 #
 # Free projects are paused after 7 days without API traffic. This job calls the
-# `keepalive()` RPC (supabase/migrations/..._keepalive.sql) through PostgREST
-# twice a week, which counts as activity. It is meant for the dev/staging
-# project only: production must be on the Pro plan (never pauses, daily
-# backups) or self-hosted, because a paused project also stops the reminder
-# jobs. See docs/TRD.md, "Hosting and the free-tier pause".
+# `keepalive()` RPC (supabase/migrations/..._keepalive_heartbeat.sql) through
+# PostgREST every second day; it updates the one row in `public.keepalive`, so
+# the project sees a real table write, and `pinged_at` shows the last ping.
+# (A no-op RPC twice a week did not stop staging from being paused.) Drop the
+# production leg once production is on Pro or self-hosted. See docs/TRD.md,
+# "Hosting and the free-tier pause".
 #
-# Secrets, on the "staging" GitHub environment (never repo-level, so a future
-# production project keeps its own values apart): SUPABASE_URL
-# (https://<ref>.supabase.co) and SUPABASE_PUBLISHABLE_KEY.
+# Secrets, per GitHub environment (never repo-level): SUPABASE_URL
+# (https://<ref>.supabase.co) and SUPABASE_PUBLISHABLE_KEY, on "staging" and on
+# "production-keepalive". The latter is a separate, unprotected environment:
+# "production" needs a reviewer and accepts only v* tags, which a scheduled run
+# from main can't satisfy, and both values are public anyway (they ship in the
+# site bundle).
 name: Supabase keepalive
 
 on:
   schedule:
-    - cron: "17 6 * * 1,4" # Monday and Thursday, 06:17 UTC
+    - cron: "17 6 */2 * *" # every second day, 06:17 UTC
   workflow_dispatch:
 
 permissions: {}
@@ -23,7 +28,11 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    environment: staging
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [staging, production-keepalive]
+    environment: ${{ matrix.environment }}
     steps:
       - name: Call keepalive()
         env:
