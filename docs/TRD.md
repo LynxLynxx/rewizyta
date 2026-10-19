@@ -64,6 +64,9 @@
  │   after each write, workmanager)  │              │                                             │
  └───────────────────────────────────┘              │ Auth (email, SMTP via EU provider)          │
                                                     │                                             │
+                                                    │ pg_cron ─► SQL                              │
+                                                    │   02:30Z waitlist_purge()    (retention)    │
+                                                    │                                             │
                                                     │ pg_cron ─► Edge functions                   │
                                                     │   08:00  send-due-reminders  (materialise)  │
                                                     │   */5min send-pending-sms    (send)         │

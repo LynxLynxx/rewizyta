@@ -23,6 +23,7 @@
 - [Remote-only tables](#remote-only-tables)
   - [`purchases` – store receipts](#purchases--store-receipts)
   - [`waitlist_signups` – the mailing list and the promo codes](#waitlist_signups--the-mailing-list-and-the-promo-codes)
+  - [`waitlist_opt_outs` – purged opt-outs](#waitlist_opt_outs--purged-opt-outs)
   - [`rate_limits` – counters for public endpoints](#rate_limits--counters-for-public-endpoints)
 - [Row Level Security](#row-level-security)
   - [`tombstones` – ids that were purged](#tombstones--ids-that-were-purged)
@@ -86,7 +87,7 @@ it rather than storing it.
      └── * devices  (push tokens)
 
  local only:  outbox, sync_state, app_settings
- remote only: waitlist_signups, rate_limits
+ remote only: waitlist_signups, waitlist_opt_outs, rate_limits
 ```
 
 ## Synced tables
@@ -400,7 +401,7 @@ RLS: the user can `select` their own rows; only the service role writes.
 | `signup_mailed_at` | `timestamptz` | When the last confirmation or code-reminder mail went out. A repeat sign-up within 15 minutes sends nothing. |
 | `confirmed_at` | `timestamptz` | Double opt-in. Null = never mail again except the confirmation itself. |
 | `unsubscribe_token` | `text` not null unique | Lives for the row's lifetime; every mail links to it. |
-| `unsubscribed_at` | `timestamptz` | Set by `waitlist-unsubscribe`; the row is kept as the opt-out record. Cleared only by confirming a new link after re-subscribing. |
+| `unsubscribed_at` | `timestamptz` | Set by `waitlist-unsubscribe`; the row is kept as the opt-out record for 30 days, then `waitlist_purge()` replaces it with a hash in `waitlist_opt_outs`. Cleared only by confirming a new link after re-subscribing. |
 | `last_mailed_at` | `timestamptz` | Set by the launch/newsletter function. |
 | `promo_code` | `text` not null unique | Human-typeable, e.g. `REWI-7K3M-9QZT`: Crockford base32 without the vowels A and E, 30^8 codes. Generated on sign-up and shown on the page, only to a new address. |
 | `promo_reward` | `text` default `'trial_90d'` | `sms_100`, `trial_90d`; the campaign decides. The waitlist page promises three free months, so the default is `trial_90d` and earlier rows were backfilled (`*_waitlist_promo_reward.sql`). A campaign with another reward changes the default in a new migration. |
@@ -415,13 +416,26 @@ executable by `service_role` alone:
 
 | Function | Does |
 |---|---|
-| `waitlist_signup(email, trade, source, answers, phone, consent)` | Inserts or finds the address and says which mail to send: `confirm` (new, pending or re-subscribing), `code` (already confirmed) or none (throttled). Anyone can type any address, so a repeat changes none of the stored data (answers, phone, consent, trade, source); it only issues a confirmation link when needed. A re-subscription stays opted out until that link is used. The phone is stored only with consent. The last three arguments default to null/false, so the three-argument call still works. |
-| `waitlist_confirm(token)` | Sets `confirmed_at`, clears the token and any opt-out (a token on an unsubscribed row came from a re-subscription); false for a used or unknown token. |
+| `waitlist_signup(email, trade, source, answers, phone, consent)` | Inserts or finds the address and says which mail to send: `confirm` (new, pending or re-subscribing), `code` (already confirmed) or none (throttled). Anyone can type any address, so a repeat changes none of the stored data (answers, phone, consent, trade, source); it only issues a confirmation link when needed. A re-subscription stays opted out until that link is used; an address in `waitlist_opt_outs` comes back as a new row that is already unsubscribed (`status = resubscribed`). The phone is stored only with consent. The last three arguments default to null/false, so the three-argument call still works. |
+| `waitlist_confirm(token)` | Sets `confirmed_at`, clears the token and any opt-out (a token on an unsubscribed row came from a re-subscription), including the address's `waitlist_opt_outs` hash; false for a used or unknown token. |
 | `waitlist_unsubscribe(token)` | Sets `unsubscribed_at` (idempotent), clears any pending confirm token and the phone number (its consent is withdrawn). |
 
 Tokens are 256-bit random values looked up through their unique index, so
 there is nothing to learn from timing. The reward lands on `profiles`
 (`sms_balance` or `paid_until`) inside the same transaction as `redeemed_at`.
+
+### `waitlist_opt_outs` – purged opt-outs
+
+| Column | Type | Notes |
+|---|---|---|
+| `email_hash` | `bytea` PK | `waitlist_email_hash(email)`: HMAC-SHA-256 of the stored address under the key in the one-row `waitlist_opt_out_key` table, drawn once per project by the migration. Never the address. |
+| `created_at` | `timestamptz` default `now()` | When the row was purged. |
+
+`waitlist_purge()` runs daily at 02:30 UTC (`pg_cron` job `waitlist-purge`): it
+deletes every `waitlist_signups` row unsubscribed 30 or more days ago, writes
+its hash here, and deletes `rate_limits` windows older than a day. Executable by
+nobody but the job's owner. Both tables are service role only, like
+`waitlist_signups`.
 
 ### `rate_limits` – counters for public endpoints
 
@@ -433,7 +447,8 @@ there is nothing to learn from timing. The reward lands on `profiles`
 
 Primary key `(key, window_start)`. `rate_limit_hit(key, max, window)` counts a
 hit and returns whether the caller is still within `max`; it deletes windows
-older than a day as it goes, so the table never holds more than a day of
+older than a day as it goes, and the daily `waitlist_purge()` catches the
+windows nobody hit since, so the table never holds more than a day of
 pseudonymous keys. Service role only, like `waitlist_signups`.
 
 ### `keepalive` – the last keepalive ping
@@ -531,10 +546,11 @@ self-hoster who prefers E2EE can run the reminder job on the phone instead
   message body was personal data).
 - `waitlist_signups` rows are deleted 12 months after launch or 30 days after
   unsubscribing, whichever comes first; the unsubscribed e-mail is kept as a
-  salted hash only, to honour the opt-out. `/prywatnosc/` and `/wypisz/` state
-  this to the reader.
+  keyed hash only (`waitlist_opt_outs`), to honour the opt-out. `/prywatnosc/`
+  and `/wypisz/` state this to the reader. The 30-day rule is the daily
+  `waitlist_purge()`; the 12-month rule is not built yet (it needs the launch date).
 - `rate_limits` rows (keyed hashes of IP addresses) live for one day; every
-  call to `rate_limit_hit` deletes the older ones.
+  call to `rate_limit_hit` and the daily `waitlist_purge()` delete the older ones.
 - `client_links`: an unclaimed invitation is deleted when it expires; a
   claimed link goes with the card (the 30-day purge) or with the portal
   account (its deletion removes the `auth.users` row and the links, nothing

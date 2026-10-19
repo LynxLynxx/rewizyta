@@ -107,7 +107,7 @@ interest before the app is built.
 - [x] `/potwierdz/` and `/wypisz/` pages (`noindex`), one `@client` button each that posts the `#t=` token to `waitlist-confirm` / `waitlist-unsubscribe`; `/prywatnosc/` notice (GDPR art. 13) (2026-09-30).
 - [x] Controller and contact on the site: USŁUGI IT Ryszard Schossler, NIP and `r.schossler@rsapps.org` in `apps/website/lib/constants/site.dart` (2026-09-30).
 - [x] Before the site goes live: a legal read of `/prywatnosc/` (Supabase's transfer wording in particular).
-- [ ] Waitlist retention job before the site goes live, because `/wypisz/` and `/prywatnosc/` promise it: delete a row 30 days after `unsubscribed_at` and everything 12 months after launch, keeping only a salted hash of the address that `waitlist_signup` checks, so the opt-out holds (see `BACKEND_SCHEMA.md`, "Retention and purge"). Moved from V1 on 2026-09-30.
+- [x] Waitlist retention job, because `/wypisz/` and `/prywatnosc/` promise it: `waitlist_purge()` daily from `pg_cron` deletes a row 30 days after `unsubscribed_at`, keeping only an HMAC of the address in `waitlist_opt_outs`, which `waitlist_signup` checks so the opt-out holds; it also drops day-old `rate_limits` windows (`*_waitlist_retention.sql`, pgTAP) (2026-10-19).
 - [x] `promo_reward` defaults to `trial_90d`, earlier rows backfilled (`*_waitlist_promo_reward.sql`, pgTAP): the page promises "3 miesiące za darmo" (2026-09-30).
 - [x] Both mails name the reward ("3 miesiące za darmo"), as the page does (2026-09-30).
 - [x] Brevo sending domain `rewizyta.rsapps.org` authenticated (Brevo code, DKIM, DMARC `p=none`, branded link subdomain `em.rewizyta`; all DNS-only in Cloudflare) (2026-09-30).
@@ -123,6 +123,7 @@ Not needed to go public, only for the app launch:
 
 - [ ] Supabase Auth custom SMTP pointed at the same Brevo account.
 - [ ] Launch-mail function with batching and `last_mailed_at`; `scaleway` adapter when volume outgrows Brevo's free plan.
+- [ ] Once the launch date is set: `waitlist_purge()` deletes every remaining row 12 months after it, hashing the unsubscribed ones, as `/prywatnosc/` promises.
 - [ ] `redeem-promo` function and the onboarding step that calls it.
 
 ## M9 – Product website
