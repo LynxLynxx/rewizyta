@@ -66,7 +66,7 @@ serve the phone's own queries; the indexes listed below are the server's.
 
 **A new enumeration value is an app change first.** The phone decodes every
 pulled row before storing it, and a value it does not know fails the decode
-(`EnumConverter` throws `ArgumentError`), so it never reaches a local table or
+(`EnumConverter` throws `UnknownEnumValueException`), so it never reaches a local table or
 a screen. Under rule 12 that makes adding a value expand-then-contract: ship
 the build that knows it, and let the server or the other phones write it only
 once older builds are gone. Until then the pull skips such a row and reports
@@ -600,7 +600,9 @@ Recompute the two cached columns on `equipment` whenever:
 - `service_types.cycle_months` changes (recompute all equipment of that type;
   each user's own row, so editing a default never touches another user).
 
-The app does this inside the writing transaction (use case). The server does
+The app does this inside the writing transaction: `VisitsService`,
+`EquipmentService` and `CatalogService.setCycle` in `rewizyta_services`, which
+save an equipment row only when a cache actually changed. The server does
 not recompute; it trusts the synced caches, which is fine because only the
 phone writes visits. If server-side writes ever appear (multi-technician), move
 the rule into a Postgres trigger and drop it from the app.

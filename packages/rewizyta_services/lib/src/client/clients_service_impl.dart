@@ -1,6 +1,7 @@
 import 'package:rewizyta_models/rewizyta_models.dart';
 import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:rewizyta_services/src/client/clients_service.dart';
+import 'package:rewizyta_services/src/common/clean_text.dart';
 import 'package:rewizyta_shared/rewizyta_shared.dart';
 import 'package:uuid/uuid.dart';
 
@@ -40,21 +41,21 @@ final class ClientsServiceImpl(
     if (trimmedName.isEmpty) {
       throw const ClientValidationException(ClientValidationError.nameEmpty);
     }
-    final cleanPhone = _clean(phone);
+    final cleanPhone = cleanText(phone);
     if (cleanPhone != null && !_e164.hasMatch(cleanPhone)) {
       throw const ClientValidationException(ClientValidationError.phoneInvalid);
     }
 
     final now = _now();
     final existing = id == null ? null : await getClient(id);
-    final cleanAddressLine = _clean(addressLine);
-    final cleanTown = _clean(town);
-    final cleanPostalCode = _clean(postalCode);
+    final cleanAddressLine = cleanText(addressLine);
+    final cleanTown = cleanText(town);
+    final cleanPostalCode = cleanText(postalCode);
     final keepsCoordinates =
         existing != null &&
-        _clean(existing.addressLine) == cleanAddressLine &&
-        _clean(existing.town) == cleanTown &&
-        _clean(existing.postalCode) == cleanPostalCode;
+        cleanText(existing.addressLine) == cleanAddressLine &&
+        cleanText(existing.town) == cleanTown &&
+        cleanText(existing.postalCode) == cleanPostalCode;
     final client = Client(
       id: existing?.id ?? _uuid.v4(),
       name: trimmedName,
@@ -64,7 +65,7 @@ final class ClientsServiceImpl(
       postalCode: cleanPostalCode,
       lat: keepsCoordinates ? existing.lat : null,
       lng: keepsCoordinates ? existing.lng : null,
-      note: _clean(note),
+      note: cleanText(note),
       contactId: existing?.contactId,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
@@ -78,12 +79,5 @@ final class ClientsServiceImpl(
     final client = await getClient(id);
     final now = _now();
     await _repository.upsert(client.copyWith(updatedAt: now, deletedAt: Optional(now)));
-  }
-
-  /// Trimmed, or null when nothing is left, so an empty form field and a
-  /// missing value are stored the same way.
-  static String? _clean(String? value) {
-    final trimmed = value?.trim();
-    return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 }

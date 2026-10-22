@@ -9,4 +9,10 @@ abstract interface class CatalogService() {
   /// template the user already has is left as it is, a soft-deleted one is
   /// restored with the user's values, and only a missing one is copied.
   Future<void> copyDefaults(Iterable<TradeTemplate> trades);
+
+  /// Sets the cycle of a service type and recomputes the due dates of all its
+  /// equipment, in one transaction. Throws
+  /// [ServiceTypeNotFoundException] for an unknown id and
+  /// [ServiceTypeValidationException] when [cycleMonths] is below 1.
+  Future<void> setCycle(String serviceTypeId, int cycleMonths);
 }

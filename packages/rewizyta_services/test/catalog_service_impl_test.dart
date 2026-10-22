@@ -1,29 +1,18 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:rewizyta_models/rewizyta_models.dart';
-import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:rewizyta_services/rewizyta_services.dart';
 import 'package:rewizyta_shared/rewizyta_shared.dart';
 import 'package:test/test.dart';
 
-class MockTradesRepository() extends Mock implements TradesRepository;
-
-class MockServiceTypesRepository() extends Mock implements ServiceTypesRepository;
-
-final class FakeTransactionRunner() implements TransactionRunner {
-  int runs = 0;
-
-  @override
-  Future<T> run<T>(Future<T> Function() action) {
-    runs++;
-    return action();
-  }
-}
+import 'helpers/mocks.dart';
 
 void main() {
   final earlier = DateTime.utc(2026, 9, 2);
   final now = DateTime.utc(2026, 10, 6, 12);
   late MockTradesRepository trades;
   late MockServiceTypesRepository serviceTypes;
+  late MockEquipmentRepository equipment;
+  late MockVisitsRepository visits;
   late FakeTransactionRunner transaction;
   late CatalogServiceImpl service;
 
@@ -36,6 +25,9 @@ void main() {
     registerFallbackValue(
       ServiceType(id: '', name: '', cycleMonths: 1, createdAt: now, updatedAt: now),
     );
+    registerFallbackValue(
+      Equipment(id: '', clientId: '', serviceTypeId: '', createdAt: now, updatedAt: now),
+    );
     registerFallbackValue(TradeTemplate.chimney);
     registerFallbackValue(ServiceTypeTemplate.chimneyInspection);
   });
@@ -43,13 +35,23 @@ void main() {
   setUp(() {
     trades = MockTradesRepository();
     serviceTypes = MockServiceTypesRepository();
+    equipment = MockEquipmentRepository();
+    visits = MockVisitsRepository();
     transaction = FakeTransactionRunner();
     when(() => trades.find(any())).thenAnswer((_) async => null);
     when(() => trades.findByTemplate(any())).thenAnswer((_) async => null);
     when(() => serviceTypes.findByTemplate(any())).thenAnswer((_) async => null);
     when(() => trades.upsert(any())).thenAnswer((_) async {});
     when(() => serviceTypes.upsert(any())).thenAnswer((_) async {});
-    service = CatalogServiceImpl(trades, serviceTypes, transaction, now: () => now);
+    when(() => equipment.upsert(any())).thenAnswer((_) async {});
+    service = CatalogServiceImpl(
+      trades,
+      serviceTypes,
+      equipment,
+      visits,
+      transaction,
+      now: () => now,
+    );
   });
 
   group('copyDefaults', () {
@@ -217,6 +219,75 @@ void main() {
         ServiceTypeTemplate.chimneyInspection,
         ServiceTypeTemplate.chimneySweepSolid,
       ]);
+    });
+  });
+
+  group('setCycle', () {
+    final type = ServiceType(
+      id: 'st',
+      name: 'Przegląd',
+      cycleMonths: 12,
+      createdAt: earlier,
+      updatedAt: earlier,
+    );
+    Equipment item(String id, {DateTime? lastVisitAt, DateTime? nextDueAt}) => Equipment(
+      id: id,
+      clientId: 'c',
+      serviceTypeId: 'st',
+      lastVisitAt: lastVisitAt,
+      nextDueAt: nextDueAt,
+      createdAt: earlier,
+      updatedAt: earlier,
+    );
+
+    setUp(() => when(() => serviceTypes.find('st')).thenAnswer((_) async => type));
+
+    test('saves the cycle and moves the due dates of its equipment in one transaction', () async {
+      final visited = item(
+        'visited',
+        lastVisitAt: DateTime.utc(2026, 1, 31),
+        nextDueAt: DateTime.utc(2027, 1, 31),
+      );
+      final never = item('never');
+      when(() => equipment.findByServiceType('st')).thenAnswer((_) async => [visited, never]);
+      when(() => visits.lastDoneAt('visited')).thenAnswer((_) async => DateTime.utc(2026, 1, 31));
+      when(() => visits.lastDoneAt('never')).thenAnswer((_) async => null);
+
+      await service.setCycle('st', 1);
+
+      expect(transaction.runs, 1);
+      expect(upsertedTypes().single, type.copyWith(cycleMonths: 1, updatedAt: now));
+      final saved = verify(() => equipment.upsert(captureAny())).captured.cast<Equipment>();
+      expect(saved.single.id, 'visited');
+      expect(saved.single.nextDueAt, DateTime.utc(2026, 2, 28));
+      expect(saved.single.updatedAt, now);
+    });
+
+    test('writes nothing when the cycle is unchanged', () async {
+      await service.setCycle('st', 12);
+
+      verifyNever(() => serviceTypes.upsert(any()));
+      verifyNever(() => equipment.findByServiceType(any()));
+    });
+
+    test('throws for an unknown service type', () async {
+      when(() => serviceTypes.find('x')).thenAnswer((_) async => null);
+
+      await expectLater(service.setCycle('x', 6), throwsA(isA<ServiceTypeNotFoundException>()));
+    });
+
+    test('rejects a cycle below one month', () {
+      expect(
+        () => service.setCycle('st', 0),
+        throwsA(
+          isA<ServiceTypeValidationException>().having(
+            (e) => e.error,
+            'error',
+            ServiceTypeValidationError.cycleBelowOne,
+          ),
+        ),
+      );
+      expect(transaction.runs, 0);
     });
   });
 }

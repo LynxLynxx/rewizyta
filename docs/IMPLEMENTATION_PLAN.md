@@ -38,15 +38,15 @@ Tick items as they land; add a short note when a decision changes.
 - [x] drift tables for every entity in `docs/BACKEND_SCHEMA.md` (`trades`, `service_types`, `equipment`, `visits`, `visit_items`, `appointments`, `reminders`, `devices`, `sync_state`, `app_settings`); `clients` brought up to the documented columns (`address_line`, `postal_code`, `lat`/`lng`, `contact_id`). Foreign keys enforced and deferred to commit, enums as snake_case text, calendar days as `YYYY-MM-DD` (2026-10-01). `profiles` waits for M5: its key is the auth user id. `client_links` and `clients.email` belong to the client portal.
 - [x] Equatable models + DTOs + repositories per entity, following the `Client` slice; `OutboxWriter.upsertSynced` writes the row and its outbox entry in one transaction, replacing a pending entry for the same row (2026-10-01).
 - [x] Default catalogue in `rewizyta_models` (`TradeTemplate` → `ServiceTypeTemplate` enums) and `CatalogService.copyDefaults` that copies the picked trades into the user's rows with `template_key` and no name (the UI localizes the enum through `localizedName(context.l10n)` until the user renames the row; `name` is nullable, a check requires a name or a template), for onboarding and "restore defaults" alike (restores soft-deleted templates, skips existing ones). No suggested prices: `default_price_grosze` stays null until the user sets one (2026-10-06). Still open: a second phone that seeds before its first pull creates other ids for the same `template_key` (code review FINDING-17); seed after the first pull or derive ids from the user id, decided in M5.
-- [ ] Due-date recompute in the services that touch visits, visit items, equipment and cycles (`nextDue` exists and is tested; `VisitsRepository.lastDoneAt` and `EquipmentRepository.findByServiceType` are the queries it needs). Services wrap multi-repository writes in `TransactionRunner.run` (added 2026-10-01; drift stays below the services, `melos run layering` checks it).
-- [ ] Repository tests on `NativeDatabase.memory()` (done for every repository, 2026-10-01), service tests with mocktail.
-- [ ] Register the new repositories and `TransactionRunner` in `dependencies.dart` with the services that use them.
+- [x] Due-date recompute in the services, inside one `TransactionRunner.run` with the writes that cause it: `VisitsService` (`saveVisit` ticks, unticks and restores items; `deleteVisit`), `EquipmentService.saveEquipment` (a new service type moves the dates), `CatalogService.setCycle` (all equipment of the type). They share an internal `DueDateUpdater` that reads `VisitsRepository.lastDoneAt`, applies `nextDue` and saves only equipment whose caches changed (2026-10-22).
+- [x] Repository tests on `NativeDatabase.memory()` (2026-10-01), service tests with mocktail (2026-10-22).
+- [x] `TransactionRunner`, the catalogue, equipment and visit repositories and their services registered in `dependencies.dart` (2026-10-22). Appointments, reminders, devices, settings and sync state wait for the services that use them.
 - [ ] Before the first release: snapshot drift schema v1 with `make-migrations` (see `BACKEND_SCHEMA.md`, "Migrations").
 
 ## M2 – Clients
 
 - [ ] List with search (name, phone, town), detail, add/edit form with inline validation, soft delete. Sort with Polish collation: SQLite's `ORDER BY name` puts Ł, Ś and Ż after Z.
-- [ ] Equipment on a client, each with a service type from the user's catalogue.
+- [ ] Equipment on a client, each with a service type from the user's catalogue. The form's "Ostatnia wizyta" is saved as a visit with that equipment ticked (`VisitsService.saveVisit`), never typed into `last_visit_at`, so the caches stay derived.
 - [ ] Import from phone contacts (`flutter_contacts`), paste a number.
 - [ ] Phone formatting (E.164 in, Polish display out – `formatPhone`), call and SMS via `url_launcher`.
 

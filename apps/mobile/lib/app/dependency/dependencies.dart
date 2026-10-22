@@ -64,7 +64,15 @@ final class Dependencies._() extends DependencyProvider {
 
   /// Tier 4 - repositories over the database. No caching, no orchestration.
   void _registerRepositories() {
+    registerLazySingleton<TransactionRunner>(() => TransactionRunnerImpl(get<AppDatabase>()));
     registerLazySingleton<ClientsRepository>(() => ClientsRepositoryImpl(get<AppDatabase>()));
+    registerLazySingleton<TradesRepository>(() => TradesRepositoryImpl(get<AppDatabase>()));
+    registerLazySingleton<ServiceTypesRepository>(
+      () => ServiceTypesRepositoryImpl(get<AppDatabase>()),
+    );
+    registerLazySingleton<EquipmentRepository>(() => EquipmentRepositoryImpl(get<AppDatabase>()));
+    registerLazySingleton<VisitsRepository>(() => VisitsRepositoryImpl(get<AppDatabase>()));
+    registerLazySingleton<VisitItemsRepository>(() => VisitItemsRepositoryImpl(get<AppDatabase>()));
   }
 
   /// Tier 5 - the outbox pusher and puller (SyncService's helpers).
@@ -83,6 +91,32 @@ final class Dependencies._() extends DependencyProvider {
   /// Tier 7 - domain services, the only tier cubits may inject.
   void _registerServices() {
     registerLazySingleton<ClientsService>(() => ClientsServiceImpl(get<ClientsRepository>()));
+    registerLazySingleton<CatalogService>(
+      () => CatalogServiceImpl(
+        get<TradesRepository>(),
+        get<ServiceTypesRepository>(),
+        get<EquipmentRepository>(),
+        get<VisitsRepository>(),
+        get<TransactionRunner>(),
+      ),
+    );
+    registerLazySingleton<EquipmentService>(
+      () => EquipmentServiceImpl(
+        get<EquipmentRepository>(),
+        get<ServiceTypesRepository>(),
+        get<VisitsRepository>(),
+        get<TransactionRunner>(),
+      ),
+    );
+    registerLazySingleton<VisitsService>(
+      () => VisitsServiceImpl(
+        get<VisitsRepository>(),
+        get<VisitItemsRepository>(),
+        get<EquipmentRepository>(),
+        get<ServiceTypesRepository>(),
+        get<TransactionRunner>(),
+      ),
+    );
   }
 
   /// Tier 8 - cubits. Per-page cubits are factories (the page's BlocProvider
