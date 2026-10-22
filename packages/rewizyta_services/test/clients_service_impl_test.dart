@@ -60,11 +60,29 @@ void main() {
       );
     });
 
-    test('rejects a phone that is not E.164', () {
-      expect(
-        () => service.saveClient(name: 'Jan', phone: '601 234 567'),
-        throwsA(isA<ClientValidationException>()),
-      );
+    test('stores a phone typed the Polish way as E.164', () async {
+      for (final typed in ['601 234 567', '601-234-567', '+48 601 234 567', '0048601234567']) {
+        final client = await service.saveClient(name: 'Jan', phone: typed);
+        expect(client.phone, '+48601234567', reason: typed);
+      }
+      final foreign = await service.saveClient(name: 'Hans', phone: '+49 151 1234 5678');
+      expect(foreign.phone, '+4915112345678');
+    });
+
+    test('rejects a phone that is not a number', () {
+      for (final typed in ['601 234', '601 234 5678', 'abc', '+0601234567']) {
+        expect(
+          () => service.saveClient(name: 'Jan', phone: typed),
+          throwsA(
+            isA<ClientValidationException>().having(
+              (e) => e.error,
+              'error',
+              ClientValidationError.phoneInvalid,
+            ),
+          ),
+          reason: typed,
+        );
+      }
     });
 
     group('updating', () {
@@ -173,11 +191,43 @@ void main() {
     });
   });
 
-  test('watchClients passes the repository stream through', () async {
-    final clients = [Client(id: 'c1', name: 'Jan', createdAt: now, updatedAt: now)];
-    when(() => repository.watchAll()).thenAnswer((_) => Stream.value(clients));
+  test('watchClients sorts the repository stream in Polish order', () async {
+    Client named(String name) => Client(id: name, name: name, createdAt: now, updatedAt: now);
+    when(() => repository.watchAll()).thenAnswer(
+      (_) => Stream.value([named('Żak'), named('Łoś'), named('Zych')]),
+    );
 
-    await expectLater(service.watchClients(), emits(clients));
+    final clients = await service.watchClients().first;
+
+    expect(clients.map((c) => c.name), ['Łoś', 'Zych', 'Żak']);
+  });
+
+  test('watchClient emits the client and an error while it is unknown', () async {
+    final jan = Client(id: 'c1', name: 'Jan', createdAt: now, updatedAt: now);
+    when(() => repository.watch('c1')).thenAnswer((_) => Stream.fromIterable([null, jan]));
+
+    await expectLater(
+      service.watchClient('c1'),
+      emitsInOrder([emitsError(isA<ClientNotFoundException>()), jan]),
+    );
+  });
+
+  test('restoreClient clears deletedAt through the repository', () async {
+    when(() => repository.find('c1')).thenAnswer(
+      (_) async => Client(
+        id: 'c1',
+        name: 'Jan',
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: DateTime.utc(2026),
+      ),
+    );
+
+    await service.restoreClient('c1');
+
+    final saved = verify(() => repository.upsert(captureAny())).captured.single as Client;
+    expect(saved.deletedAt, isNull);
+    expect(saved.updatedAt, now);
   });
 
   test('deleteClient soft-deletes through the repository', () async {

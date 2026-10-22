@@ -49,6 +49,35 @@ void main() {
     ],
   );
 
+  blocTest<ClientsCubit, ClientsState>(
+    'search keeps every item and filters the visible ones',
+    build: () => ClientsCubit(service),
+    seed: () => ClientsState(
+      isLoading: false,
+      items: [
+        ClientListItemViewModel.fromDomain(jan),
+        ClientListItemViewModel.fromDomain(
+          Client(id: '2', name: 'Anna', createdAt: now, updatedAt: now),
+        ),
+      ],
+    ),
+    act: (cubit) => cubit.search('jan'),
+    verify: (cubit) {
+      expect(cubit.state.items, hasLength(2));
+      expect(cubit.state.visibleItems.map((item) => item.name), ['Jan']);
+    },
+  );
+
+  test('restoreClient undoes a delete through the service', () async {
+    when(() => service.restoreClient('1')).thenAnswer((_) async {});
+    final cubit = ClientsCubit(service);
+
+    await cubit.restoreClient('1');
+
+    verify(() => service.restoreClient('1')).called(1);
+    await cubit.close();
+  });
+
   test('a failing delete goes to the error channel, not to state', () async {
     when(() => service.deleteClient('x')).thenThrow(const ClientNotFoundException('x'));
     final cubit = ClientsCubit(service);

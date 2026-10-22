@@ -123,5 +123,7 @@ final class Dependencies._() extends DependencyProvider {
   /// closes them); app-wide ones are lazy singletons with a dispose hook.
   void _registerBlocs() {
     registerFactory<ClientsCubit>(() => ClientsCubit(get<ClientsService>()));
+    registerFactory<ClientDetailCubit>(() => ClientDetailCubit(get<ClientsService>()));
+    registerFactory<ClientFormCubit>(() => ClientFormCubit(get<ClientsService>()));
   }
 }

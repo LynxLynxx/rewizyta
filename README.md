@@ -66,6 +66,7 @@ melos bootstrap          # pub get for every package, incl. the Jaspr site
 melos run gen            # code generation (json_serializable, drift)
 melos run l10n           # AppLocalizations from app_pl.arb
 melos run check          # everything CI runs: gen, l10n, format, analyze, test
+melos run e2e            # Maestro flows on a running Android emulator (needs the maestro CLI)
 melos run hooks          # once: pre-commit hook that blocks secrets and personal data
 
 cd apps/mobile && flutter run --dart-define-from-file=../../.env
@@ -87,6 +88,33 @@ and production are hosted projects deployed by GitHub Actions; see
 `melos run --list` shows every script. The Jaspr sites keep their own lockfiles
 (see the note in `pubspec.yaml`), which is why `melos bootstrap` runs their
 `pub get` in a hook rather than as workspace members.
+
+## Test coverage
+
+Line coverage of the Flutter workspace, generated files (`*.g.dart`, `*.drift.dart`,
+`lib/generated/`) excluded, measured on 2026-10-22:
+
+| Package | Lines hit | Coverage |
+|---|---:|---:|
+| `apps/mobile` | 102 / 187 | 54.5% |
+| `rewizyta_blocs` | 37 / 74 | 50.0% |
+| `rewizyta_models` | 149 / 283 | 52.7% |
+| `rewizyta_repositories` | 708 / 822 | 86.1% |
+| `rewizyta_services` | 146 / 177 | 82.5% |
+| `rewizyta_shared` | 4 / 32 | 12.5% |
+| `rewizyta_view_models` | 29 / 50 | 58.0% |
+| **Total** | **1175 / 1625** | **72.3%** |
+
+```bash
+melos run coverage       # flutter test --coverage in every package, then the table above
+genhtml packages/rewizyta_services/coverage/lcov.info -o coverage/html   # browsable report (brew install lcov)
+```
+
+Only files that a test loads are counted, so a file no test imports does not pull the
+number down. `rewizyta_localization` has no tests of its own. The figures above are a
+snapshot: CI runs the tests but does not enforce a threshold. The Jaspr site (`dart test`),
+the edge functions (`deno task check`) and the SQL (`melos run db:test`, pgTAP) have their
+own suites, which are not included here.
 
 ## Contributing
 

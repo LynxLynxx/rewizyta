@@ -1,0 +1,99 @@
+# End-to-end journeys (Maestro flows in apps/mobile/.maestro) on an Android
+# emulator. Separate from CI because it takes 15+ minutes and only app changes
+# can break it; not a required check.
+name: E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/mobile/**
+      - packages/**
+      - pubspec.yaml
+      - pubspec.lock
+      - .github/workflows/e2e.yml
+  pull_request:
+    paths:
+      - apps/mobile/**
+      - packages/**
+      - pubspec.yaml
+      - pubspec.lock
+      - .github/workflows/e2e.yml
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  MAESTRO_CLI_NO_ANALYTICS: "1"
+
+jobs:
+  android:
+    name: Maestro on Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - run: dart pub global activate melos
+      - run: melos bootstrap --no-private
+      - run: melos run gen
+      - run: melos run l10n
+
+      # No .env: empty keys mean the no-op adapters, and the flows never touch the network.
+      - name: Build the debug APK
+        working-directory: apps/mobile
+        run: flutter build apk --debug
+
+      - name: Install Maestro
+        env:
+          MAESTRO_VERSION: 2.11.0
+          MAESTRO_SHA256: 5384593cb4e7a106489e75a821d157dd43f4e438df6bc308b72e82c685e1283a
+        run: |
+          curl -sSL -o maestro.zip "https://github.com/mobile-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip"
+          echo "${MAESTRO_SHA256}  maestro.zip" | sha256sum -c -
+          unzip -q maestro.zip -d "$HOME"
+          echo "$HOME/maestro/bin" >> "$GITHUB_PATH"
+
+      # Hardware acceleration for the emulator on GitHub's Linux runners.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the flows
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+            maestro test --debug-output e2e-debug --format junit --output e2e-debug/report.xml apps/mobile/.maestro
+
+      - name: Keep screenshots and logs of a failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: maestro-debug
+          path: e2e-debug
+          retention-days: 7

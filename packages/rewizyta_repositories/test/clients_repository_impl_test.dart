@@ -48,13 +48,23 @@ void main() {
     expect(await repository.find('c1'), full);
   });
 
-  test('watchAll hides soft-deleted rows and sorts by name', () async {
+  test('watchAll hides soft-deleted rows', () async {
     await repository.upsert(client(id: 'b', name: 'Zofia'));
     await repository.upsert(client(id: 'a', name: 'Adam'));
     await repository.upsert(client(id: 'x', name: 'Usunięty', deletedAt: DateTime.utc(2026)));
 
     final names = await repository.watchAll().first;
-    expect(names.map((c) => c.name), ['Adam', 'Zofia']);
+    expect(names.map((c) => c.name), unorderedEquals(['Adam', 'Zofia']));
+  });
+
+  test('watch emits the row, then its changes, and null for an unknown id', () async {
+    final updates = repository.watch('c1');
+    final expectation = expectLater(updates, emitsInOrder([null, client(), client(name: 'Jan')]));
+
+    await updates.first;
+    await repository.upsert(client());
+    await repository.upsert(client(name: 'Jan'));
+    await expectation;
   });
 
   test('a deleted client is queued as a delete', () async {

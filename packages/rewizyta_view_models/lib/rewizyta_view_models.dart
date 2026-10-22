@@ -4,6 +4,7 @@
 library;
 
 export 'src/catalog/catalog_template_x.dart';
+export 'src/client/client_detail_view_model.dart';
 export 'src/client/client_list_item_view_model.dart';
 export 'src/client/client_validation_error_x.dart';
 export 'src/exceptions/localized_exception.dart';

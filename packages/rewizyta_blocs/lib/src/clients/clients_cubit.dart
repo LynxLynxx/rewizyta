@@ -19,9 +19,20 @@ class ClientsCubit(final ClientsService _clientsService)
     subscribe(#clients, _clientsService.watchClients(), _onClients, onError: _onError);
   }
 
+  void search(String query) => emit(state.copyWith(query: query));
+
   Future<void> deleteClient(String id) async {
     try {
       await _clientsService.deleteClient(id);
+    } on Exception catch (error) {
+      emitError(LocalizedException.create(error));
+    }
+  }
+
+  /// The "Cofnij" on the snackbar after a delete.
+  Future<void> restoreClient(String id) async {
+    try {
+      await _clientsService.restoreClient(id);
     } on Exception catch (error) {
       emitError(LocalizedException.create(error));
     }

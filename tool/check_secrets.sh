@@ -50,10 +50,11 @@ check_each() {
   fi
 }
 
-# Polish mobile numbers other than the shared fixture +48 601 234 567.
+# Polish mobile numbers other than the shared fixture +48 601 234 567 and the
+# phone field's placeholder 600 000 000.
 check "phone number that is not the test fixture" \
   '(^|[^0-9A-Za-z])(\+48 ?)?[5-8][0-9]{2}[ -]?[0-9]{3}[ -]?[0-9]{3}([^0-9A-Za-z]|$)' \
-  '601[ -]?234[ -]?567|\.pbxproj:|\.svg:|[0-9]{3} [0-9]{3} [0-9]{3} [0-9]|version|rgb|#[0-9a-fA-F]{6}'
+  '601[ -]?234[ -]?567|600[ -]?000[ -]?000|\.pbxproj:|\.svg:|[0-9]{3} [0-9]{3} [0-9]{3} [0-9]|version|rgb|#[0-9a-fA-F]{6}'
 # E-mail addresses outside the documented example domains, except the product's
 # sending domain and the public contact address the website names as the
 # data controller's.

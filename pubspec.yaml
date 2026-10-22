@@ -75,6 +75,17 @@ melos:
         failFast: true
       packageFilters:
         dirExists: test
+    coverage:
+      description: Run the workspace tests with coverage and print line coverage per package.
+      run: >-
+        melos exec --dir-exists=test -c 1 --fail-fast -- flutter test --coverage &&
+        bash tool/coverage.sh
+    e2e:
+      description: Build the debug APK, install it on the running Android emulator or phone and run the Maestro flows (needs the maestro CLI; ANDROID_SERIAL picks a device when several are connected).
+      run: >-
+        cd apps/mobile && flutter build apk --debug &&
+        flutter install --debug ${ANDROID_SERIAL:+-d $ANDROID_SERIAL} &&
+        MAESTRO_CLI_NO_ANALYTICS=1 maestro ${ANDROID_SERIAL:+--device $ANDROID_SERIAL} test .maestro
     gen:
       description: build_runner (json_serializable, drift) in every package that needs it.
       exec:

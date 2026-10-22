@@ -42,6 +42,8 @@ melos run layering     # grep-based import-direction audit (tool/check_layering.
 melos run secrets      # gitleaks + PII greps over the tree (tool/check_secrets.sh); CI runs it on the history too
 melos run hooks        # once per clone: pre-commit hook that runs the secrets scan on staged files
 melos run test         # flutter test in every package with test/
+melos run e2e          # Maestro flows on a running Android emulator (brew install mobile-dev-inc/tap/maestro)
+melos run coverage     # the same with --coverage, then line coverage per package (tool/coverage.sh)
 melos run functions:check  # edge functions: deno fmt, lint, check, test (needs Deno 2)
 melos run db:test      # pgTAP tests in supabase/tests against the local database
 melos run check        # gen + l10n + format + analyze + test, app and sites
@@ -178,6 +180,11 @@ format → analyze matters; `melos run check` does it right.
   service method, every cubit and every page gets a test; a
   single-subscription `StreamController` in a test must be `broadcast()` or
   its `close()` hangs the tearDown.
+  A journey from `docs/APP_FLOW.md` gets a Maestro flow in
+  `apps/mobile/.maestro/` (CI: `.github/workflows/e2e.yml`). Flows start from
+  an empty database (`clearState`), type ASCII only, and match a form field by
+  its label, a list tile by its first line (`"(?s)Name.*"`): merged semantics
+  is what Maestro reads, so a missing label is a missing selector.
 - **Third-party SDKs sit behind adapters** in `rewizyta_services`
   (`AnalyticsService`, `ReportingService`, `PushNotificationsService`) with a
   no-op implementation each. Vendor implementations (PostHog EU, Sentry EU,
