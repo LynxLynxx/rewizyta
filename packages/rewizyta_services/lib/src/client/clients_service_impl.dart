@@ -11,12 +11,20 @@ final class ClientsServiceImpl(
   Uuid? uuid,
 }) implements ClientsService {
   static final _e164 = RegExp(r'^\+[1-9]\d{6,14}$');
+  static final _separators = RegExp(r'[\s\-().]');
+  static final _nationalNumber = RegExp(r'^\d{9}$');
 
   final DateTime Function() _now = now ?? DateTime.timestamp;
   final Uuid _uuid = uuid ?? const Uuid();
 
   @override
-  Stream<List<Client>> watchClients() => _repository.watchAll();
+  Stream<List<Client>> watchClients() => _repository.watchAll().map(
+    (clients) => [...clients]..sort((a, b) => comparePolish(a.name, b.name)),
+  );
+
+  @override
+  Stream<Client> watchClient(String id) =>
+      _repository.watch(id).map((client) => client ?? (throw ClientNotFoundException(id)));
 
   @override
   Future<Client> getClient(String id) async {
@@ -41,7 +49,7 @@ final class ClientsServiceImpl(
     if (trimmedName.isEmpty) {
       throw const ClientValidationException(ClientValidationError.nameEmpty);
     }
-    final cleanPhone = cleanText(phone);
+    final cleanPhone = _toE164(phone);
     if (cleanPhone != null && !_e164.hasMatch(cleanPhone)) {
       throw const ClientValidationException(ClientValidationError.phoneInvalid);
     }
@@ -79,5 +87,23 @@ final class ClientsServiceImpl(
     final client = await getClient(id);
     final now = _now();
     await _repository.upsert(client.copyWith(updatedAt: now, deletedAt: Optional(now)));
+  }
+
+  @override
+  Future<void> restoreClient(String id) async {
+    final client = await getClient(id);
+    await _repository.upsert(
+      client.copyWith(updatedAt: _now(), deletedAt: const Optional.empty()),
+    );
+  }
+
+  /// Drops separators and reads a bare nine-digit number as Polish. Anything
+  /// else is returned as typed, for the E.164 check to reject.
+  static String? _toE164(String? phone) {
+    final compact = cleanText(phone)?.replaceAll(_separators, '');
+    if (compact == null || compact.isEmpty) return null;
+    if (compact.startsWith('00')) return '+${compact.substring(2)}';
+    if (_nationalNumber.hasMatch(compact)) return '+48$compact';
+    return compact;
   }
 }

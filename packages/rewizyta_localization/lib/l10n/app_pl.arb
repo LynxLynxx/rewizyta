@@ -4,6 +4,14 @@
   "@appTitle": {
     "description": "Application name shown in the task switcher."
   },
+  "back": "Wstecz",
+  "@back": {
+    "description": "Back link above pushed screens, after the ‹ glyph; also its screen-reader label."
+  },
+  "undo": "Cofnij",
+  "@undo": {
+    "description": "Snackbar action that undoes a soft delete."
+  },
   "clientsTitle": "Klienci",
   "@clientsTitle": {
     "description": "App bar title of the client list."
@@ -16,9 +24,81 @@
   "@clientsAdd": {
     "description": "Floating action button on the client list."
   },
-  "clientNoPhone": "Brak numeru",
-  "@clientNoPhone": {
-    "description": "Subtitle of a client without a phone number."
+  "clientsSearchHint": "Nazwisko, miejscowość, telefon",
+  "@clientsSearchHint": {
+    "description": "Placeholder of the search field on the client list."
+  },
+  "clientsNoResults": "Nikogo nie znaleziono.",
+  "@clientsNoResults": {
+    "description": "Shown when the search on the client list matches nobody."
+  },
+  "clientNoAddress": "Brak adresu",
+  "@clientNoAddress": {
+    "description": "Address line of a client without an address."
+  },
+  "clientNote": "Notatka",
+  "@clientNote": {
+    "description": "Label of the note field and heading of the note on the client card."
+  },
+  "clientEdit": "Edytuj",
+  "@clientEdit": {
+    "description": "Opens the edit form from the client card."
+  },
+  "clientDelete": "Usuń klienta",
+  "@clientDelete": {
+    "description": "Soft-deletes the client from the client card."
+  },
+  "clientDeleted": "Usunięto klienta.",
+  "@clientDeleted": {
+    "description": "Snackbar after deleting a client, with an undo action."
+  },
+  "clientAdded": "Dodano klienta.",
+  "@clientAdded": {
+    "description": "Snackbar after adding a client."
+  },
+  "clientSaved": "Zapisano.",
+  "@clientSaved": {
+    "description": "Snackbar after editing a client."
+  },
+  "clientFormNewTitle": "Nowy klient",
+  "@clientFormNewTitle": {
+    "description": "Title of the add-client form."
+  },
+  "clientFormEditTitle": "Edycja klienta",
+  "@clientFormEditTitle": {
+    "description": "Title of the edit-client form."
+  },
+  "clientFormName": "Imię i nazwisko albo nazwa",
+  "@clientFormName": {
+    "description": "Label of the client name field (a person or a company)."
+  },
+  "clientFormNameHint": "np. Jan Obrochta",
+  "@clientFormNameHint": {
+    "description": "Placeholder of the client name field."
+  },
+  "clientFormPhone": "Telefon",
+  "@clientFormPhone": {
+    "description": "Label of the phone field."
+  },
+  "clientFormPhoneHint": "600 000 000",
+  "@clientFormPhoneHint": {
+    "description": "Placeholder of the phone field."
+  },
+  "clientFormAddress": "Ulica i numer",
+  "@clientFormAddress": {
+    "description": "Label of the street and number field."
+  },
+  "clientFormPostalCode": "Kod pocztowy",
+  "@clientFormPostalCode": {
+    "description": "Label of the postal code field."
+  },
+  "clientFormTown": "Miejscowość",
+  "@clientFormTown": {
+    "description": "Label of the town field."
+  },
+  "clientFormSave": "Zapisz klienta",
+  "@clientFormSave": {
+    "description": "Save button of the client form."
   },
   "errorGenericTitle": "Coś poszło nie tak",
   "@errorGenericTitle": {

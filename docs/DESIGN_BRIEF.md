@@ -193,8 +193,9 @@ self-hosts them in `apps/website/web/fonts/`).
   content. On `accent` use ink text (6.8), never white.
 - Non-text contrast (3:1) falls short in two places: the `accent` tab bar on
   white (2.5), which is fine because the active tab is also ink and 600; and
-  the 1.5 px `inputBorder` on white (2.5), which is not. Inputs need a label
-  above them or a darker border; decide before M2's forms.
+  the 1.5 px `inputBorder` on white (2.5), which is not. Decided for M2
+  (2026-10-22): every input has a visible label above it, as in the
+  prototype, merged with the field for screen readers; the border stays.
 - Layouts survive 200% system text scale: the fixed row heights are minimums,
   not fixed heights; no clipped labels.
 - Status tags read their word; the "›" and "‹" glyphs get semantic labels.

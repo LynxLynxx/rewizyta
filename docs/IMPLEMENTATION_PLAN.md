@@ -45,7 +45,8 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M2 – Clients
 
-- [ ] List with search (name, phone, town), detail, add/edit form with inline validation, soft delete. Sort with Polish collation: SQLite's `ORDER BY name` puts Ł, Ś and Ż after Z.
+- [x] List with search (name and address without diacritics, phone digits whatever the spacing), detail, add/edit form with inline validation, soft delete with "Cofnij". `ClientsService.watchClients` sorts with `comparePolish` (`rewizyta_models`), because SQLite's `ORDER BY name` puts Ł, Ś and Ż after Z; the service turns a typed phone (`601 234 567`, `0048…`) into E.164. The card pops with `true` after a delete and the list offers the undo; the add form pops with the new id and the list opens the card, because go_router's `pushReplacement` never completes the original `push` (2026-10-22). Status tags on the list and the card wait for the equipment item below.
+- [x] End-to-end tests with Maestro: `apps/mobile/.maestro/clients.yaml` (add, card, edit, delete, undo, search), `melos run e2e` locally, `.github/workflows/e2e.yml` on an Android emulator for app changes, not a required check; Maestro's analytics off, no Maestro Cloud (2026-10-22). Each journey that lands adds a flow.
 - [ ] Equipment on a client, each with a service type from the user's catalogue. The form's "Ostatnia wizyta" is saved as a visit with that equipment ticked (`VisitsService.saveVisit`), never typed into `last_visit_at`, so the caches stay derived.
 - [ ] Import from phone contacts (`flutter_contacts`), paste a number.
 - [ ] Phone formatting (E.164 in, Polish display out – `formatPhone`), call and SMS via `url_launcher`.

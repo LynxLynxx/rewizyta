@@ -9,6 +9,7 @@ export 'src/catalog/service_type_exceptions.dart';
 export 'src/catalog/trade.dart';
 export 'src/client/client.dart';
 export 'src/client/client_exceptions.dart';
+export 'src/common/polish_text.dart';
 export 'src/common/unknown_enum_value_exception.dart';
 export 'src/device/device.dart';
 export 'src/due/due_date.dart';

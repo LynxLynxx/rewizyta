@@ -24,7 +24,10 @@ and handoff notes in the git-ignored `docs/private/design/`; looks, tokens and
 the places where it disagrees with the other docs in `DESIGN_BRIEF.md`). Its
 copy is final; take strings from it.
 
-Status today (2026-10-06): only the client list (`/clients`) exists. Everything
+Status today (2026-10-22): Klienci (search, Polish order), Klient
+(`/clients/:id`: name, address, phone, note, edit, delete with "Cofnij") and
+Nowy klient / edycja (`/clients/new`, `/clients/:id/edit`, without equipment
+rows yet) exist, with no tab bar and no other tab yet. Everything
 else here is the target for the MVP milestones M2–M7 and V1, and changes when
 a milestone decides otherwise; update this file when it does.
 

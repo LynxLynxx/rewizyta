@@ -1,0 +1,58 @@
+# Journey 1 in docs/APP_FLOW.md plus the card: add a client, open the card,
+# edit it, delete it, undo, find it by phone. Starts from an empty database.
+# ASCII input only: Maestro's Android driver cannot type Polish letters.
+# Form fields are matched by their label: the label is merged with the field
+# for screen readers, so a field's text is "label\nplaceholder" ((?s) spans
+# the line break). A list tile is likewise "name\naddress".
+appId: org.rsapps.rewizyta
+name: Clients - add, edit, delete, undo, search
+---
+- launchApp:
+    clearState: true
+# A cold start of a debug build on a CI emulator takes longer than assertVisible waits.
+- extendedWaitUntil:
+    visible: "Nie masz jeszcze żadnych klientów."
+    timeout: 30000
+
+# Add
+- tapOn: "Dodaj klienta"
+- assertVisible: "Nowy klient"
+- tapOn: "(?s)Imię i nazwisko albo nazwa.*"
+- inputText: "Jan Kowalski"
+- tapOn: "(?s)Telefon.*"
+- inputText: "601234567"
+- tapOn: "Ulica i numer"
+- inputText: "ul. Lesna 12"
+- tapOn: "Miejscowość"
+- inputText: "Nysa"
+- hideKeyboard
+- tapOn: "Zapisz klienta"
+
+# The card, with the phone stored as E.164 and shown the Polish way
+- assertVisible: "Jan Kowalski"
+- assertVisible: "ul. Lesna 12, Nysa"
+- assertVisible: "601 234 567"
+
+# Edit
+- tapOn: "Edytuj"
+- assertVisible: "Edycja klienta"
+- tapOn: "(?s)Imię i nazwisko albo nazwa.*"
+- eraseText
+- inputText: "Jan Kowalski jr"
+- hideKeyboard
+- tapOn: "Zapisz klienta"
+- assertVisible: "Jan Kowalski jr"
+
+# Delete, then undo from the list
+- tapOn: "Usuń klienta"
+- assertVisible: "Usunięto klienta."
+- assertVisible: "Nie masz jeszcze żadnych klientów."
+- tapOn: "Cofnij"
+- assertVisible: "(?s)Jan Kowalski jr.*"
+
+# Search by phone digits, then a miss
+- tapOn: "Nazwisko, miejscowość, telefon"
+- inputText: "234567"
+- assertVisible: "(?s)Jan Kowalski jr.*"
+- inputText: "x"
+- assertVisible: "Nikogo nie znaleziono."
