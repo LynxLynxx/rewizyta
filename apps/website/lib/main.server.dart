@@ -5,6 +5,7 @@ import 'package:jaspr/dom.dart';
 import 'package:jaspr/server.dart';
 
 import 'app.dart';
+import 'constants/site.dart';
 import 'main.server.options.dart';
 
 void main() {
@@ -14,10 +15,9 @@ void main() {
     Document(
       lang: 'pl',
       meta: {
-        'description':
-            'Książka klientów w telefonie dla kominiarzy i serwisantów. Pamięta terminy przeglądów, '
-            'sama wysyła klientom SMS i pokazuje kartę klienta, gdy dzwoni.',
+        'description': siteDescription,
         'theme-color': '#F6F4EF',
+        'twitter:card': 'summary_large_image',
       },
       head: [
         // The header mark as the site icon: the SVG where it is supported, the ICO
@@ -30,6 +30,19 @@ void main() {
         link(rel: 'icon', href: '/favicon.ico', attributes: {'sizes': '16x16 32x32 48x48'}),
         link(rel: 'apple-touch-icon', href: '/apple-touch-icon.png'),
         link(rel: 'stylesheet', href: '/styles.css'),
+        // Link previews (Facebook, WhatsApp, LinkedIn, Messenger, X). Every page
+        // shares the image; the home page adds its title, description and URL,
+        // the others fall back to their <title> and description.
+        for (final (property, content) in [
+          ('og:site_name', 'Rewizyta'),
+          ('og:type', 'website'),
+          ('og:locale', 'pl_PL'),
+          ('og:image', '$siteUrl/og-image.png'),
+          ('og:image:width', '1200'),
+          ('og:image:height', '630'),
+          ('og:image:alt', 'Rewizyta: karta klienta z terminem przeglądu i historią wizyt.'),
+        ])
+          meta(attributes: {'property': property, 'content': content}),
       ],
       body: const App(),
     ),

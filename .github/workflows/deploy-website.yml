@@ -97,6 +97,7 @@ jobs:
         run: |
           jaspr build \
             --dart-define=FUNCTIONS_URL="https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1" \
+            --dart-define=SITE_URL="$SITE_URL" \
             --sitemap-domain="$SITE_URL" \
             --sitemap-exclude='^/(potwierdz|wypisz|404)'
           # Dev-compiler and test-runner files the static build leaves behind; no page uses them.
