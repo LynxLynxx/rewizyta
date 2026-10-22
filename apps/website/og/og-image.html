@@ -1,0 +1,69 @@
+<!doctype html>
+<!--
+  Source of web/og-image.png, the 1200×630 preview shown when the site is
+  shared. Colours are the tokens in web/styles.css, the card is the hero's
+  (lib/pages/home/hero.dart); the name and address are made up. After a change,
+  from apps/website:
+
+    chromium --headless --hide-scrollbars --force-device-scale-factor=1 \
+      --window-size=1200,630 --screenshot=web/og-image.png og/og-image.html
+-->
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: 'Plex'; font-weight: 400; src: url('../web/fonts/ibm-plex-sans-400-latin.woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+  @font-face { font-family: 'Plex'; font-weight: 400; src: url('../web/fonts/ibm-plex-sans-400-latin-ext.woff2'); unicode-range: U+0100-02BA; }
+  @font-face { font-family: 'Plex'; font-weight: 600; src: url('../web/fonts/ibm-plex-sans-600-latin.woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+  @font-face { font-family: 'Plex'; font-weight: 600; src: url('../web/fonts/ibm-plex-sans-600-latin-ext.woff2'); unicode-range: U+0100-02BA; }
+  @font-face { font-family: 'Plex'; font-weight: 700; src: url('../web/fonts/ibm-plex-sans-700-latin.woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+  @font-face { font-family: 'Plex'; font-weight: 700; src: url('../web/fonts/ibm-plex-sans-700-latin-ext.woff2'); unicode-range: U+0100-02BA; }
+  @font-face { font-family: 'Plex Mono'; font-weight: 400; src: url('../web/fonts/ibm-plex-mono-400-latin.woff2'); }
+
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    display: flex; align-items: center; gap: 56px; padding: 64px 72px;
+    font-family: 'Plex', sans-serif; color: #1D1C1A; background: #F6F4EF;
+  }
+  .text { flex: 1; display: flex; flex-direction: column; gap: 28px; }
+  .logo { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; }
+  .mark { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 9px; background: #1D1C1A; }
+  .mark span { width: 16px; height: 16px; border-radius: 50%; background: #EE8A3A; }
+  h1 { font-size: 58px; line-height: 1.08; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+  .lead { font-size: 25px; line-height: 1.35; color: #5E5A53; }
+
+  .card {
+    width: 400px; flex: none; display: flex; flex-direction: column; gap: 16px; padding: 24px;
+    border-radius: 22px; background: #FFFFFF; box-shadow: 0 30px 60px -30px rgba(29, 28, 26, 0.45);
+  }
+  .top { display: flex; justify-content: space-between; align-items: center; }
+  .title { font-size: 15px; font-weight: 600; letter-spacing: 0.04em; color: #5E5A53; }
+  .due { padding: 4px 10px; border-radius: 6px; font-size: 15px; font-weight: 600; color: #8A3F0C; background: #FBE3CF; }
+  .name { font-size: 26px; font-weight: 600; }
+  .address { font-size: 19px; margin-top: -10px; color: #5E5A53; }
+  .tags { display: flex; gap: 8px; }
+  .tag { padding: 5px 10px; border: 1px solid #DAD5CB; border-radius: 6px; font-size: 16px; }
+  .visits { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid #ECE8E0; }
+  .visit { display: grid; grid-template-columns: 100px 1fr; gap: 10px; font-size: 17px; line-height: 1.35; }
+  .date { padding-top: 2px; font-family: 'Plex Mono', monospace; font-size: 15px; color: #5E5A53; }
+</style>
+</head>
+<body>
+  <div class="text">
+    <div class="logo"><span class="mark"><span></span></span>Rewizyta</div>
+    <h1>Klient dzwoni. Ty już wiesz, kiedy u niego byłeś.</h1>
+    <p class="lead">Terminy przeglądów i przypomnienia SMS dla kominiarzy i&nbsp;serwisantów.</p>
+  </div>
+  <div class="card">
+    <div class="top"><span class="title">KARTA KLIENTA</span><span class="due">przegląd za 12 dni</span></div>
+    <div class="name">Henryk Wiśniewski</div>
+    <div class="address">ul. Leśna 12, Nowy Targ</div>
+    <div class="tags"><span class="tag">2 × komin</span><span class="tag">kocioł gazowy</span></div>
+    <div class="visits">
+      <div class="visit"><span class="date">14.10.2025</span><span>Czyszczenie przewodów, protokół.</span></div>
+      <div class="visit"><span class="date">09.10.2024</span><span>Czyszczenie, wymiana wkładu.</span></div>
+    </div>
+  </div>
+</body>
+</html>

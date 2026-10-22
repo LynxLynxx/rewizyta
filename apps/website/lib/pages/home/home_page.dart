@@ -2,6 +2,7 @@ import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
 import '../../components/site_page.dart';
+import '../../constants/site.dart';
 import '../../constants/theme.dart';
 import 'audience.dart';
 import 'comparison.dart';
@@ -16,13 +17,23 @@ class HomePage extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
-    return const SitePage([
-      Hero(),
-      HowItWorks(),
-      Audience(),
-      Comparison(),
-      Ownership(),
-      SignupSection(),
+    return SitePage([
+      Document.head(
+        children: [
+          for (final (property, content) in [
+            ('og:title', 'Klient dzwoni. Ty już wiesz, kiedy u niego byłeś.'),
+            ('og:description', siteDescription),
+            ('og:url', '$siteUrl/'),
+          ])
+            meta(attributes: {'property': property, 'content': content}),
+        ],
+      ),
+      const Hero(),
+      const HowItWorks(),
+      const Audience(),
+      const Comparison(),
+      const Ownership(),
+      const SignupSection(),
     ]);
   }
 

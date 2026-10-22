@@ -17,12 +17,14 @@ This package keeps its own `pubspec.lock` and is driven through the melos
 ```bash
 melos run website:serve      # or: cd apps/website && jaspr serve   → http://localhost:8080
 dart test                    # flow, API client and render tests
-jaspr build --dart-define=FUNCTIONS_URL=https://<ref>.supabase.co/functions/v1
+jaspr build --dart-define=FUNCTIONS_URL=https://<ref>.supabase.co/functions/v1 --dart-define=SITE_URL=https://<host>
                              # pre-renders to build/jaspr
 ```
 
-- `FUNCTIONS_URL` is the only setting and it is public. Without it the form
-  talks to `supabase start` on this machine (`http://127.0.0.1:54321/functions/v1`).
+- Two settings, both public. `FUNCTIONS_URL`: without it the form talks to
+  `supabase start` on this machine (`http://127.0.0.1:54321/functions/v1`).
+  `SITE_URL`: the site's own address, for the absolute `og:url` and `og:image`
+  link previews need; defaults to `http://localhost:8080`.
   The function accepts the site's origin only (`WAITLIST_SITE_URL`,
   `http://localhost:8080` locally), so serve the site on that port.
 - `jaspr build` pre-renders by running the site on port 8080 (`--port` changes
@@ -60,3 +62,8 @@ jaspr build --dart-define=FUNCTIONS_URL=https://<ref>.supabase.co/functions/v1
   and the source; `favicon.ico` (16, 32, 48) and `apple-touch-icon.png` (180,
   full-bleed, iOS rounds it) are rasterised from it. Change the mark in all
   three; `lib/main.server.dart` links them.
+- Link previews: `web/og-image.png` (1200×630) is rendered from
+  `og/og-image.html` with headless Chrome (the command is in that file); change
+  the HTML and re-render, never edit the PNG. `lib/main.server.dart` sets the
+  shared Open Graph tags, `lib/pages/home/home_page.dart` the home page's title,
+  description and URL; other pages fall back to their `<title>` and description.

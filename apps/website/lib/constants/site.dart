@@ -7,3 +7,12 @@ const controllerName = 'USŁUGI IT Ryszard Schossler';
 const controllerTaxId = '6020147376';
 
 const contactEmail = 'r.schossler@rsapps.org';
+
+/// Where the site is served, for the absolute URLs that link previews need
+/// (`og:url`, `og:image`). The deploy workflow sets it per target.
+const siteUrl = String.fromEnvironment('SITE_URL', defaultValue: 'http://localhost:8080');
+
+/// The home page's summary: the meta description and the link preview text.
+const siteDescription =
+    'Książka klientów w telefonie dla kominiarzy i serwisantów. Pamięta terminy przeglądów, '
+    'sama wysyła klientom SMS i pokazuje kartę klienta, gdy dzwoni.';
