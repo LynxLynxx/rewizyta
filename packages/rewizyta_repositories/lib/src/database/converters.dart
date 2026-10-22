@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:rewizyta_models/rewizyta_models.dart';
 
 /// A calendar day as `YYYY-MM-DD`, the local and the Postgres `date` form.
 ///
@@ -35,13 +36,14 @@ final class const DateConverter() extends TypeConverter<DateTime, String> {
   String toSql(DateTime value) => formatDate(value);
 }
 
-/// Stores an enum as its snake_case name (see [enumToSql]).
+/// Stores an enum as its snake_case name (see [enumToSql]). An unknown name
+/// throws [UnknownEnumValueException].
 final class const EnumConverter<T extends Enum>(final List<T> _values)
     extends TypeConverter<T, String> {
   @override
   T fromSql(String fromDb) => _values.firstWhere(
     (value) => enumToSql(value) == fromDb,
-    orElse: () => throw ArgumentError.value(fromDb, 'fromDb', 'Not a $T'),
+    orElse: () => throw UnknownEnumValueException(T, fromDb),
   );
 
   @override

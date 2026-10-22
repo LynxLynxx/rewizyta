@@ -1,16 +1,20 @@
 import 'package:rewizyta_models/rewizyta_models.dart';
 import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:rewizyta_services/src/catalog/catalog_service.dart';
+import 'package:rewizyta_services/src/due/due_date_updater.dart';
 import 'package:rewizyta_shared/rewizyta_shared.dart';
 import 'package:uuid/uuid.dart';
 
 final class CatalogServiceImpl(
   final TradesRepository _trades,
   final ServiceTypesRepository _serviceTypes,
+  EquipmentRepository equipment,
+  VisitsRepository visits,
   final TransactionRunner _transaction, {
   DateTime Function()? now,
   Uuid? uuid,
 }) implements CatalogService {
+  final DueDateUpdater _due = DueDateUpdater(visits, equipment, _serviceTypes);
   final DateTime Function() _now = now ?? DateTime.timestamp;
   final Uuid _uuid = uuid ?? const Uuid();
 
@@ -26,6 +30,26 @@ final class CatalogServiceImpl(
           await _copyServiceType(typeTemplate, trade.id, sortOrder, now);
         }
       }
+    });
+  }
+
+  @override
+  Future<void> setCycle(String serviceTypeId, int cycleMonths) {
+    if (cycleMonths < 1) {
+      throw const ServiceTypeValidationException(ServiceTypeValidationError.cycleBelowOne);
+    }
+    final now = _now();
+    return _transaction.run(() async {
+      final serviceType = await _serviceTypes.find(serviceTypeId);
+      if (serviceType == null) {
+        throw ServiceTypeNotFoundException(serviceTypeId);
+      }
+      if (serviceType.cycleMonths == cycleMonths) {
+        return;
+      }
+      final updated = serviceType.copyWith(cycleMonths: cycleMonths, updatedAt: now);
+      await _serviceTypes.upsert(updated);
+      await _due.updateServiceType(updated, now);
     });
   }
 

@@ -127,6 +127,11 @@ format → analyze matters; `melos run check` does it right.
   `emitSignal(...)`; pages consume them with `ErrorHandlerStateMixin` /
   `SignalHandlerStateMixin` from `apps/mobile/lib/common/handlers/`. Field
   validation is state (an enum on the state, localized in `view_models`).
+- **Every error a service or repository throws is typed**: an
+  `XNotFoundException(id)` or `XValidationException(XValidationError.…)` in
+  `rewizyta_models` (see `client_exceptions.dart`), never a bare `StateError`,
+  `ArgumentError` or `Exception('…')`, so any of them can get a Polish message
+  in `LocalizedException.create` the day a screen shows it.
 - **Guard every async boundary**: `if (isClosed) return;` after each `await`.
   Streams go through `SubscriptionManagerMixin`, which cancels them in `close()`.
 - **Map domain → view model before emitting.** Widgets never see a domain model.

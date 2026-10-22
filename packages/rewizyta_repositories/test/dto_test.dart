@@ -130,7 +130,14 @@ void main() {
     test('an unknown enum value fails loudly', () {
       final json = AppointmentDto.fromDomain(appointment()).toJson()..['status'] = 'rescheduled';
 
-      expect(() => AppointmentDto.fromJson(json).toDomain(), throwsArgumentError);
+      expect(
+        () => AppointmentDto.fromJson(json).toDomain(),
+        throwsA(
+          isA<UnknownEnumValueException>()
+              .having((e) => e.enumType, 'enumType', AppointmentStatus)
+              .having((e) => e.value, 'value', 'rescheduled'),
+        ),
+      );
     });
 
     test('every catalogue template has its own template_key and round-trips', () {
@@ -148,7 +155,7 @@ void main() {
     test('a template_key from a newer catalogue fails loudly, so the pull can skip the row', () {
       final json = TradeDto.fromDomain(trade()).toJson()..['template_key'] = 'plumber';
 
-      expect(() => TradeDto.fromJson(json).toDomain(), throwsArgumentError);
+      expect(() => TradeDto.fromJson(json).toDomain(), throwsA(isA<UnknownEnumValueException>()));
     });
   });
 }
