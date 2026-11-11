@@ -4,19 +4,31 @@ import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:rewizyta_services/rewizyta_services.dart';
 import 'package:test/test.dart';
 
+import 'helpers/mocks.dart';
+
 class MockClientsRepository() extends Mock implements ClientsRepository;
+
+class MockEquipmentService() extends Mock implements EquipmentService;
+
+class MockVisitsService() extends Mock implements VisitsService;
 
 void main() {
   final now = DateTime.utc(2026, 9, 28, 12);
   late MockClientsRepository repository;
+  late MockEquipmentService equipment;
+  late MockVisitsService visits;
+  late FakeTransactionRunner transaction;
   late ClientsServiceImpl service;
 
   setUpAll(() => registerFallbackValue(Client(id: '', name: '', createdAt: now, updatedAt: now)));
 
   setUp(() {
     repository = MockClientsRepository();
+    equipment = MockEquipmentService();
+    visits = MockVisitsService();
+    transaction = FakeTransactionRunner();
     when(() => repository.upsert(any())).thenAnswer((_) async {});
-    service = ClientsServiceImpl(repository, now: () => now);
+    service = ClientsServiceImpl(repository, equipment, visits, transaction, now: () => now);
   });
 
   group('saveClient', () {
@@ -244,5 +256,130 @@ void main() {
     when(() => repository.find('missing')).thenAnswer((_) async => null);
 
     expect(() => service.getClient('missing'), throwsA(isA<ClientNotFoundException>()));
+  });
+
+  group('saveClientWithEquipment', () {
+    Equipment row(String id, {String? label, int count = 1, String? note}) => Equipment(
+      id: id,
+      clientId: 'c',
+      serviceTypeId: 'yearly',
+      label: label,
+      count: count,
+      note: note,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final stored = Client(id: 'c', name: 'Jan', createdAt: now, updatedAt: now);
+
+    setUp(() {
+      when(() => repository.find('c')).thenAnswer((_) async => stored);
+      when(() => equipment.findByClient(any())).thenAnswer((_) async => const []);
+      when(() => equipment.deleteEquipment(any())).thenAnswer((_) async {});
+      var nextId = 0;
+      when(
+        () => equipment.saveEquipment(
+          id: any(named: 'id'),
+          clientId: any(named: 'clientId'),
+          serviceTypeId: any(named: 'serviceTypeId'),
+          label: any(named: 'label'),
+          count: any(named: 'count'),
+          note: any(named: 'note'),
+        ),
+      ).thenAnswer((_) async => row('new${nextId++}'));
+      when(
+        () => visits.saveVisit(
+          clientId: any(named: 'clientId'),
+          doneAt: any(named: 'doneAt'),
+          equipmentIds: any(named: 'equipmentIds'),
+        ),
+      ).thenAnswer(
+        (_) async => Visit(id: 'v', clientId: 'c', doneAt: now, createdAt: now, updatedAt: now),
+      );
+    });
+
+    Future<Client> save(List<EquipmentDraft> drafts) =>
+        service.saveClientWithEquipment(id: 'c', name: 'Jan', equipment: drafts);
+
+    test('runs in one transaction', () async {
+      await save(const []);
+
+      expect(transaction.runs, 1);
+    });
+
+    test('adds a new row and records no visit without a date', () async {
+      await save(const [EquipmentDraft(serviceTypeId: 'yearly', label: ' Kuchnia ')]);
+
+      verify(
+        () => equipment.saveEquipment(clientId: 'c', serviceTypeId: 'yearly', label: 'Kuchnia'),
+      ).called(1);
+      verifyNever(
+        () => visits.saveVisit(
+          clientId: any(named: 'clientId'),
+          doneAt: any(named: 'doneAt'),
+          equipmentIds: any(named: 'equipmentIds'),
+        ),
+      );
+    });
+
+    test('rows of the same day share one visit, another day gets its own', () async {
+      final day = DateTime.utc(2025, 10, 14);
+      final otherDay = DateTime.utc(2025, 3);
+
+      await save([
+        EquipmentDraft(serviceTypeId: 'yearly', lastVisitAt: day),
+        EquipmentDraft(serviceTypeId: 'yearly', lastVisitAt: day),
+        EquipmentDraft(serviceTypeId: 'yearly', lastVisitAt: otherDay),
+      ]);
+
+      verify(
+        () => visits.saveVisit(clientId: 'c', doneAt: day, equipmentIds: {'new0', 'new1'}),
+      ).called(1);
+      verify(
+        () => visits.saveVisit(clientId: 'c', doneAt: otherDay, equipmentIds: {'new2'}),
+      ).called(1);
+    });
+
+    test('soft-deletes live equipment missing from the drafts', () async {
+      when(() => equipment.findByClient('c')).thenAnswer((_) async => [row('kept'), row('gone')]);
+
+      await save(const [EquipmentDraft(id: 'kept', serviceTypeId: 'yearly')]);
+
+      verify(() => equipment.deleteEquipment('gone')).called(1);
+      verifyNever(() => equipment.deleteEquipment('kept'));
+    });
+
+    test('does not write a row the form left as it was', () async {
+      when(() => equipment.findByClient('c')).thenAnswer((_) async => [row('e', label: 'Kuchnia')]);
+
+      await save(const [EquipmentDraft(id: 'e', serviceTypeId: 'yearly', label: 'Kuchnia')]);
+
+      verifyNever(
+        () => equipment.saveEquipment(
+          id: any(named: 'id'),
+          clientId: any(named: 'clientId'),
+          serviceTypeId: any(named: 'serviceTypeId'),
+          label: any(named: 'label'),
+          count: any(named: 'count'),
+          note: any(named: 'note'),
+        ),
+      );
+    });
+
+    test('an edited row keeps the count and note the form does not show', () async {
+      when(() => equipment.findByClient('c'))
+          .thenAnswer((_) async => [row('e', count: 3, note: 'N')]);
+
+      await save(const [EquipmentDraft(id: 'e', serviceTypeId: 'quarterly')]);
+
+      verify(
+        () => equipment.saveEquipment(
+          id: 'e',
+          clientId: 'c',
+          serviceTypeId: 'quarterly',
+          count: 3,
+          note: 'N',
+        ),
+      ).called(1);
+    });
   });
 }

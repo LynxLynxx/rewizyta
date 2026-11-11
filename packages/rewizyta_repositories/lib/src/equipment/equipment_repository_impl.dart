@@ -8,11 +8,20 @@ import 'package:rewizyta_repositories/src/equipment/equipment_row_mapping.dart';
 
 final class const EquipmentRepositoryImpl(final AppDatabase _db) implements EquipmentRepository {
   @override
-  Stream<List<Equipment>> watchByClient(String clientId) {
-    final query = _db.select(_db.equipmentTable)
-      ..where((e) => e.clientId.equals(clientId) & e.deletedAt.isNull())
-      ..orderBy([(e) => OrderingTerm.asc(e.createdAt), (e) => OrderingTerm.asc(e.id)]);
+  Stream<List<Equipment>> watchAll() {
+    final query = _db.select(_db.equipmentTable)..where((e) => e.deletedAt.isNull());
     return query.watch().map((rows) => rows.map((row) => row.toDomain()).toList());
+  }
+
+  @override
+  Stream<List<Equipment>> watchByClient(String clientId) => _byClient(
+    clientId,
+  ).watch().map((rows) => rows.map((row) => row.toDomain()).toList());
+
+  @override
+  Future<List<Equipment>> findByClient(String clientId) async {
+    final rows = await _byClient(clientId).get();
+    return rows.map((row) => row.toDomain()).toList();
   }
 
   @override
@@ -38,4 +47,8 @@ final class const EquipmentRepositoryImpl(final AppDatabase _db) implements Equi
     isDeleted: equipment.isDeleted,
     payload: EquipmentDto.fromDomain(equipment).toJson(),
   );
+
+  Selectable<EquipmentRow> _byClient(String clientId) => _db.select(_db.equipmentTable)
+    ..where((e) => e.clientId.equals(clientId) & e.deletedAt.isNull())
+    ..orderBy([(e) => OrderingTerm.asc(e.createdAt), (e) => OrderingTerm.asc(e.id)]);
 }

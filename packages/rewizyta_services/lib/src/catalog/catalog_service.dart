@@ -3,6 +3,14 @@ import 'package:rewizyta_models/rewizyta_models.dart';
 /// The user's trades and service types, seeded from the default catalogue
 /// ([TradeTemplate], [ServiceTypeTemplate]).
 abstract interface class CatalogService() {
+  /// Live service types, archived ones included, in the user's order.
+  Stream<List<ServiceType>> watchServiceTypes();
+
+  /// Copies the whole default catalogue when the user has no service type yet.
+  /// Stands in for onboarding's trade picker until that lands (M7), which
+  /// replaces the only call to it.
+  Future<void> ensureDefaults();
+
   /// Copies [trades] and their service types into the user's rows, in one
   /// transaction, without a name (the UI localizes the template until the
   /// user renames it). Used by onboarding and by "restore defaults": a

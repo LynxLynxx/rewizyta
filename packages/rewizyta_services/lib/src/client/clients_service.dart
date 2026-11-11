@@ -28,6 +28,22 @@ abstract interface class ClientsService() {
     String? note,
   });
 
+  /// [saveClient] and the client's equipment in one transaction, as the form
+  /// shows them: a draft with an id updates that row, one without adds a row,
+  /// and live equipment missing from [equipment] is soft-deleted. Drafts with
+  /// a [EquipmentDraft.lastVisitAt] are recorded as visits, one per day, so
+  /// the due dates stay derived.
+  Future<Client> saveClientWithEquipment({
+    String? id,
+    required String name,
+    String? phone,
+    String? addressLine,
+    String? town,
+    String? postalCode,
+    String? note,
+    required List<EquipmentDraft> equipment,
+  });
+
   Future<void> deleteClient(String id);
 
   /// Undoes [deleteClient].

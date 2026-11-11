@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:rewizyta_models/rewizyta_models.dart';
+import 'package:rewizyta_view_models/src/due/due_status_view_model.dart';
 import 'package:rewizyta_view_models/src/formatters/address_formatter.dart';
 
 final class const ClientListItemViewModel({
@@ -11,8 +12,15 @@ final class const ClientListItemViewModel({
 
   /// The phone without `+`, for searching by number.
   final String phoneDigits = '',
+
+  /// Null for a client with no equipment.
+  final DueStatusViewModel? status,
 }) with Equatable {
-  factory fromDomain(Client client) => ClientListItemViewModel(
+  factory fromDomain(
+    Client client, {
+    List<Equipment> equipment = const [],
+    required DateTime today,
+  }) => ClientListItemViewModel(
     id: client.id,
     name: client.name,
     addressLabel: formatAddress(
@@ -21,6 +29,7 @@ final class const ClientListItemViewModel({
       town: client.town,
     ),
     phoneDigits: client.phone?.replaceAll(_nonDigits, '') ?? '',
+    status: DueStatusViewModel.ofClient(equipment, today),
   );
 
   static final _phoneQuery = RegExp(r'^[\d\s+\-]+$');
@@ -37,5 +46,5 @@ final class const ClientListItemViewModel({
   }
 
   @override
-  List<Object?> get props => [id, name, addressLabel, phoneDigits];
+  List<Object?> get props => [id, name, addressLabel, phoneDigits, status];
 }

@@ -45,9 +45,9 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M2 – Clients
 
-- [x] List with search (name and address without diacritics, phone digits whatever the spacing), detail, add/edit form with inline validation, soft delete with "Cofnij". `ClientsService.watchClients` sorts with `comparePolish` (`rewizyta_models`), because SQLite's `ORDER BY name` puts Ł, Ś and Ż after Z; the service turns a typed phone (`601 234 567`, `0048…`) into E.164. The card pops with `true` after a delete and the list offers the undo; the add form pops with the new id and the list opens the card, because go_router's `pushReplacement` never completes the original `push` (2026-10-22). Status tags on the list and the card wait for the equipment item below.
+- [x] List with search (name and address without diacritics, phone digits whatever the spacing), detail, add/edit form with inline validation, soft delete with "Cofnij". `ClientsService.watchClients` sorts with `comparePolish` (`rewizyta_models`), because SQLite's `ORDER BY name` puts Ł, Ś and Ż after Z; the service turns a typed phone (`601 234 567`, `0048…`) into E.164. The card pops with `true` after a delete and the list offers the undo; the add form pops with the new id and the list opens the card, because go_router's `pushReplacement` never completes the original `push` (2026-10-22).
 - [x] End-to-end tests with Maestro: `apps/mobile/.maestro/clients.yaml` (add, card, edit, delete, undo, search), `melos run e2e` locally, `.github/workflows/e2e.yml` on an Android emulator for app changes, not a required check; Maestro's analytics off, no Maestro Cloud (2026-10-22). Each journey that lands adds a flow.
-- [ ] Equipment on a client, each with a service type from the user's catalogue. The form's "Ostatnia wizyta" is saved as a visit with that equipment ticked (`VisitsService.saveVisit`), never typed into `last_visit_at`, so the caches stay derived.
+- [x] Equipment on a client, each with a service type from the user's catalogue. The form's "Ostatnia wizyta" is saved as a visit with that equipment ticked (`VisitsService.saveVisit`), never typed into `last_visit_at`, so the caches stay derived; rows with the same date share one visit. `ClientsService.saveClientWithEquipment` writes the client, the equipment and the visits in one transaction. A saved last visit is read-only on the form, because a typed date could only add a visit and an earlier one would not move it; correcting it means removing the row until the client history (M3) can edit visits. Status tags on the list, the card and each row follow the rule in `DESIGN_BRIEF.md`, a client's being that of its earliest due equipment. `CatalogService.ensureDefaults` copies the whole catalogue the first time the form opens, standing in for onboarding's trade picker (M7) (2026-11-04).
 - [ ] Import from phone contacts (`flutter_contacts`), paste a number.
 - [ ] Phone formatting (E.164 in, Polish display out – `formatPhone`), call and SMS via `url_launcher`.
 
@@ -89,7 +89,7 @@ Tick items as they land; add a short note when a decision changes.
 - [ ] Profile, sender name, template, offsets, SMS balance.
 - [ ] Planner settings: working hours, slots per day, slot length, home location, travel speed, route mode.
 - [ ] Settings → "Eksportuj dane" and "Usuń konto" (export first, re-auth, confirmation word, local wipe); "export this client" on the client screen.
-- [ ] First-run onboarding: profile → pick trades (seeds service types) → import contacts → promo code → notification permission.
+- [ ] First-run onboarding: profile → pick trades (seeds service types, replacing the `CatalogService.ensureDefaults` call in `ClientFormCubit`) → import contacts → promo code → notification permission.
 - [ ] Trades and service types editor (rename, cycle, price, archive, add; add a custom trade; restore defaults).
 - [ ] Vendor adapters in `apps/mobile/lib/app/integrations/`: `SentryReportingService` (EU DSN), `PosthogAnalyticsService` (EU host), `FcmPushNotificationsService`; chosen from `AppConfig` in `_registerReporting()`.
 - [ ] Analytics events as constants in the services that emit them; no strings in cubits.
