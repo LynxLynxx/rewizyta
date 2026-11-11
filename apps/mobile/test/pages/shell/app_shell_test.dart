@@ -17,9 +17,7 @@ void main() {
     expect(find.text('Klienci'), findsOneWidget);
     expect(find.byType(Icon), findsNothing);
     expect(selected, [AppTab.due]);
-    // The bar takes its own height, not the screen's.
-    final tab = find.ancestor(of: find.text('Terminy'), matching: find.byType(InkWell));
-    expect(tester.getSize(tab).height, 56);
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 1);
   });
 
   testWidgets('marks the current tab selected for screen readers', (tester) async {
@@ -29,7 +27,7 @@ void main() {
 
     expect(
       tester.getSemantics(find.text('Terminy')),
-      isSemantics(isSelected: true, isButton: true, label: 'Terminy'),
+      isSemantics(isSelected: true, isButton: true),
     );
   });
 }

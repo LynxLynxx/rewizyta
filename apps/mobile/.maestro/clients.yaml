@@ -79,7 +79,7 @@ name: Clients - add, edit, delete, undo, search
 # The due list: the last visit (14.10.2025) puts the next one on 14.10.2026,
 # so the client is overdue from then on.
 - hideKeyboard
-- tapOn: "Terminy"
+- tapOn: "(?s)Terminy.*"
 - assertVisible: "PO TERMINIE"
 - assertVisible: "(?s)Jan Kowalski jr.*"
 - assertVisible: "Dzwoń"

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rewizyta/app/theme/app_colors.dart';
+import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 
 /// The tabs, in the order of the shell branches in `Routes`. Dziś and Więcej join in M4 and M7.
@@ -13,8 +14,9 @@ enum AppTab() {
   };
 }
 
-/// The bottom navigation: text tabs, no icons; the active one in ink, 600,
-/// over a 3 px accent bar (`docs/DESIGN_BRIEF.md`, "The app").
+/// The bottom navigation: a Material [NavigationBar] with text tabs, no icons;
+/// the active one in ink, 600, under a 3 px accent bar (`docs/DESIGN_BRIEF.md`,
+/// "The app"). Colours and label styles come from the theme's `navigationBarTheme`.
 class const AppShell({
   super.key,
   required final AppTab current,
@@ -23,72 +25,24 @@ class const AppShell({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    const bar = SizedBox(width: AppSpacing.xl, height: 3);
     return Scaffold(
       body: child,
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
-          color: context.colorScheme.surfaceContainerLowest,
           border: Border(top: BorderSide(color: context.colorScheme.outlineVariant)),
         ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            children: [
-              for (final tab in AppTab.values)
-                Expanded(
-                  child: _Tab(
-                    label: tab.label(context.l10n),
-                    isSelected: tab == current,
-                    onTap: () => onSelect(tab),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class const _Tab({
-  required final String label,
-  required final bool isSelected,
-  required final VoidCallback onTap,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      selected: isSelected,
-      button: true,
-      child: InkWell(
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  width: 3,
-                  color: isSelected
-                      ? context.appColors.accent
-                      : context.colorScheme.surfaceContainerLowest,
-                ),
+        child: NavigationBar(
+          selectedIndex: current.index,
+          onDestinationSelected: (index) => onSelect(AppTab.values[index]),
+          destinations: [
+            for (final tab in AppTab.values)
+              NavigationDestination(
+                icon: bar,
+                selectedIcon: ColoredBox(color: context.appColors.accent, child: bar),
+                label: tab.label(context.l10n),
               ),
-            ),
-            // heightFactor: the bar gets the screen's height; take only the text's.
-            child: Center(
-              heightFactor: 1,
-              child: Text(
-                label,
-                style: context.textTheme.bodyMedium?.copyWith(
-                  color: isSelected
-                      ? context.colorScheme.onSurface
-                      : context.colorScheme.onSurfaceVariant,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-            ),
-          ),
+          ],
         ),
       ),
     );

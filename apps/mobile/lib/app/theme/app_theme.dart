@@ -173,6 +173,18 @@ abstract final class AppTheme() {
         ),
         trackOutlineColor: const WidgetStatePropertyAll(Color(0x00000000)),
       ),
+      // Text tabs: no pill indicator; the shell draws the accent bar as the icon.
+      navigationBarTheme: NavigationBarThemeData(
+        height: 56,
+        backgroundColor: _Palette.white,
+        elevation: 0,
+        indicatorColor: const Color(0x00000000),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? textTheme.bodyMedium?.copyWith(color: _Palette.ink, fontWeight: FontWeight.w600)
+              : textTheme.bodyMedium?.copyWith(color: _Palette.muted, fontWeight: FontWeight.w400),
+        ),
+      ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: _Palette.accent,
         linearTrackColor: _Palette.lineLight,

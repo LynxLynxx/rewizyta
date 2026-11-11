@@ -153,7 +153,7 @@ self-hosts them in `apps/website/web/fonts/`).
   padding and 12 px card gaps the prototype uses; add a constant rather than
   a literal.
 - **Navigation.** Four text tabs (Dziś · Terminy · Klienci · Więcej). Active:
-  `ink`, 600, a 3 px `accent` bar; inactive: `muted`, 400. No icons.
+  `ink`, 600, a 3 px `accent` bar; inactive: `muted`, 400. No icons. Built on Material's `NavigationBar` (`navigationBarTheme`), the bar as the destination icon.
 - **Patterns.** Segmented control (track `lineLight`, 3 px padding, active
   segment white); the next-stop card (white, 1.5 px ink border, radius 14);
   64 px list rows in a `50px 1fr auto` grid (mono time, two text lines, a
