@@ -40,6 +40,18 @@
   "@clientNote": {
     "description": "Label of the note field and heading of the note on the client card."
   },
+  "clientCall": "Zadzwoń",
+  "@clientCall": {
+    "description": "Opens the phone's dialer with the client's number, on the client card."
+  },
+  "clientSms": "SMS",
+  "@clientSms": {
+    "description": "Opens the phone's messaging app with the client's number, on the client card."
+  },
+  "clientLaunchFailed": "Nie udało się otworzyć aplikacji telefonu.",
+  "@clientLaunchFailed": {
+    "description": "Snackbar when the phone has no app for calls or text messages (a tablet, for one)."
+  },
   "clientEdit": "Edytuj",
   "@clientEdit": {
     "description": "Opens the edit form from the client card."

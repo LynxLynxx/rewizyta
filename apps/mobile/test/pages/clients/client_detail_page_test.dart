@@ -1,19 +1,54 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:rewizyta/pages/clients/client_detail_page.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../helpers/pump_app.dart';
 
 class MockClientDetailCubit() extends MockCubit<ClientDetailState> implements ClientDetailCubit;
 
+/// Records launched URLs; `fails` makes it throw as Android does without a
+/// matching app.
+class _FakeUrlLauncher() extends UrlLauncherPlatform with MockPlatformInterfaceMixin {
+  final List<String> launched = [];
+  bool fails = false;
+
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    if (fails) throw PlatformException(code: 'ACTIVITY_NOT_FOUND');
+    launched.add(url);
+    return true;
+  }
+}
+
+const _withPhone = ClientDetailState(
+  client: ClientDetailViewModel(
+    id: 'c1',
+    name: 'Jan',
+    phone: '+48601234567',
+    phoneLabel: '601 234 567',
+    addressLabel: null,
+    note: null,
+  ),
+);
+
 void main() {
   late MockClientDetailCubit cubit;
+  late _FakeUrlLauncher launcher;
 
   setUp(() {
+    launcher = _FakeUrlLauncher();
+    UrlLauncherPlatform.instance = launcher;
     cubit = MockClientDetailCubit();
     when(() => cubit.errorStream).thenAnswer((_) => const Stream.empty());
     when(() => cubit.signalStream).thenAnswer((_) => const Stream.empty());
@@ -37,6 +72,7 @@ void main() {
         client: ClientDetailViewModel(
           id: 'c1',
           name: 'Jan Kowalski',
+          phone: '+48601234567',
           phoneLabel: '601 234 567',
           addressLabel: 'ul. Leśna 12, Nysa',
           note: 'Pies na podwórku',
@@ -60,6 +96,7 @@ void main() {
         client: ClientDetailViewModel(
           id: 'c1',
           name: 'Jan',
+          phone: null,
           phoneLabel: null,
           addressLabel: null,
           note: null,
@@ -71,6 +108,30 @@ void main() {
 
     expect(find.text('Brak adresu'), findsOneWidget);
     expect(find.text('NOTATKA'), findsNothing);
+    expect(find.text('Zadzwoń'), findsNothing);
+    expect(find.text('SMS'), findsNothing);
+  });
+
+  testWidgets('Zadzwoń and SMS hand the number to the system apps', (tester) async {
+    when(() => cubit.state).thenReturn(_withPhone);
+
+    await tester.pumpApp(subject());
+    await tester.tap(find.text('Zadzwoń'));
+    await tester.tap(find.text('SMS'));
+    await tester.pump();
+
+    expect(launcher.launched, ['tel:+48601234567', 'sms:+48601234567']);
+  });
+
+  testWidgets('says so when no app can take the call', (tester) async {
+    when(() => cubit.state).thenReturn(_withPhone);
+    launcher.fails = true;
+
+    await tester.pumpApp(subject());
+    await tester.tap(find.text('Zadzwoń'));
+    await tester.pump();
+
+    expect(find.text('Nie udało się otworzyć aplikacji telefonu.'), findsOneWidget);
   });
 
   testWidgets('Usuń klienta deletes through the cubit', (tester) async {
@@ -79,6 +140,7 @@ void main() {
         client: ClientDetailViewModel(
           id: 'c1',
           name: 'Jan',
+          phone: null,
           phoneLabel: null,
           addressLabel: null,
           note: null,

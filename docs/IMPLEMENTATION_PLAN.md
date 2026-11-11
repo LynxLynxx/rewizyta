@@ -49,7 +49,7 @@ Tick items as they land; add a short note when a decision changes.
 - [x] End-to-end tests with Maestro: `apps/mobile/.maestro/clients.yaml` (add, card, edit, delete, undo, search), `melos run e2e` locally, `.github/workflows/e2e.yml` on an Android emulator for app changes, not a required check; Maestro's analytics off, no Maestro Cloud (2026-10-22). Each journey that lands adds a flow.
 - [ ] Equipment on a client, each with a service type from the user's catalogue. The form's "Ostatnia wizyta" is saved as a visit with that equipment ticked (`VisitsService.saveVisit`), never typed into `last_visit_at`, so the caches stay derived.
 - [ ] Import from phone contacts (`flutter_contacts`), paste a number.
-- [ ] Phone formatting (E.164 in, Polish display out – `formatPhone`), call and SMS via `url_launcher`.
+- [x] Phone formatting (E.164 in, Polish display out – `formatPhone`), call and SMS via `url_launcher`: Zadzwoń and SMS on the card open the system dialer and messaging app (`tel:` / `sms:`), with a snackbar when nothing takes the link. No `<queries>` in the manifest, because nothing calls `canLaunchUrl`. The SMS button turns into the server-sent SMS sheet in M6 (2026-11-11).
 
 ## M3 – Visits and due list
 

@@ -19,6 +19,7 @@ void main() {
       ),
     );
 
+    expect(vm.phone, '+48601234567');
     expect(vm.phoneLabel, '601 234 567');
     expect(vm.addressLabel, 'ul. Leśna 12, Nowy Targ');
     expect(vm.note, 'Pies');
@@ -29,6 +30,6 @@ void main() {
       Client(id: '1', name: 'Jan', createdAt: now, updatedAt: now),
     );
 
-    expect([vm.phoneLabel, vm.addressLabel, vm.note], everyElement(isNull));
+    expect([vm.phone, vm.phoneLabel, vm.addressLabel, vm.note], everyElement(isNull));
   });
 }

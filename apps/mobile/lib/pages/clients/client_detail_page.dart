@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rewizyta/app/dependency/dependencies.dart';
 import 'package:rewizyta/app/theme/app_colors.dart';
@@ -10,6 +11,7 @@ import 'package:rewizyta/router/route_paths.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// The client card. Pops with `true` after a delete, so the screen that
 /// pushed it can offer the undo.
@@ -91,6 +93,28 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
             client.phoneLabel!,
             style: textTheme.bodyMedium?.copyWith(fontFamily: AppFonts.mono, color: muted),
           ),
+        if (client.phone != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launch(context, Uri(scheme: 'tel', path: client.phone)),
+                  icon: const Icon(Icons.call_outlined),
+                  label: Text(context.l10n.clientCall),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launch(context, Uri(scheme: 'sms', path: client.phone)),
+                  icon: const Icon(Icons.sms_outlined),
+                  label: Text(context.l10n.clientSms),
+                ),
+              ),
+            ],
+          ),
+        ],
         if (client.note != null) ...[
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -117,4 +141,14 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
       ],
     );
   }
+}
+
+/// Hands [uri] to the system dialer or messaging app. The SMS button becomes
+/// the server-sent SMS sheet in M6. Android throws when no app takes the
+/// intent (a tablet without telephony), iOS returns false.
+Future<void> _launch(BuildContext context, Uri uri) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final failed = context.l10n.clientLaunchFailed;
+  final launched = await launchUrl(uri).onError<PlatformException>((_, _) => false);
+  if (!launched) messenger.showSnackBar(SnackBar(content: Text(failed)));
 }

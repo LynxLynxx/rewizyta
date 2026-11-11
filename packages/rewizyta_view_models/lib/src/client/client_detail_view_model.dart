@@ -7,6 +7,7 @@ import 'package:rewizyta_view_models/src/formatters/phone_formatter.dart';
 final class const ClientDetailViewModel({
   required final String id,
   required final String name,
+  required final String? phone,
   required final String? phoneLabel,
   required final String? addressLabel,
   required final String? note,
@@ -14,6 +15,7 @@ final class const ClientDetailViewModel({
   factory fromDomain(Client client) => ClientDetailViewModel(
     id: client.id,
     name: client.name,
+    phone: client.phone,
     phoneLabel: client.phone == null ? null : formatPhone(client.phone!),
     addressLabel: formatAddress(
       addressLine: client.addressLine,
@@ -24,5 +26,5 @@ final class const ClientDetailViewModel({
   );
 
   @override
-  List<Object?> get props => [id, name, phoneLabel, addressLabel, note];
+  List<Object?> get props => [id, name, phone, phoneLabel, addressLabel, note];
 }
