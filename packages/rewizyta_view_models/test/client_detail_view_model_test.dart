@@ -20,6 +20,7 @@ void main() {
       today: now,
     );
 
+    expect(vm.phone, '+48601234567');
     expect(vm.phoneLabel, '601 234 567');
     expect(vm.addressLabel, 'ul. Leśna 12, Nowy Targ');
     expect(vm.note, 'Pies');
@@ -31,7 +32,7 @@ void main() {
       today: now,
     );
 
-    expect([vm.phoneLabel, vm.addressLabel, vm.note], everyElement(isNull));
+    expect([vm.phone, vm.phoneLabel, vm.addressLabel, vm.note], everyElement(isNull));
   });
 
   test('maps the equipment and takes the status from the earliest due date', () {
