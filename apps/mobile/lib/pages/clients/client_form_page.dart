@@ -7,6 +7,7 @@ import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/handlers/signal_handler_state_mixin.dart';
 import 'package:rewizyta/common/widgets/back_link.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
+import 'package:rewizyta/common/widgets/labeled_field.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_models/rewizyta_models.dart';
@@ -83,7 +84,7 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
           style: context.textTheme.headlineMedium,
         ),
         const SizedBox(height: AppSpacing.md),
-        _LabeledField(
+        LabeledField(
           label: l10n.clientFormName,
           child: TextFormField(
             initialValue: state.name,
@@ -96,7 +97,7 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
             ),
           ),
         ),
-        _LabeledField(
+        LabeledField(
           label: l10n.clientFormPhone,
           child: TextFormField(
             initialValue: state.phone,
@@ -110,7 +111,7 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
             ),
           ),
         ),
-        _LabeledField(
+        LabeledField(
           label: l10n.clientFormAddress,
           child: TextFormField(
             initialValue: state.addressLine,
@@ -124,7 +125,7 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
           children: [
             Expanded(
               flex: 2,
-              child: _LabeledField(
+              child: LabeledField(
                 label: l10n.clientFormPostalCode,
                 child: TextFormField(
                   initialValue: state.postalCode,
@@ -137,7 +138,7 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               flex: 3,
-              child: _LabeledField(
+              child: LabeledField(
                 label: l10n.clientFormTown,
                 child: TextFormField(
                   initialValue: state.town,
@@ -161,7 +162,7 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
               child: Text(l10n.clientFormAddEquipment),
             ),
           ),
-        _LabeledField(
+        LabeledField(
           label: l10n.clientNote,
           child: TextFormField(
             initialValue: state.note,
@@ -238,7 +239,7 @@ class const _EquipmentRow({
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            _LabeledField(
+            LabeledField(
               label: l10n.clientFormEquipmentLabel,
               child: TextFormField(
                 initialValue: row.label,
@@ -248,7 +249,7 @@ class const _EquipmentRow({
                 decoration: InputDecoration(hintText: l10n.clientFormEquipmentLabelHint),
               ),
             ),
-            _LabeledField(
+            LabeledField(
               label: l10n.clientFormLastVisit,
               child: TextFormField(
                 initialValue: row.lastVisit,
@@ -315,33 +316,6 @@ class const _NextDueBox({required final ClientFormEquipmentRow row}) extends Sta
                 row.lastVisitError?.localizedMessage(l10n) ?? l10n.clientFormLastVisitEmpty,
                 style: textStyle,
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A label above the input, as in the design. Above rather than inside,
-/// because the 1.5 px input border alone falls short of 3:1 on white
-/// (`docs/DESIGN_BRIEF.md`, "Accessibility"). Merged, so a screen reader
-/// announces the label with the field.
-class const _LabeledField({required final String label, required final Widget child})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: MergeSemantics(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              label,
-              style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 6),
-            child,
           ],
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:rewizyta/app/theme/app_colors.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
+import 'package:rewizyta/pages/clients/open_client_card.dart';
 import 'package:rewizyta/router/routes/routing/clients_route.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
@@ -37,20 +38,9 @@ class _ClientsViewState()
     if (id != null && mounted) await _openClient(id);
   }
 
-  /// The card pops with `true` after a delete; the undo lives here because
-  /// this cubit outlives the card.
-  Future<void> _openClient(String id) async {
+  Future<void> _openClient(String id) {
     final cubit = context.read<ClientsCubit>();
-    final messenger = ScaffoldMessenger.of(context);
-    final l10n = context.l10n;
-    final deleted = await ClientDetailRoute(id: id).push<bool>(context);
-    if (deleted != true) return;
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(l10n.clientDeleted),
-        action: SnackBarAction(label: l10n.undo, onPressed: () => cubit.restoreClient(id)),
-      ),
-    );
+    return openClientCard(context, id, onUndo: () => cubit.restoreClient(id));
   }
 
   @override

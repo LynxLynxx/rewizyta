@@ -199,6 +199,67 @@
   "@dueNone": {
     "description": "Status tag: no last visit, so no due date yet."
   },
+  "visitRecord": "Zapisz wizytę",
+  "@visitRecord": {
+    "description": "Sticky button on the client card, and the title of the sheet it opens."
+  },
+  "visitWorkDone": "Wykonane",
+  "@visitWorkDone": {
+    "description": "Label above the equipment chips on the visit sheet: what was serviced."
+  },
+  "visitDate": "Data wizyty",
+  "@visitDate": {
+    "description": "Label of the visit date field (DD.MM.RRRR), prefilled with today."
+  },
+  "visitPrice": "Cena (zł)",
+  "@visitPrice": {
+    "description": "Label of the optional price field on the visit sheet."
+  },
+  "visitPriceHint": "np. 180",
+  "@visitPriceHint": {
+    "description": "Placeholder of the price field."
+  },
+  "visitPriceInvalid": "Wpisz kwotę jak 180 albo 180,50.",
+  "@visitPriceInvalid": {
+    "description": "Inline error when the price is not an amount."
+  },
+  "visitSave": "Zapisz",
+  "@visitSave": {
+    "description": "Primary button of the visit sheet."
+  },
+  "visitSaved": "Zapisano wizytę.",
+  "@visitSaved": {
+    "description": "Snackbar after a visit is saved."
+  },
+  "dueTitle": "Terminy",
+  "@dueTitle": {
+    "description": "App bar title of the due list, and its tab in the bottom navigation."
+  },
+  "dueCount": "{count, plural, one{1 klient do obsłużenia} other{{count} klientów do obsłużenia}}",
+  "@dueCount": {
+    "description": "Subtitle of the due list: clients overdue or due within 60 days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueOverdueSection": "Po terminie",
+  "@dueOverdueSection": {
+    "description": "Due list group of overdue clients; shown upper-case."
+  },
+  "dueUpcomingSection": "Najbliższe 60 dni",
+  "@dueUpcomingSection": {
+    "description": "Due list group of clients due today or within 60 days; shown upper-case."
+  },
+  "dueCall": "Dzwoń",
+  "@dueCall": {
+    "description": "Round button on a due list row that opens the dialer with the client's number."
+  },
+  "dueEmpty": "Nikt nie czeka na przegląd w najbliższych 60 dniach.",
+  "@dueEmpty": {
+    "description": "Due list when no client is overdue or due within 60 days."
+  },
   "errorGenericTitle": "Coś poszło nie tak",
   "@errorGenericTitle": {
     "description": "Default snackbar title for errors."

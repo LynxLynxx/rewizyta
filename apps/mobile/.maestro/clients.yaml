@@ -1,5 +1,6 @@
 # Journey 1 in docs/APP_FLOW.md plus the card: add a client with equipment and
-# a last visit, open the card, edit it, delete it, undo, find it by phone.
+# a last visit, open the card, edit it, delete it, undo, find it by phone,
+# then see it on the due list and record a visit from there.
 # Starts from an empty database.
 # ASCII input only: Maestro's Android driver cannot type Polish letters.
 # Form fields are matched by their label: the label is merged with the field
@@ -74,3 +75,21 @@ name: Clients - add, edit, delete, undo, search
 - assertVisible: "(?s)Jan Kowalski jr.*"
 - inputText: "x"
 - assertVisible: "Nikogo nie znaleziono."
+
+# The due list: the last visit (14.10.2025) puts the next one on 14.10.2026,
+# so the client is overdue from then on.
+- hideKeyboard
+- tapOn: "Terminy"
+- assertVisible: "PO TERMINIE"
+- assertVisible: "(?s)Jan Kowalski jr.*"
+- assertVisible: "Dzwoń"
+
+# Journey 2 from the card: record today's visit with everything ticked. The
+# next date moves a year on, so the client leaves the due list.
+- tapOn: "(?s)Jan Kowalski jr.*Nysa.*"
+- tapOn: "Zapisz wizytę"
+- assertVisible: "Wykonane"
+- tapOn: "Zapisz"
+- assertVisible: "Zapisano wizytę."
+- back
+- assertVisible: "Nikt nie czeka na przegląd w najbliższych 60 dniach."

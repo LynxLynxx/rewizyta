@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rewizyta/app/dependency/dependencies.dart';
 import 'package:rewizyta/app/theme/app_colors.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/handlers/signal_handler_state_mixin.dart';
+import 'package:rewizyta/common/launch_external.dart';
 import 'package:rewizyta/common/widgets/back_link.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
+import 'package:rewizyta/pages/visits/visit_sheet.dart';
 import 'package:rewizyta/router/routes/routing/clients_route.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// The client card. Pops with `true` after a delete, so the screen that
 /// pushed it can offer the undo.
@@ -66,6 +66,23 @@ class _ClientDetailViewState()
       body: client == null
           ? const Center(child: CircularProgressIndicator())
           : _ClientCard(client: client),
+      // Sticky, so recording a visit is one tap wherever the card is scrolled.
+      bottomNavigationBar: client == null
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: FilledButton(
+                  onPressed: () => VisitSheet.show(context, clientId: client.id),
+                  child: Text(context.l10n.visitRecord),
+                ),
+              ),
+            ),
     );
   }
 }
@@ -100,7 +117,7 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _launch(context, Uri(scheme: 'tel', path: client.phone)),
+                  onPressed: () => launchExternal(context, Uri(scheme: 'tel', path: client.phone)),
                   icon: const Icon(Icons.call_outlined),
                   label: Text(context.l10n.clientCall),
                 ),
@@ -108,7 +125,7 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _launch(context, Uri(scheme: 'sms', path: client.phone)),
+                  onPressed: () => launchExternal(context, Uri(scheme: 'sms', path: client.phone)),
                   icon: const Icon(Icons.sms_outlined),
                   label: Text(context.l10n.clientSms),
                 ),
@@ -158,16 +175,6 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
       ],
     );
   }
-}
-
-/// Hands [uri] to the system dialer or messaging app. The SMS button becomes
-/// the server-sent SMS sheet in M6. Android throws when no app takes the
-/// intent (a tablet without telephony), iOS returns false.
-Future<void> _launch(BuildContext context, Uri uri) async {
-  final messenger = ScaffoldMessenger.of(context);
-  final failed = context.l10n.clientLaunchFailed;
-  final launched = await launchUrl(uri).onError<PlatformException>((_, _) => false);
-  if (!launched) messenger.showSnackBar(SnackBar(content: Text(failed)));
 }
 
 class const _EquipmentCard({required final ClientEquipmentViewModel equipment})
