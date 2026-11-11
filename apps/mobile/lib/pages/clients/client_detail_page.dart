@@ -6,6 +6,7 @@ import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/handlers/signal_handler_state_mixin.dart';
 import 'package:rewizyta/common/widgets/back_link.dart';
+import 'package:rewizyta/common/widgets/due_status_tag.dart';
 import 'package:rewizyta/router/route_paths.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
@@ -91,6 +92,22 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
             client.phoneLabel!,
             style: textTheme.bodyMedium?.copyWith(fontFamily: AppFonts.mono, color: muted),
           ),
+        if (client.status != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: DueStatusTag(status: client.status!),
+          ),
+        ],
+        if (client.equipment.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            context.l10n.clientEquipment.toUpperCase(),
+            style: textTheme.labelMedium?.copyWith(color: muted),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final item in client.equipment) _EquipmentCard(equipment: item),
+        ],
         if (client.note != null) ...[
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -115,6 +132,68 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
           ),
         ),
       ],
+    );
+  }
+}
+
+class const _EquipmentCard({required final ClientEquipmentViewModel equipment})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final textTheme = context.textTheme;
+    return MergeSemantics(
+      child: Card(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      equipment.serviceType?.localizedName(l10n) ?? '',
+                      style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  DueStatusTag(status: equipment.status),
+                ],
+              ),
+              if (equipment.label != null)
+                Text(
+                  equipment.label!,
+                  style: textTheme.bodyMedium?.copyWith(color: context.appColors.text2),
+                ),
+              if (equipment.lastVisitLabel != null)
+                _DateRow(label: l10n.clientFormLastVisit, date: equipment.lastVisitLabel!),
+              if (equipment.nextDueLabel != null)
+                _DateRow(label: l10n.clientFormNextDue, date: equipment.nextDueLabel!),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class const _DateRow({required final String label, required final String date})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final style = context.textTheme.bodyMedium;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: style),
+          Text(date, style: style?.copyWith(fontFamily: AppFonts.mono)),
+        ],
+      ),
     );
   }
 }

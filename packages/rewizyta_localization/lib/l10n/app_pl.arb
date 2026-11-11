@@ -100,6 +100,93 @@
   "@clientFormSave": {
     "description": "Save button of the client form."
   },
+  "clientEquipment": "Urządzenia",
+  "@clientEquipment": {
+    "description": "Heading of the equipment section on the client card and form."
+  },
+  "clientFormService": "Usługa",
+  "@clientFormService": {
+    "description": "Label above the service type chips of an equipment row."
+  },
+  "clientFormEquipmentLabel": "Opis (opcjonalnie)",
+  "@clientFormEquipmentLabel": {
+    "description": "Optional label of an equipment row."
+  },
+  "clientFormEquipmentLabelHint": "np. komin w kuchni",
+  "@clientFormEquipmentLabelHint": {
+    "description": "Placeholder of the equipment label."
+  },
+  "clientFormLastVisit": "Ostatnia wizyta",
+  "@clientFormLastVisit": {
+    "description": "Label of the last visit date of an equipment row."
+  },
+  "clientFormLastVisitHint": "dd.mm.rrrr",
+  "@clientFormLastVisitHint": {
+    "description": "Placeholder of the last visit date."
+  },
+  "clientFormLastVisitEmpty": "Nie pamiętasz? Zostaw puste – policzymy po pierwszej wizycie.",
+  "@clientFormLastVisitEmpty": {
+    "description": "Shown under an empty last visit date."
+  },
+  "clientFormLastVisitInvalid": "Wpisz datę jak 14.10.2025.",
+  "@clientFormLastVisitInvalid": {
+    "description": "Shown while the last visit is not a date yet; blocks saving."
+  },
+  "clientFormLastVisitFuture": "Data wizyty nie może być z przyszłości.",
+  "@clientFormLastVisitFuture": {
+    "description": "Shown when the last visit is after today; blocks saving."
+  },
+  "clientFormNextDue": "Następny przegląd",
+  "@clientFormNextDue": {
+    "description": "Label of the computed next due date."
+  },
+  "clientFormAddEquipment": "Dodaj urządzenie",
+  "@clientFormAddEquipment": {
+    "description": "Button that adds an equipment row to the client form."
+  },
+  "clientFormRemoveEquipment": "Usuń urządzenie",
+  "@clientFormRemoveEquipment": {
+    "description": "Button that removes an equipment row from the client form."
+  },
+  "equipmentRemoved": "Usunięto urządzenie.",
+  "@equipmentRemoved": {
+    "description": "Snackbar after removing an equipment row, with an undo."
+  },
+  "dueOverdue": "{count, plural, one{po terminie {count} dzień} other{po terminie {count} dni}}",
+  "@dueOverdue": {
+    "description": "Status tag: the due date was {count} days ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueToday": "dzisiaj",
+  "@dueToday": {
+    "description": "Status tag: due today."
+  },
+  "dueInDays": "{count, plural, one{za {count} dzień} other{za {count} dni}}",
+  "@dueInDays": {
+    "description": "Status tag: due in {count} days, up to 60.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueInMonths": "za {count} mies.",
+  "@dueInMonths": {
+    "description": "Status tag: due in {count} months, over 60 days away.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueNone": "bez terminu",
+  "@dueNone": {
+    "description": "Status tag: no last visit, so no due date yet."
+  },
   "errorGenericTitle": "Coś poszło nie tak",
   "@errorGenericTitle": {
     "description": "Default snackbar title for errors."
@@ -107,6 +194,14 @@
   "errorClientNotFound": "Nie znaleziono klienta.",
   "@errorClientNotFound": {
     "description": "Snackbar message when a client id is unknown."
+  },
+  "errorEquipmentNotFound": "Nie znaleziono urządzenia.",
+  "@errorEquipmentNotFound": {
+    "description": "Snackbar message when an equipment id is unknown."
+  },
+  "errorServiceTypeNotFound": "Nie znaleziono usługi.",
+  "@errorServiceTypeNotFound": {
+    "description": "Snackbar message when a service type id is unknown."
   },
   "validationNameEmpty": "Podaj nazwę klienta.",
   "@validationNameEmpty": {

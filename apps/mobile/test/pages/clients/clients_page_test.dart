@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
+import 'package:rewizyta/common/widgets/due_status_tag.dart';
 import 'package:rewizyta/pages/clients/clients_page.dart';
 import 'package:rewizyta/router/route_paths.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
@@ -38,6 +39,28 @@ void main() {
     await tester.pumpApp(subject());
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('a client with equipment shows its status, one without shows none', (tester) async {
+    when(() => cubit.state).thenReturn(
+      const ClientsState(
+        isLoading: false,
+        items: [
+          ClientListItemViewModel(
+            id: '1',
+            name: 'Jan Kowalski',
+            addressLabel: null,
+            status: DueStatusViewModel(kind: DueStatusKind.soon, count: 5),
+          ),
+          anna,
+        ],
+      ),
+    );
+
+    await tester.pumpApp(subject());
+
+    expect(find.text('za 5 dni'), findsOneWidget);
+    expect(find.byType(DueStatusTag), findsOneWidget);
   });
 
   testWidgets('shows the empty message and no search when there are no clients', (tester) async {

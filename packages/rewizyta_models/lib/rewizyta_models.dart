@@ -14,6 +14,7 @@ export 'src/common/unknown_enum_value_exception.dart';
 export 'src/device/device.dart';
 export 'src/due/due_date.dart';
 export 'src/equipment/equipment.dart';
+export 'src/equipment/equipment_draft.dart';
 export 'src/equipment/equipment_exceptions.dart';
 export 'src/reminder/reminder.dart';
 export 'src/visit/visit.dart';

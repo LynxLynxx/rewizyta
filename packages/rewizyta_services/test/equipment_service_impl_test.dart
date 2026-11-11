@@ -110,4 +110,32 @@ void main() {
       verifyNever(() => equipment.upsert(any()));
     });
   });
+
+  group('deleteEquipment', () {
+    test('soft-deletes the row and keeps its due dates', () async {
+      await service.deleteEquipment('e');
+
+      final saved = verify(() => equipment.upsert(captureAny())).captured.single as Equipment;
+      expect(saved.deletedAt, now);
+      expect(saved.updatedAt, now);
+      expect(saved.nextDueAt, stored.nextDueAt);
+    });
+
+    test('throws for an unknown id', () async {
+      when(() => equipment.find('x')).thenAnswer((_) async => null);
+
+      await expectLater(service.deleteEquipment('x'), throwsA(isA<EquipmentNotFoundException>()));
+      verifyNever(() => equipment.upsert(any()));
+    });
+  });
+
+  test('the reads pass through to the repository', () async {
+    when(equipment.watchAll).thenAnswer((_) => Stream.value([stored]));
+    when(() => equipment.watchByClient('c')).thenAnswer((_) => Stream.value([stored]));
+    when(() => equipment.findByClient('c')).thenAnswer((_) async => [stored]);
+
+    expect(await service.watchAll().first, [stored]);
+    expect(await service.watchByClient('c').first, [stored]);
+    expect(await service.findByClient('c'), [stored]);
+  });
 }

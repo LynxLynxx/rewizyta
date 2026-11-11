@@ -6,6 +6,7 @@ import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/handlers/signal_handler_state_mixin.dart';
 import 'package:rewizyta/common/widgets/back_link.dart';
+import 'package:rewizyta/common/widgets/due_status_tag.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_models/rewizyta_models.dart';
@@ -37,9 +38,10 @@ class _ClientFormViewState()
   @override
   void handleSignal(ClientFormSaved signal) {
     final l10n = context.l10n;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(signal.created ? l10n.clientAdded : l10n.clientSaved)));
+    // Replaces a pending "Cofnij" for a removed row, which saving has made final.
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(signal.created ? l10n.clientAdded : l10n.clientSaved)));
     context.pop(signal.created ? signal.id : null);
   }
 
@@ -147,6 +149,18 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
             ),
           ],
         ),
+        Text(l10n.clientEquipment, style: context.textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.sm),
+        for (final row in state.equipment)
+          _EquipmentRow(key: ValueKey(row.rowKey), row: row, state: state),
+        if (state.canAddEquipment)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: OutlinedButton(
+              onPressed: () => cubit().addEquipment(),
+              child: Text(l10n.clientFormAddEquipment),
+            ),
+          ),
         _LabeledField(
           label: l10n.clientNote,
           child: TextFormField(
@@ -163,6 +177,147 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
           child: Text(l10n.clientFormSave),
         ),
       ],
+    );
+  }
+}
+
+/// Service chips, an optional label and the last visit with what it makes the
+/// next due date. Keyed by the row, so removing one keeps the others' text.
+class const _EquipmentRow({
+  super.key,
+  required final ClientFormEquipmentRow row,
+  required final ClientFormState state,
+}) extends StatelessWidget {
+  void _remove(BuildContext context) {
+    final cubit = context.read<ClientFormCubit>();
+    final l10n = context.l10n;
+    final index = state.equipment.indexOf(row);
+    cubit.removeEquipment(row.rowKey);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          persist: false,
+          content: Text(l10n.equipmentRemoved),
+          action: SnackBarAction(
+            label: l10n.undo,
+            onPressed: () => cubit.restoreEquipment(row, index),
+          ),
+        ),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    ClientFormCubit cubit() => context.read<ClientFormCubit>();
+    return Card(
+      // Off, or the row's texts merge into one node, read apart from its chips.
+      semanticContainer: false,
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.clientFormService,
+              style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final type in state.serviceTypesFor(row))
+                  ChoiceChip(
+                    label: Text(type.localizedName(l10n)),
+                    selected: type.id == row.serviceTypeId,
+                    onSelected: (_) => cubit().updateEquipment(row.rowKey, serviceTypeId: type.id),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _LabeledField(
+              label: l10n.clientFormEquipmentLabel,
+              child: TextFormField(
+                initialValue: row.label,
+                onChanged: (value) => cubit().updateEquipment(row.rowKey, label: value),
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(hintText: l10n.clientFormEquipmentLabelHint),
+              ),
+            ),
+            _LabeledField(
+              label: l10n.clientFormLastVisit,
+              child: TextFormField(
+                initialValue: row.lastVisit,
+                readOnly: row.isLastVisitLocked,
+                onChanged: (value) => cubit().updateEquipment(row.rowKey, lastVisit: value),
+                keyboardType: TextInputType.datetime,
+                textInputAction: TextInputAction.next,
+                style: context.textTheme.bodyLarge?.copyWith(fontFamily: AppFonts.mono),
+                decoration: InputDecoration(hintText: l10n.clientFormLastVisitHint),
+              ),
+            ),
+            _NextDueBox(row: row),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                style: TextButton.styleFrom(foregroundColor: context.colorScheme.error),
+                onPressed: () => _remove(context),
+                child: Text(l10n.clientFormRemoveEquipment),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The live "Następny przegląd", or what keeps it from showing.
+class const _NextDueBox({required final ClientFormEquipmentRow row}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colors = context.appColors;
+    final textStyle = context.textTheme.bodyMedium?.copyWith(color: colors.soonForeground);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.soonBackground,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm + AppSpacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppSpacing.xs,
+          children: [
+            if (row.nextDueLabel != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.clientFormNextDue, style: textStyle),
+                  Text(
+                    row.nextDueLabel!,
+                    style: textStyle?.copyWith(
+                      fontFamily: AppFonts.mono,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            if (row.status != null)
+              DueStatusTag(status: row.status!)
+            else
+              Text(
+                row.lastVisitError?.localizedMessage(l10n) ?? l10n.clientFormLastVisitEmpty,
+                style: textStyle,
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

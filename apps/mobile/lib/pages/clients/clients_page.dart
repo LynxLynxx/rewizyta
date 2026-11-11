@@ -4,6 +4,7 @@ import 'package:rewizyta/app/dependency/dependencies.dart';
 import 'package:rewizyta/app/theme/app_colors.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
+import 'package:rewizyta/common/widgets/due_status_tag.dart';
 import 'package:rewizyta/router/route_paths.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
@@ -124,6 +125,7 @@ class const _ClientList({
         return ListTile(
           title: Text(item.name),
           subtitle: Text(item.addressLabel ?? context.l10n.clientNoAddress),
+          trailing: item.status == null ? null : DueStatusTag(status: item.status!),
           onTap: () => onOpen(item.id),
         );
       },

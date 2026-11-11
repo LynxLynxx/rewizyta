@@ -81,4 +81,22 @@ void main() {
       throwsA(isA<SqliteException>()),
     );
   });
+
+  test('watchAll emits the live equipment of every client', () async {
+    await repository.upsert(equipment());
+    await repository.upsert(equipment(id: 'e2', clientId: 'c2'));
+    await repository.upsert(equipment(id: 'gone', deletedAt: t0));
+
+    final list = await repository.watchAll().first;
+    expect(list.map((e) => e.id), unorderedEquals(['e1', 'e2']));
+  });
+
+  test('findByClient returns only the live equipment of that client', () async {
+    await repository.upsert(equipment());
+    await repository.upsert(equipment(id: 'e2', clientId: 'c2'));
+    await repository.upsert(equipment(id: 'gone', deletedAt: t0));
+
+    final list = await repository.findByClient('c1');
+    expect(list.map((e) => e.id), ['e1']);
+  });
 }

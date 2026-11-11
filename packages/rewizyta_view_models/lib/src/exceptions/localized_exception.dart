@@ -13,6 +13,10 @@ abstract base class const LocalizedException() with Equatable implements Excepti
   factory create(Object error) {
     if (error is LocalizedException) return error;
     if (error is ClientNotFoundException) return const LocalizedClientNotFoundException();
+    if (error is EquipmentNotFoundException) return const LocalizedEquipmentNotFoundException();
+    if (error is ServiceTypeNotFoundException) {
+      return const LocalizedServiceTypeNotFoundException();
+    }
     return LocalizedUnknownException(cause: error);
   }
 
@@ -33,6 +37,16 @@ abstract base class const LocalizedException() with Equatable implements Excepti
 final class const LocalizedClientNotFoundException() extends LocalizedException {
   @override
   String message(BuildContext context) => context.l10n.errorClientNotFound;
+}
+
+final class const LocalizedEquipmentNotFoundException() extends LocalizedException {
+  @override
+  String message(BuildContext context) => context.l10n.errorEquipmentNotFound;
+}
+
+final class const LocalizedServiceTypeNotFoundException() extends LocalizedException {
+  @override
+  String message(BuildContext context) => context.l10n.errorServiceTypeNotFound;
 }
 
 /// Fallback. The page swallows it (logged and reported instead of shown), so

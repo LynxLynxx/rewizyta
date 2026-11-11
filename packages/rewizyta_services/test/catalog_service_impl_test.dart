@@ -77,7 +77,8 @@ void main() {
       expect(copiedTypes[1].tradeId, chimney.id);
       expect(copiedTypes[1].name, isNull);
       expect(copiedTypes[1].cycleMonths, 3);
-      expect(copiedTypes[1].sortOrder, 1);
+      // Unique across the trades, so a picker of all types has a stable order.
+      expect(copiedTypes.map((s) => s.sortOrder), [0, 1, 2, 4]);
       expect(copiedTypes.last.tradeId, copiedTrades.last.id);
       expect({...copiedTrades.map((t) => t.id), ...copiedTypes.map((s) => s.id)}, hasLength(6));
     });
@@ -288,6 +289,36 @@ void main() {
         ),
       );
       expect(transaction.runs, 0);
+    });
+  });
+
+  test('watchServiceTypes passes through to the repository', () async {
+    final type = ServiceType(id: 's', name: 'Mine', cycleMonths: 6, createdAt: now, updatedAt: now);
+    when(serviceTypes.watchAll).thenAnswer((_) => Stream.value([type]));
+
+    expect(await service.watchServiceTypes().first, [type]);
+  });
+
+  group('ensureDefaults', () {
+    test('copies the whole catalogue when the user has no service type', () async {
+      when(serviceTypes.watchAll).thenAnswer((_) => Stream.value(const []));
+
+      await service.ensureDefaults();
+
+      expect(upsertedTrades().map((t) => t.template), TradeTemplate.values);
+    });
+
+    test('leaves an existing catalogue alone', () async {
+      when(serviceTypes.watchAll).thenAnswer(
+        (_) => Stream.value([
+          ServiceType(id: 's', name: 'Mine', cycleMonths: 6, createdAt: now, updatedAt: now),
+        ]),
+      );
+
+      await service.ensureDefaults();
+
+      verifyNever(() => trades.upsert(any()));
+      verifyNever(() => serviceTypes.upsert(any()));
     });
   });
 }

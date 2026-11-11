@@ -24,10 +24,10 @@ and handoff notes in the git-ignored `docs/private/design/`; looks, tokens and
 the places where it disagrees with the other docs in `DESIGN_BRIEF.md`). Its
 copy is final; take strings from it.
 
-Status today (2026-10-22): Klienci (search, Polish order), Klient
-(`/clients/:id`: name, address, phone, note, edit, delete with "Cofnij") and
-Nowy klient / edycja (`/clients/new`, `/clients/:id/edit`, without equipment
-rows yet) exist, with no tab bar and no other tab yet. Everything
+Status today (2026-11-04): Klienci (search, Polish order, status tags), Klient
+(`/clients/:id`: name, address, phone, status, equipment, note, edit, delete
+with "Cofnij") and Nowy klient / edycja (`/clients/new`, `/clients/:id/edit`,
+with equipment rows) exist, with no tab bar and no other tab yet. Everything
 else here is the target for the MVP milestones M2–M7 and V1, and changes when
 a milestone decides otherwise; update this file when it does.
 
@@ -79,7 +79,7 @@ leaves the app.
 | Terminy | `/due` | Tab | "{n} klientów do obsłużenia · SMS-y idą same"; groups "PO TERMINIE" and "NAJBLIŻSZE 60 DNI"; each row a status tag plus "umówiony pn 29.09, 09:30" or the SMS status, and a round "Dzwoń" button | M3 |
 | Klienci | `/clients` | Tab | Count; "Dodaj klienta", "Import z kontaktów", "Wklej numer"; search "Nazwisko, miejscowość, telefon" (digits match without spaces); list by name in Polish order with status tags | M2 |
 | Klient | `/clients/:id` | Klienci, Terminy, Dziś, caller card | "‹ {previous}"; name, phone, address, due status, equipment tags, note; Zadzwoń, SMS, Dojazd, Umów termin; history; sticky "Zapisz wizytę" | M2–M3 |
-| Nowy klient / edycja | `/clients/new`, `/clients/:id/edit` | Klienci, Wklej numer, Klient | Name or company, phone, address, town; one or more equipment rows, each with a service chip (its cycle comes from the user's service type), an optional label and "Ostatnia wizyta" (DD.MM.RRRR) with a live "Następny przegląd: {date}", or the hint "Nie pamiętasz? Zostaw puste – policzymy po pierwszej wizycie." Save enabled when the name has 2+ characters and the phone 9+ digits. The prototype sets one service and cycle per client; the equipment model in `BACKEND_SCHEMA.md` wins (`DESIGN_BRIEF.md`, "Where the prototype and the docs disagree") | M2 |
+| Nowy klient / edycja | `/clients/new`, `/clients/:id/edit` | Klienci, Wklej numer, Klient | Name or company, phone, address, town; one or more equipment rows, each with a service chip (its cycle comes from the user's service type), an optional label and "Ostatnia wizyta" (DD.MM.RRRR) with a live "Następny przegląd: {date}", or the hint "Nie pamiętasz? Zostaw puste – policzymy po pierwszej wizycie." A saved last visit is read-only. Save enabled when the name has 2+ characters, the phone 9+ digits and no last visit is an unreadable or future date. The prototype sets one service and cycle per client; the equipment model in `BACKEND_SCHEMA.md` wins (`DESIGN_BRIEF.md`, "Where the prototype and the docs disagree") | M2 |
 | Zapisz wizytę | sheet | Klient, Dziś | Work-done chips, price in zł, "Następny przegląd {date}" | M3 |
 | Umów termin | sheet | Klient, Terminy, call screen | 7-day picker ("{n} wiz." / "wolne"), free slots, "Umów na {day}, {time}"; replaces the client's open booking | M4 |
 | SMS | sheet | Klient | Prefilled from the template, editable, characters and SMS count | M6 |

@@ -92,4 +92,63 @@ void main() {
 
     verify(cubit.deleteClient).called(1);
   });
+
+  testWidgets('shows the status and each piece of equipment', (tester) async {
+    when(() => cubit.state).thenReturn(
+      const ClientDetailState(
+        client: ClientDetailViewModel(
+          id: 'c1',
+          name: 'Jan',
+          phoneLabel: null,
+          addressLabel: null,
+          note: null,
+          status: DueStatusViewModel(kind: DueStatusKind.overdue, count: 2),
+          equipment: [
+            ClientEquipmentViewModel(
+              id: 'e1',
+              status: DueStatusViewModel(kind: DueStatusKind.overdue, count: 2),
+              serviceType: ServiceTypeViewModel(id: 's1', name: 'Komin', cycleMonths: 12),
+              label: 'Kuchnia',
+              lastVisitLabel: '02.11.2025',
+              nextDueLabel: '02.11.2026',
+            ),
+            ClientEquipmentViewModel(
+              id: 'e2',
+              status: DueStatusViewModel(kind: DueStatusKind.none),
+              serviceType: ServiceTypeViewModel(id: 's2', name: 'Kocioł', cycleMonths: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpApp(subject());
+
+    expect(find.text('URZĄDZENIA'), findsOneWidget);
+    expect(find.text('Komin'), findsOneWidget);
+    expect(find.text('Kuchnia'), findsOneWidget);
+    expect(find.text('02.11.2025'), findsOneWidget);
+    expect(find.text('02.11.2026'), findsOneWidget);
+    expect(find.text('Kocioł'), findsOneWidget);
+    expect(find.text('po terminie 2 dni'), findsNWidgets(2));
+    expect(find.text('bez terminu'), findsOneWidget);
+  });
+
+  testWidgets('hides the section for a client with no equipment', (tester) async {
+    when(() => cubit.state).thenReturn(
+      const ClientDetailState(
+        client: ClientDetailViewModel(
+          id: 'c1',
+          name: 'Jan',
+          phoneLabel: null,
+          addressLabel: null,
+          note: null,
+        ),
+      ),
+    );
+
+    await tester.pumpApp(subject());
+
+    expect(find.text('URZĄDZENIA'), findsNothing);
+  });
 }

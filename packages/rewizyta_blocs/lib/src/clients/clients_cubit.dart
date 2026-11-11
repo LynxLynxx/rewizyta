@@ -10,13 +10,27 @@ import 'package:rewizyta_view_models/rewizyta_view_models.dart';
 /// another screen shows up without any explicit refresh. There is no
 /// "loading from network" here and there never will be (CLAUDE.md, rule 1).
 /// Not `final`: widget tests mock cubits with `MockCubit implements ClientsCubit`.
-class ClientsCubit(final ClientsService _clientsService)
-    extends Cubit<ClientsState>
+class ClientsCubit(
+  final ClientsService _clientsService,
+  final EquipmentService _equipmentService, {
+  DateTime Function()? now,
+}) extends Cubit<ClientsState>
     with SubscriptionManagerMixin<ClientsState>, BlocErrorEmitterMixin<ClientsState> {
   this : super(const ClientsState());
 
+  final DateTime Function() _now = now ?? DateTime.now;
+  List<Client>? _clients;
+  List<Equipment>? _equipment;
+
   void init() {
-    subscribe(#clients, _clientsService.watchClients(), _onClients, onError: _onError);
+    subscribe(#clients, _clientsService.watchClients(), (clients) {
+      _clients = clients;
+      _emitItems();
+    }, onError: _onError);
+    subscribe(#equipment, _equipmentService.watchAll(), (equipment) {
+      _equipment = equipment;
+      _emitItems();
+    }, onError: _onError);
   }
 
   void search(String query) => emit(state.copyWith(query: query));
@@ -38,11 +52,26 @@ class ClientsCubit(final ClientsService _clientsService)
     }
   }
 
-  void _onClients(List<Client> clients) {
-    if (isClosed) return;
+  /// Waits for both streams, so a tag never pops in after its row.
+  void _emitItems() {
+    final clients = _clients;
+    final equipment = _equipment;
+    if (isClosed || clients == null || equipment == null) return;
+    final today = calendarDay(_now());
+    final byClient = <String, List<Equipment>>{};
+    for (final item in equipment) {
+      (byClient[item.clientId] ??= []).add(item);
+    }
     emit(
       state.copyWith(
-        items: clients.map(ClientListItemViewModel.fromDomain).toList(),
+        items: [
+          for (final client in clients)
+            ClientListItemViewModel.fromDomain(
+              client,
+              equipment: byClient[client.id] ?? const [],
+              today: today,
+            ),
+        ],
         isLoading: false,
       ),
     );

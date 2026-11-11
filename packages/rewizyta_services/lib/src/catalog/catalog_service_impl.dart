@@ -19,6 +19,15 @@ final class CatalogServiceImpl(
   final Uuid _uuid = uuid ?? const Uuid();
 
   @override
+  Stream<List<ServiceType>> watchServiceTypes() => _serviceTypes.watchAll();
+
+  @override
+  Future<void> ensureDefaults() async {
+    final existing = await _serviceTypes.watchAll().first;
+    if (existing.isEmpty) await copyDefaults(TradeTemplate.values);
+  }
+
+  @override
   Future<void> copyDefaults(Iterable<TradeTemplate> trades) {
     final picked = trades.toSet();
     final now = _now();
@@ -26,8 +35,8 @@ final class CatalogServiceImpl(
       // Catalogue order, not pick order, so sort_order is stable.
       for (final template in TradeTemplate.values.where(picked.contains)) {
         final trade = await _copyTrade(template, now);
-        for (final (sortOrder, typeTemplate) in template.serviceTypes.indexed) {
-          await _copyServiceType(typeTemplate, trade.id, sortOrder, now);
+        for (final typeTemplate in template.serviceTypes) {
+          await _copyServiceType(typeTemplate, trade.id, now);
         }
       }
     });
@@ -74,7 +83,6 @@ final class CatalogServiceImpl(
   Future<void> _copyServiceType(
     ServiceTypeTemplate template,
     String tradeId,
-    int sortOrder,
     DateTime now,
   ) async {
     final existing = await _serviceTypes.findByTemplate(template);
@@ -85,7 +93,9 @@ final class CatalogServiceImpl(
           tradeId: tradeId,
           cycleMonths: template.cycleMonths,
           template: template,
-          sortOrder: sortOrder,
+          // Across the catalogue, not per trade: pickers list the types of all
+          // trades together, and a tie would fall to the random id.
+          sortOrder: template.index,
           createdAt: now,
           updatedAt: now,
         ),
