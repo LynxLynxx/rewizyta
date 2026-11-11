@@ -2,8 +2,14 @@ import 'package:rewizyta_models/rewizyta_models.dart';
 
 /// Equipment at the clients, with the outbox rows for it.
 abstract interface class EquipmentRepository() {
+  /// All live equipment, for the status of every client on the list.
+  Stream<List<Equipment>> watchAll();
+
   /// The client's live equipment in the order it was added.
   Stream<List<Equipment>> watchByClient(String clientId);
+
+  /// The client's live equipment once, for use inside a transaction.
+  Future<List<Equipment>> findByClient(String clientId);
 
   /// Any equipment by id, soft-deleted included.
   Future<Equipment?> find(String id);

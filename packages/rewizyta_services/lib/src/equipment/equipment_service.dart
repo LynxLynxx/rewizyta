@@ -2,6 +2,15 @@ import 'package:rewizyta_models/rewizyta_models.dart';
 
 /// Equipment at the clients.
 abstract interface class EquipmentService() {
+  /// All live equipment, for the status of every client on the list.
+  Stream<List<Equipment>> watchAll();
+
+  /// The client's live equipment in the order it was added.
+  Stream<List<Equipment>> watchByClient(String clientId);
+
+  /// The client's live equipment once.
+  Future<List<Equipment>> findByClient(String clientId);
+
   /// Adds (no [id]) or updates equipment at a client. The due dates are
   /// recomputed from the visit history and the cycle of [serviceTypeId], so a
   /// new service type moves them. Throws [EquipmentNotFoundException] or
@@ -15,4 +24,8 @@ abstract interface class EquipmentService() {
     int count = 1,
     String? note,
   });
+
+  /// Soft-deletes the equipment; its visit history stays. Throws
+  /// [EquipmentNotFoundException] for an unknown [id].
+  Future<void> deleteEquipment(String id);
 }

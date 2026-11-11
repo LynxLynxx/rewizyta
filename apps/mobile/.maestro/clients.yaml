@@ -1,5 +1,6 @@
-# Journey 1 in docs/APP_FLOW.md plus the card: add a client, open the card,
-# edit it, delete it, undo, find it by phone. Starts from an empty database.
+# Journey 1 in docs/APP_FLOW.md plus the card: add a client with equipment and
+# a last visit, open the card, edit it, delete it, undo, find it by phone.
+# Starts from an empty database.
 # ASCII input only: Maestro's Android driver cannot type Polish letters.
 # Form fields are matched by their label: the label is merged with the field
 # for screen readers, so a field's text is "label\nplaceholder" ((?s) spans
@@ -26,12 +27,26 @@ name: Clients - add, edit, delete, undo, search
 - tapOn: "Miejscowość"
 - inputText: "Nysa"
 - hideKeyboard
+
+# An equipment row: the first service type is picked, the next due date is live
+- scrollUntilVisible:
+    element: "(?s)Ostatnia wizyta.*"
+- tapOn: "(?s)Ostatnia wizyta.*"
+- inputText: "14.10.2025"
+- hideKeyboard
+- scrollUntilVisible:
+    element: "14.10.2026"
+- assertVisible: "14.10.2026"
+- scrollUntilVisible:
+    element: "Zapisz klienta"
 - tapOn: "Zapisz klienta"
 
-# The card, with the phone stored as E.164 and shown the Polish way
+# The card, with the phone stored as E.164 and shown the Polish way, and the
+# due date derived from the visit the form recorded
 - assertVisible: "Jan Kowalski"
 - assertVisible: "ul. Lesna 12, Nysa"
 - assertVisible: "601 234 567"
+- assertVisible: "(?s).*Przegląd przewodów kominowych.*14\\.10\\.2025.*14\\.10\\.2026.*"
 
 # Edit
 - tapOn: "Edytuj"
@@ -40,8 +55,11 @@ name: Clients - add, edit, delete, undo, search
 - eraseText
 - inputText: "Jan Kowalski jr"
 - hideKeyboard
+- scrollUntilVisible:
+    element: "Zapisz klienta"
 - tapOn: "Zapisz klienta"
 - assertVisible: "Jan Kowalski jr"
+- assertVisible: "(?s).*14\\.10\\.2026.*"
 
 # Delete, then undo from the list
 - tapOn: "Usuń klienta"

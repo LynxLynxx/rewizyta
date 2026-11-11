@@ -2,11 +2,16 @@ import 'package:rewizyta_models/rewizyta_models.dart';
 import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:rewizyta_services/src/client/clients_service.dart';
 import 'package:rewizyta_services/src/common/clean_text.dart';
+import 'package:rewizyta_services/src/equipment/equipment_service.dart';
+import 'package:rewizyta_services/src/visit/visits_service.dart';
 import 'package:rewizyta_shared/rewizyta_shared.dart';
 import 'package:uuid/uuid.dart';
 
 final class ClientsServiceImpl(
-  final ClientsRepository _repository, {
+  final ClientsRepository _repository,
+  final EquipmentService _equipment,
+  final VisitsService _visits,
+  final TransactionRunner _transaction, {
   DateTime Function()? now,
   Uuid? uuid,
 }) implements ClientsService {
@@ -83,6 +88,46 @@ final class ClientsServiceImpl(
   }
 
   @override
+  Future<Client> saveClientWithEquipment({
+    String? id,
+    required String name,
+    String? phone,
+    String? addressLine,
+    String? town,
+    String? postalCode,
+    String? note,
+    required List<EquipmentDraft> equipment,
+  }) {
+    return _transaction.run(() async {
+      final client = await saveClient(
+        id: id,
+        name: name,
+        phone: phone,
+        addressLine: addressLine,
+        town: town,
+        postalCode: postalCode,
+        note: note,
+      );
+      final current = {for (final e in await _equipment.findByClient(client.id)) e.id: e};
+      final keptIds = {for (final draft in equipment) draft.id};
+      for (final removedId in current.keys.where((id) => !keptIds.contains(id))) {
+        await _equipment.deleteEquipment(removedId);
+      }
+      final servicedByDay = <DateTime, Set<String>>{};
+      for (final draft in equipment) {
+        final saved = await _saveDraft(draft, client.id, current[draft.id]);
+        if (draft.lastVisitAt case final day?) {
+          (servicedByDay[day] ??= {}).add(saved.id);
+        }
+      }
+      for (final MapEntry(key: day, value: equipmentIds) in servicedByDay.entries) {
+        await _visits.saveVisit(clientId: client.id, doneAt: day, equipmentIds: equipmentIds);
+      }
+      return client;
+    });
+  }
+
+  @override
   Future<void> deleteClient(String id) async {
     final client = await getClient(id);
     final now = _now();
@@ -94,6 +139,25 @@ final class ClientsServiceImpl(
     final client = await getClient(id);
     await _repository.upsert(
       client.copyWith(updatedAt: _now(), deletedAt: const Optional.empty()),
+    );
+  }
+
+  /// An untouched row is not written, so it queues no push. The form does not
+  /// edit [Equipment.count] and [Equipment.note], so they stay as they are.
+  Future<Equipment> _saveDraft(EquipmentDraft draft, String clientId, Equipment? existing) async {
+    final label = cleanText(draft.label);
+    if (existing != null &&
+        existing.serviceTypeId == draft.serviceTypeId &&
+        existing.label == label) {
+      return existing;
+    }
+    return await _equipment.saveEquipment(
+      id: draft.id,
+      clientId: clientId,
+      serviceTypeId: draft.serviceTypeId,
+      label: label,
+      count: existing?.count ?? 1,
+      note: existing?.note,
     );
   }
 

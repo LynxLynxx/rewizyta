@@ -15,6 +15,7 @@ void main() {
       createdAt: now,
       updatedAt: now,
     ),
+    today: now,
   );
 
   test('puts the address on one line', () {
@@ -22,12 +23,14 @@ void main() {
     expect(
       ClientListItemViewModel.fromDomain(
         Client(id: '2', name: 'Anna', town: 'Nysa', createdAt: now, updatedAt: now),
+        today: now,
       ).addressLabel,
       'Nysa',
     );
     expect(
       ClientListItemViewModel.fromDomain(
         Client(id: '3', name: 'Ewa', createdAt: now, updatedAt: now),
+        today: now,
       ).addressLabel,
       isNull,
     );
@@ -62,6 +65,14 @@ void main() {
     expect(
       LocalizedException.create(const ClientNotFoundException('x')),
       isA<LocalizedClientNotFoundException>(),
+    );
+    expect(
+      LocalizedException.create(const EquipmentNotFoundException('x')),
+      isA<LocalizedEquipmentNotFoundException>(),
+    );
+    expect(
+      LocalizedException.create(const ServiceTypeNotFoundException('x')),
+      isA<LocalizedServiceTypeNotFoundException>(),
     );
     expect(LocalizedException.create(StateError('boom')), isA<LocalizedUnknownException>());
   });

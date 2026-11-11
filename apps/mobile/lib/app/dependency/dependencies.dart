@@ -90,7 +90,14 @@ final class Dependencies._() extends DependencyProvider {
 
   /// Tier 7 - domain services, the only tier cubits may inject.
   void _registerServices() {
-    registerLazySingleton<ClientsService>(() => ClientsServiceImpl(get<ClientsRepository>()));
+    registerLazySingleton<ClientsService>(
+      () => ClientsServiceImpl(
+        get<ClientsRepository>(),
+        get<EquipmentService>(),
+        get<VisitsService>(),
+        get<TransactionRunner>(),
+      ),
+    );
     registerLazySingleton<CatalogService>(
       () => CatalogServiceImpl(
         get<TradesRepository>(),
@@ -122,8 +129,22 @@ final class Dependencies._() extends DependencyProvider {
   /// Tier 8 - cubits. Per-page cubits are factories (the page's BlocProvider
   /// closes them); app-wide ones are lazy singletons with a dispose hook.
   void _registerBlocs() {
-    registerFactory<ClientsCubit>(() => ClientsCubit(get<ClientsService>()));
-    registerFactory<ClientDetailCubit>(() => ClientDetailCubit(get<ClientsService>()));
-    registerFactory<ClientFormCubit>(() => ClientFormCubit(get<ClientsService>()));
+    registerFactory<ClientsCubit>(
+      () => ClientsCubit(get<ClientsService>(), get<EquipmentService>()),
+    );
+    registerFactory<ClientDetailCubit>(
+      () => ClientDetailCubit(
+        get<ClientsService>(),
+        get<EquipmentService>(),
+        get<CatalogService>(),
+      ),
+    );
+    registerFactory<ClientFormCubit>(
+      () => ClientFormCubit(
+        get<ClientsService>(),
+        get<EquipmentService>(),
+        get<CatalogService>(),
+      ),
+    );
   }
 }

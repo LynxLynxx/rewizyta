@@ -3,6 +3,7 @@ import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:rewizyta_services/src/common/clean_text.dart';
 import 'package:rewizyta_services/src/due/due_date_updater.dart';
 import 'package:rewizyta_services/src/equipment/equipment_service.dart';
+import 'package:rewizyta_shared/rewizyta_shared.dart';
 import 'package:uuid/uuid.dart';
 
 final class EquipmentServiceImpl(
@@ -16,6 +17,15 @@ final class EquipmentServiceImpl(
   final DueDateUpdater _due = DueDateUpdater(visits, _equipment, _serviceTypes);
   final DateTime Function() _now = now ?? DateTime.timestamp;
   final Uuid _uuid = uuid ?? const Uuid();
+
+  @override
+  Stream<List<Equipment>> watchAll() => _equipment.watchAll();
+
+  @override
+  Stream<List<Equipment>> watchByClient(String clientId) => _equipment.watchByClient(clientId);
+
+  @override
+  Future<List<Equipment>> findByClient(String clientId) => _equipment.findByClient(clientId);
 
   @override
   Future<Equipment> saveEquipment({
@@ -55,5 +65,15 @@ final class EquipmentServiceImpl(
       await _equipment.upsert(saved);
       return saved;
     });
+  }
+
+  @override
+  Future<void> deleteEquipment(String id) async {
+    final equipment = await _equipment.find(id);
+    if (equipment == null) {
+      throw EquipmentNotFoundException(id);
+    }
+    final now = _now();
+    await _equipment.upsert(equipment.copyWith(updatedAt: now, deletedAt: Optional(now)));
   }
 }
