@@ -177,4 +177,3 @@ second only if the first is used.
 - [ ] Multiple technicians.
 - [ ] Two-way SMS (one platform receiving number; costs the alphanumeric sender). Blocked on multi-technician accounts.
 - [ ] Phone-side reminder rendering as an opt-in E2EE mode for self-hosters (server holds only ciphertext).
-- [ ] `go_router_builder` typed routes if the route table outgrows the central list.

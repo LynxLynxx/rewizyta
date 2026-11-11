@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:rewizyta/app/app.dart';
 import 'package:rewizyta/app/config/app_config.dart';
 import 'package:rewizyta/app/dependency/dependencies.dart';
+import 'package:rewizyta/router/app_router_factory.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_services/rewizyta_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -45,6 +46,6 @@ Future<void> bootstrap(AppConfig config) async {
 
     Bloc.observer = AppBlocObserver(reportingService: reporting);
 
-    runApp(const App());
+    runApp(App(router: AppRouterFactory.create()));
   }, (error, stack) => unawaited(reporting?.recordError(error, stack, fatal: true)));
 }

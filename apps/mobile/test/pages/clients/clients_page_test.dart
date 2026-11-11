@@ -6,7 +6,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
 import 'package:rewizyta/pages/clients/clients_page.dart';
-import 'package:rewizyta/router/route_paths.dart';
+import 'package:rewizyta/router/routes/routing/clients_route.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
@@ -107,10 +107,10 @@ void main() {
     when(() => cubit.state).thenReturn(const ClientsState(isLoading: false, items: [jan]));
     when(() => cubit.restoreClient('1')).thenAnswer((_) async {});
     final router = GoRouter(
-      initialLocation: RoutePaths.clients,
+      initialLocation: const ClientsRoute().location,
       routes: [
         GoRoute(
-          path: RoutePaths.clients,
+          path: const ClientsRoute().location,
           builder: (context, state) => subject(),
           routes: [
             GoRoute(

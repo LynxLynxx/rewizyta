@@ -86,7 +86,7 @@
 
 | Part | Tech | Responsibility |
 |---|---|---|
-| `apps/mobile` + `packages/rewizyta_*` | Flutter 3.47, flutter_bloc, Equatable, get_it, go_router, drift, supabase_flutter, connectivity_plus, url_launcher, flutter_contacts (M2), workmanager (M5) | The product. Reads only from the local DB; syncs in the background. |
+| `apps/mobile` + `packages/rewizyta_*` | Flutter 3.47, flutter_bloc, Equatable, get_it, go_router (+ go_router_builder), drift, supabase_flutter, connectivity_plus, url_launcher, flutter_contacts (M2), workmanager (M5) | The product. Reads only from the local DB; syncs in the background. |
 | `supabase/migrations` | SQL | Schema, RLS, indexes, triggers, `sync_push`/`sync_pull` RPCs, `keepalive()`, cron schedules. |
 | `supabase/functions` | Deno / TypeScript | `send-due-reminders`, `send-pending-sms`, `sms-webhook`, `waitlist-signup`, `waitlist-confirm`, `waitlist-unsubscribe`, `redeem-promo`, `verify-purchase`. Gateways behind adapter interfaces. |
 | Supabase Auth | email + password (magic link optional), custom SMTP | One account per technician. The JWT `sub` is the `user_id` on every row. |
