@@ -29,6 +29,12 @@ void main() {
     );
   });
 
+  test('isDue covers overdue through 60 days', () {
+    expect([-1, 0, 60].map((days) => inDays(days).isDue), everyElement(isTrue));
+    expect(inDays(61).isDue, isFalse);
+    expect(DueStatusViewModel.fromDate(null, today).isDue, isFalse);
+  });
+
   group('ofClient', () {
     test('is null without equipment and none without any due date', () {
       expect(DueStatusViewModel.ofClient(const [], today), isNull);

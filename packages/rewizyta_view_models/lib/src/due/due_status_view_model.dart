@@ -36,6 +36,12 @@ final class const DueStatusViewModel({required final DueStatusKind kind, final i
     );
   }
 
+  /// Overdue or due within 60 days: what the due list shows.
+  bool get isDue => switch (kind) {
+    DueStatusKind.overdue || DueStatusKind.today || DueStatusKind.soon => true,
+    DueStatusKind.later || DueStatusKind.none => false,
+  };
+
   String localizedLabel(AppLocalizations l10n) => switch (kind) {
     DueStatusKind.overdue => l10n.dueOverdue(count),
     DueStatusKind.today => l10n.dueToday,

@@ -53,13 +53,14 @@ Tick items as they land; add a short note when a decision changes.
 
 ## M3 – Visits and due list
 
-- [ ] Record a visit: tick equipment, price, note; recompute due dates.
-- [ ] Due list: overdue / next 60 days / later, with "booked" flag.
+- [x] Record a visit: the "Zapisz wizytę" sheet from a sticky button on the client card. Every piece of equipment is ticked and the date is today, so the usual visit is one tap; the date (`DD.MM.RRRR`, not in the future), an optional price in zł (`parseMoney` → grosze) and a note are editable, with a live "Następny przegląd" for what is ticked. `VisitFormCubit` saves through `VisitsService.saveVisit`, which recomputes the due dates in the same transaction. The price is not prefilled yet: `default_price_grosze` stays null until the service-type editor (M7) can set it. Opening the sheet from Dziś comes with M4 (2026-11-11).
+- [x] Due list (Terminy, `/due`): "PO TERMINIE" (most overdue first) and "NAJBLIŻSZE 60 DNI" (soonest first), a client per row with its earliest status tag, town and the due service types, and "Dzwoń" (`tel:`). `DueCubit` combines the clients, equipment and service-type streams like the client list; clients due later stay on Klienci with their tag, as in `APP_FLOW.md`. The first tab shell (`StatefulShellRoute.indexedStack`, untyped, wrapping each feature's typed `$appRoutes`): Terminy · Klienci, text tabs; the client card and the forms sit on the root navigator above it. Klienci stays the start screen until Dziś (M4). The subtitle's "· SMS-y idą same" waits for M6 (2026-11-11).
 - [ ] Client history.
 
 ## M4 – Booking and Today
 
 - [ ] Book appointment (day + hour), statuses.
+- [ ] Due list rows show "umówiony pn 29.09, 09:30" for a planned appointment from today on (the "booked" flag); the 'Umów termin' sheet opens from the row.
 - [ ] Today screen (day plan) and week view.
 - [ ] `DayPlanService`: capacity from `slots_per_day`/hours, haversine distances with road factor, nearest-neighbour order that keeps `is_time_fixed` stops, `route_position` persistence, drag-and-drop in `manual` mode.
 - [ ] Booking proposals: days with a free slot whose stops are closest to the client.

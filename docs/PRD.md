@@ -57,7 +57,7 @@ Everything else is measured against that sentence.
 |---|---|
 | Clients | Name, phone, address, equipment, notes. Add by hand, paste a number, or import from phone contacts. |
 | Service types and cycles | Chimney every 12 months, coal stove every 3 months, gas every 12, and so on. Editable list with sensible Polish defaults. |
-| Due list | Who is due: overdue, next 60 days, later. Each row shows whether a visit is already booked. |
+| Due list | Who is due: overdue and the next 60 days (later dates show on the client list). Each row shows whether a visit is already booked. |
 | Visit log | What was done at a client and for how much. Saving a visit updates the next due date automatically. |
 | Appointments | Book a day and hour. Day plan and week view. |
 | SMS reminders | Sent automatically 30 and 7 days before the due date (offsets configurable), from a template with placeholders such as `{imie}`, `{usluga}`, `{termin}`, `{firma}`, `{telefon}`. |

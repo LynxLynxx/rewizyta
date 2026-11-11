@@ -146,5 +146,11 @@ final class Dependencies._() extends DependencyProvider {
         get<CatalogService>(),
       ),
     );
+    registerFactory<VisitFormCubit>(
+      () => VisitFormCubit(get<EquipmentService>(), get<CatalogService>(), get<VisitsService>()),
+    );
+    registerFactory<DueCubit>(
+      () => DueCubit(get<ClientsService>(), get<EquipmentService>(), get<CatalogService>()),
+    );
   }
 }

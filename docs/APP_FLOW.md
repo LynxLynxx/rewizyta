@@ -62,8 +62,10 @@ each tab keeps its own stack and scroll position):
 | Klienci | `/clients` | Client list | Lookup during a call. |
 | Więcej | `/more` | Settings, summary, account | Everything used rarely. |
 
-Klient and the forms are pushed above the shell; the client card keeps the
-tab bar and adds a sticky "Zapisz wizytę" above it. Short tasks (save a visit,
+Klient and the forms are pushed above the shell, on the root navigator, so
+they cover the tab bar and one card route serves every tab; the card adds a
+sticky "Zapisz wizytę" at the bottom. (The prototype keeps the tab bar under
+the card; that would need the card route inside each tab's branch.) Short tasks (save a visit,
 book, SMS, directions, import) are bottom sheets, not routes. The system back
 button closes a sheet or pops; on a tab root it goes to Dziś, and on Dziś it
 leaves the app.
