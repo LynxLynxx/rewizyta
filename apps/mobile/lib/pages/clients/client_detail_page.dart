@@ -8,7 +8,7 @@ import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/handlers/signal_handler_state_mixin.dart';
 import 'package:rewizyta/common/widgets/back_link.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
-import 'package:rewizyta/router/route_paths.dart';
+import 'package:rewizyta/router/routes/routing/clients_route.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
@@ -58,7 +58,7 @@ class _ClientDetailViewState()
         actions: [
           if (client != null)
             TextButton(
-              onPressed: () => context.push(RoutePaths.clientEditFor(client.id)),
+              onPressed: () => ClientEditRoute(id: client.id).push<void>(context),
               child: Text(context.l10n.clientEdit),
             ),
         ],

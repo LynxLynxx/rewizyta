@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:rewizyta/app/dependency/dependencies.dart';
 import 'package:rewizyta/app/theme/app_colors.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
-import 'package:rewizyta/router/route_paths.dart';
+import 'package:rewizyta/router/routes/routing/clients_route.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
@@ -34,7 +33,7 @@ class _ClientsViewState()
   /// The form pops with the new client's id; the card opens from here, so
   /// its delete still comes back to this list for the undo.
   Future<void> _addClient() async {
-    final id = await context.push<String>(RoutePaths.clientNew);
+    final id = await const ClientNewRoute().push<String>(context);
     if (id != null && mounted) await _openClient(id);
   }
 
@@ -44,7 +43,7 @@ class _ClientsViewState()
     final cubit = context.read<ClientsCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
-    final deleted = await context.push<bool>(RoutePaths.clientDetailFor(id));
+    final deleted = await ClientDetailRoute(id: id).push<bool>(context);
     if (deleted != true) return;
     messenger.showSnackBar(
       SnackBar(

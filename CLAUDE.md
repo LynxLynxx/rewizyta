@@ -35,7 +35,7 @@ pins an older `analyzer` than drift_dev needs); it is driven through the
 
 ```bash
 melos bootstrap        # pub get everywhere (sites via the post-bootstrap hook)
-melos run gen          # build_runner (json_serializable, drift) where needed
+melos run gen          # build_runner (json_serializable, drift, go_router_builder) where needed
 melos run l10n         # regenerate AppLocalizations from app_pl.arb
 melos run analyze      # dart analyze --fatal-infos, every package
 melos run layering     # grep-based import-direction audit (tool/check_layering.sh)
@@ -123,7 +123,7 @@ format → analyze matters; `melos run check` does it right.
   `class` (not `final`) so widget tests can mock them.
 - **No code generation for models or state.** Equatable + primary
   constructors + hand-written `copyWith`; no freezed. Codegen is limited to DTOs (json_serializable),
-  drift and l10n.
+  drift, routes (go_router_builder) and l10n.
 - **Errors and effects leave cubits through side-channels**, never through a
   dead error state: `emitError(LocalizedException.create(e))` and
   `emitSignal(...)`; pages consume them with `ErrorHandlerStateMixin` /
@@ -161,9 +161,13 @@ format → analyze matters; `melos run check` does it right.
 - **Page pattern:** `XPage` (stateless, provides the cubit) + `XView`
   (renders, mixes in the handlers, `@visibleForTesting`). Widget tests pump
   `XView` with a `MockCubit` through `test/helpers/pump_app.dart`.
-- **go_router** with a central table in `apps/mobile/lib/router/` and
-  `RoutePaths` constants; screens never hard-code paths. Typed routes
-  (`go_router_builder`) can come later if the table grows.
+- **go_router** with typed routes (`go_router_builder`), the Bodyspace /
+  Catalyst Voices layout under `apps/mobile/lib/router/`: one
+  `routes/routing/<feature>_route.dart` per feature (its `GoRouteData` classes),
+  `routes/routing/routes.dart` spreading each file's `$appRoutes` once, and
+  `app_router_factory.dart` building the `GoRouter`, called from `bootstrap`.
+  Screens navigate with `ClientDetailRoute(id: id).push<bool>(context)`, never a
+  path string.
 - **Theming**: Material 3 from a seed colour, semantic colours (overdue, due
   soon, booked) in the `AppColors` `ThemeExtension`, `AppSpacing` constants.
   No `Colors.*` literals in widgets; read `context.appColors` / `context.colorScheme`.

@@ -87,7 +87,7 @@ melos:
         flutter install --debug ${ANDROID_SERIAL:+-d $ANDROID_SERIAL} &&
         MAESTRO_CLI_NO_ANALYTICS=1 maestro ${ANDROID_SERIAL:+--device $ANDROID_SERIAL} test .maestro
     gen:
-      description: build_runner (json_serializable, drift) in every package that needs it.
+      description: build_runner (json_serializable, drift, go_router_builder) in every package that needs it.
       exec:
         command: dart run build_runner build
         concurrency: 1
