@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:rewizyta_localization/rewizyta_localization.dart';
 import 'package:rewizyta_models/rewizyta_models.dart';
 import 'package:rewizyta_view_models/src/catalog/service_type_view_model.dart';
 import 'package:rewizyta_view_models/src/due/due_status_view_model.dart';
@@ -26,6 +27,11 @@ final class const ClientEquipmentViewModel({
       nextDueLabel: equipment.nextDueAt == null ? null : formatDate(equipment.nextDueAt!),
     );
   }
+
+  /// "Przegląd przewodów kominowych · Kuchnia": the service and the label, as
+  /// on a chip or a history row.
+  String workLabel(AppLocalizations l10n) =>
+      [?serviceType?.localizedName(l10n), ?label].join(' · ');
 
   @override
   List<Object?> get props => [id, status, serviceType, label, lastVisitLabel, nextDueLabel];

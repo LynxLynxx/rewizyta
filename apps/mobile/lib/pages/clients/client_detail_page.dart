@@ -163,6 +163,18 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
             ),
           ),
         ],
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          context.l10n.clientHistory.toUpperCase(),
+          style: textTheme.labelMedium?.copyWith(color: muted),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (client.history.isEmpty)
+          Text(
+            context.l10n.clientHistoryEmpty,
+            style: textTheme.bodyMedium?.copyWith(color: muted),
+          ),
+        for (final visit in client.history) _VisitCard(clientId: client.id, visit: visit),
         const SizedBox(height: AppSpacing.lg),
         Align(
           alignment: AlignmentDirectional.centerStart,
@@ -214,6 +226,73 @@ class const _EquipmentCard({required final ClientEquipmentViewModel equipment})
               if (equipment.nextDueLabel != null)
                 _DateRow(label: l10n.clientFormNextDue, date: equipment.nextDueLabel!),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One visit in the history; a tap opens it on the visit sheet to correct or
+/// delete it.
+class const _VisitCard({required final String clientId, required final ClientVisitViewModel visit})
+    extends StatelessWidget {
+  Future<void> _open(BuildContext context) async {
+    final cubit = context.read<ClientDetailCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final deleted = await VisitSheet.show(context, clientId: clientId, visitId: visit.id);
+    if (deleted != true) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.visitDeleted),
+        action: SnackBarAction(label: l10n.undo, onPressed: () => cubit.restoreVisit(visit.id)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final textTheme = context.textTheme;
+    final text2 = context.appColors.text2;
+    return MergeSemantics(
+      child: Card(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _open(context),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      visit.dateLabel,
+                      style: textTheme.bodyLarge?.copyWith(
+                        fontFamily: AppFonts.mono,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (visit.priceLabel != null)
+                      Text(
+                        l10n.visitPriceAmount(visit.priceLabel!),
+                        style: textTheme.bodyMedium?.copyWith(fontFamily: AppFonts.mono),
+                      ),
+                  ],
+                ),
+                for (final item in visit.work)
+                  Text(item.workLabel(l10n), style: textTheme.bodyMedium?.copyWith(color: text2)),
+                if (visit.note != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    child: Text(visit.note!, style: textTheme.bodyMedium),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

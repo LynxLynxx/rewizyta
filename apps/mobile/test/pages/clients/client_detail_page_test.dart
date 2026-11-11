@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:rewizyta/app/dependency/dependencies.dart';
 import 'package:rewizyta/pages/clients/client_detail_page.dart';
+import 'package:rewizyta/pages/visits/visit_sheet.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
+import 'package:rewizyta_shared/rewizyta_shared.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
@@ -11,6 +16,14 @@ import '../../helpers/fake_url_launcher.dart';
 import '../../helpers/pump_app.dart';
 
 class MockClientDetailCubit() extends MockCubit<ClientDetailState> implements ClientDetailCubit;
+
+class MockVisitFormCubit() extends MockCubit<VisitFormState> implements VisitFormCubit;
+
+/// Registers into the get_it instance that `Dependencies` resolves from;
+/// `register*` is protected to subclasses.
+class _TestDependencies() extends DependencyProvider {
+  void factory<T extends Object>(T Function() create) => registerFactory<T>(create);
+}
 
 const _withPhone = ClientDetailState(
   client: ClientDetailViewModel(
@@ -211,5 +224,99 @@ void main() {
     await tester.pumpApp(subject());
 
     expect(find.text('URZĄDZENIA'), findsNothing);
+  });
+
+  group('history', () {
+    const komin = ClientEquipmentViewModel(
+      id: 'e1',
+      status: DueStatusViewModel(kind: DueStatusKind.later),
+      serviceType: ServiceTypeViewModel(id: 's1', name: 'Komin', cycleMonths: 12),
+      label: 'Kuchnia',
+    );
+    const withHistory = ClientDetailState(
+      client: ClientDetailViewModel(
+        id: 'c1',
+        name: 'Jan',
+        phone: null,
+        phoneLabel: null,
+        addressLabel: null,
+        note: null,
+        history: [
+          ClientVisitViewModel(
+            id: 'v1',
+            dateLabel: '02.10.2026',
+            work: [komin],
+            priceLabel: '180,50',
+            note: 'Sadza w kominie',
+          ),
+          ClientVisitViewModel(id: 'v0', dateLabel: '03.03.2025'),
+        ],
+      ),
+    );
+
+    testWidgets('lists each visit with its work, price and note', (tester) async {
+      when(() => cubit.state).thenReturn(withHistory);
+
+      await tester.pumpApp(subject());
+
+      expect(find.text('HISTORIA'), findsOneWidget);
+      expect(find.text('02.10.2026'), findsOneWidget);
+      expect(find.text('180,50 zł'), findsOneWidget);
+      expect(find.text('Komin · Kuchnia'), findsOneWidget);
+      expect(find.text('Sadza w kominie'), findsOneWidget);
+      expect(find.text('03.03.2025'), findsOneWidget);
+    });
+
+    testWidgets('says how to start an empty history', (tester) async {
+      when(() => cubit.state).thenReturn(_withPhone);
+
+      await tester.pumpApp(subject());
+
+      expect(find.textContaining('Nie ma jeszcze wizyt.'), findsOneWidget);
+    });
+
+    group('a tap opens the visit on the sheet', () {
+      late MockVisitFormCubit visitCubit;
+      late StreamController<VisitFormSignal> visitSignals;
+
+      setUp(() {
+        visitCubit = MockVisitFormCubit();
+        visitSignals = StreamController<VisitFormSignal>.broadcast();
+        when(() => visitCubit.state).thenReturn(
+          const VisitFormState(isLoading: false, isEditing: true, date: '02.10.2026'),
+        );
+        when(() => visitCubit.errorStream).thenAnswer((_) => const Stream.empty());
+        when(() => visitCubit.signalStream).thenAnswer((_) => visitSignals.stream);
+        when(
+          () => visitCubit.init('c1', visitId: 'v1'),
+        ).thenAnswer((_) async {});
+        _TestDependencies().factory<VisitFormCubit>(() => visitCubit);
+      });
+
+      tearDown(() async {
+        await visitSignals.close();
+        await Dependencies.instance.reset;
+      });
+
+      testWidgets('and a delete there offers the undo', (tester) async {
+        when(() => cubit.state).thenReturn(withHistory);
+        when(() => cubit.restoreVisit('v1')).thenAnswer((_) async {});
+
+        await tester.pumpApp(subject());
+        await tester.tap(find.text('02.10.2026'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VisitSheetView), findsOneWidget);
+        verify(() => visitCubit.init('c1', visitId: 'v1')).called(1);
+
+        visitSignals.add(VisitFormSignal.deleted);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VisitSheetView), findsNothing);
+        expect(find.text('Usunięto wizytę.'), findsOneWidget);
+        await tester.tap(find.text('Cofnij'));
+        verify(() => cubit.restoreVisit('v1')).called(1);
+      });
+    });
   });
 }

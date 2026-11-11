@@ -231,6 +231,35 @@
   "@visitSaved": {
     "description": "Snackbar after a visit is saved."
   },
+  "visitEdit": "Wizyta",
+  "@visitEdit": {
+    "description": "Title of the visit sheet when it opens a visit from the client's history."
+  },
+  "visitDelete": "Usuń wizytę",
+  "@visitDelete": {
+    "description": "Button on the visit sheet of a stored visit; a soft delete with an undo."
+  },
+  "visitDeleted": "Usunięto wizytę.",
+  "@visitDeleted": {
+    "description": "Snackbar after deleting a visit, with an undo action."
+  },
+  "visitPriceAmount": "{amount} zł",
+  "@visitPriceAmount": {
+    "description": "A visit's price in the history, already formatted (180 or 180,50).",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "clientHistory": "Historia",
+  "@clientHistory": {
+    "description": "Heading of the visit history on the client card."
+  },
+  "clientHistoryEmpty": "Nie ma jeszcze wizyt. Pierwszą zapiszesz przyciskiem „Zapisz wizytę”.",
+  "@clientHistoryEmpty": {
+    "description": "Empty history on the client card; names the sticky button below."
+  },
   "dueTitle": "Terminy",
   "@dueTitle": {
     "description": "App bar title of the due list, and its tab in the bottom navigation."

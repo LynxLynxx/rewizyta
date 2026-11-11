@@ -17,6 +17,18 @@ final class const VisitItemsRepositoryImpl(final AppDatabase _db) implements Vis
   }
 
   @override
+  Stream<List<VisitItem>> watchByClient(String clientId) {
+    final items = _db.visitItems;
+    final query =
+        _db.select(items).join([innerJoin(_db.visits, _db.visits.id.equalsExp(items.visitId))])
+          ..where(_db.visits.clientId.equals(clientId) & items.deletedAt.isNull())
+          ..orderBy([OrderingTerm.asc(items.createdAt), OrderingTerm.asc(items.id)]);
+    return query.watch().map(
+      (rows) => rows.map((row) => row.readTable(items).toDomain()).toList(),
+    );
+  }
+
+  @override
   Future<void> upsert(VisitItem item) => _db.upsertSynced(
     _db.visitItems,
     item.toCompanion(),

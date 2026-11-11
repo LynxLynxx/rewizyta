@@ -1,6 +1,7 @@
 # Journey 1 in docs/APP_FLOW.md plus the card: add a client with equipment and
 # a last visit, open the card, edit it, delete it, undo, find it by phone,
-# then see it on the due list and record a visit from there.
+# then see it on the due list, record a visit from there and delete and
+# restore the older one in the history.
 # Starts from an empty database.
 # ASCII input only: Maestro's Android driver cannot type Polish letters.
 # Form fields are matched by their label: the label is merged with the field
@@ -91,5 +92,19 @@ name: Clients - add, edit, delete, undo, search
 - assertVisible: "Wykonane"
 - tapOn: "Zapisz"
 - assertVisible: "Zapisano wizytę."
+
+# The history: today's visit and the one the form recorded. Delete the older
+# one from its sheet, then undo. A history tile reads "date\nwork".
+- scrollUntilVisible:
+    element: "(?s)14\\.10\\.2025.*"
+- tapOn: "(?s)14\\.10\\.2025.*"
+- assertVisible: "Wizyta"
+- scrollUntilVisible:
+    element: "Usuń wizytę"
+- tapOn: "Usuń wizytę"
+- assertVisible: "Usunięto wizytę."
+- assertNotVisible: "(?s)14\\.10\\.2025.*"
+- tapOn: "Cofnij"
+- assertVisible: "(?s)14\\.10\\.2025.*"
 - back
 - assertVisible: "Nikt nie czeka na przegląd w najbliższych 60 dniach."

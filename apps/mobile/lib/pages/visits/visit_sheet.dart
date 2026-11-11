@@ -9,21 +9,26 @@ import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 
 /// "Zapisz wizytę": a bottom sheet, not a route (`docs/APP_FLOW.md`,
-/// "Navigation").
-class const VisitSheet({super.key, required final String clientId}) extends StatelessWidget {
-  static Future<void> show(BuildContext context, {required String clientId}) {
-    return showModalBottomSheet<void>(
+/// "Navigation"). With a [visitId] it edits that visit from the history and
+/// can delete it.
+class const VisitSheet({super.key, required final String clientId, final String? visitId})
+    extends StatelessWidget {
+  /// Completes with `true` after a delete, so the caller, whose cubit outlives
+  /// the sheet, can offer the undo.
+  static Future<bool?> show(BuildContext context, {required String clientId, String? visitId}) {
+    return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => VisitSheet(clientId: clientId),
+      builder: (context) => VisitSheet(clientId: clientId, visitId: visitId),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => Dependencies.instance.get<VisitFormCubit>()..init(clientId),
+      create: (context) =>
+          Dependencies.instance.get<VisitFormCubit>()..init(clientId, visitId: visitId),
       child: const VisitSheetView(),
     );
   }
@@ -47,6 +52,8 @@ class _VisitSheetViewState()
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.l10n.visitSaved)));
         Navigator.of(context).pop();
+      case VisitFormSignal.deleted:
+        Navigator.of(context).pop(true);
     }
   }
 
@@ -79,7 +86,10 @@ class const _Form({required final VisitFormState state}) extends StatelessWidget
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.visitRecord, style: context.textTheme.headlineSmall),
+          Text(
+            state.isEditing ? l10n.visitEdit : l10n.visitRecord,
+            style: context.textTheme.headlineSmall,
+          ),
           const SizedBox(height: AppSpacing.md),
           if (state.equipment.isNotEmpty) ...[
             Text(
@@ -93,9 +103,7 @@ class const _Form({required final VisitFormState state}) extends StatelessWidget
               children: [
                 for (final item in state.equipment)
                   FilterChip(
-                    label: Text(
-                      [?item.serviceType?.localizedName(l10n), ?item.label].join(' · '),
-                    ),
+                    label: Text(item.workLabel(l10n)),
                     selected: state.ticked.contains(item.id),
                     onSelected: (_) => cubit().toggle(item.id),
                   ),
@@ -146,6 +154,14 @@ class const _Form({required final VisitFormState state}) extends StatelessWidget
             onPressed: state.canSave ? cubit().save : null,
             child: Text(l10n.visitSave),
           ),
+          if (state.isEditing) ...[
+            const SizedBox(height: AppSpacing.sm),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: context.colorScheme.error),
+              onPressed: state.isSaving ? null : cubit().delete,
+              child: Text(l10n.visitDelete),
+            ),
+          ],
         ],
       ),
     );

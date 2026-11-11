@@ -22,7 +22,8 @@ final class EquipmentServiceImpl(
   Stream<List<Equipment>> watchAll() => _equipment.watchAll();
 
   @override
-  Stream<List<Equipment>> watchByClient(String clientId) => _equipment.watchByClient(clientId);
+  Stream<List<Equipment>> watchByClient(String clientId, {bool includeDeleted = false}) =>
+      _equipment.watchByClient(clientId, includeDeleted: includeDeleted);
 
   @override
   Future<List<Equipment>> findByClient(String clientId) => _equipment.findByClient(clientId);

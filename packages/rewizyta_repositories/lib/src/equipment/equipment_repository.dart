@@ -5,8 +5,10 @@ abstract interface class EquipmentRepository() {
   /// All live equipment, for the status of every client on the list.
   Stream<List<Equipment>> watchAll();
 
-  /// The client's live equipment in the order it was added.
-  Stream<List<Equipment>> watchByClient(String clientId);
+  /// The client's live equipment in the order it was added; with
+  /// [includeDeleted], the soft-deleted rows too, which the visit history
+  /// still names.
+  Stream<List<Equipment>> watchByClient(String clientId, {bool includeDeleted = false});
 
   /// The client's live equipment once, for use inside a transaction.
   Future<List<Equipment>> findByClient(String clientId);

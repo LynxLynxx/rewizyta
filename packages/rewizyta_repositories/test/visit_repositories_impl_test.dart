@@ -92,6 +92,19 @@ void main() {
       expect((await items.findByVisit('v1')).last.isDeleted, isFalse);
     });
 
+    test("watchByClient lists the live items of the client's visits", () async {
+      await ClientsRepositoryImpl(db).upsert(client(id: 'c2'));
+      await visits.upsert(visit(id: 'v2', deletedAt: t0));
+      await visits.upsert(visit(id: 'other', clientId: 'c2'));
+      await items.upsert(visitItem());
+      await items.upsert(visitItem(id: 'unticked', equipmentId: 'e2', deletedAt: t0));
+      await items.upsert(visitItem(id: 'i2', visitId: 'v2'));
+      await items.upsert(visitItem(id: 'i3', visitId: 'other'));
+
+      final list = await items.watchByClient('c1').first;
+      expect(list.map((i) => i.id), unorderedEquals(['i1', 'i2']));
+    });
+
     test('a visit holds one row per equipment', () async {
       await items.upsert(visitItem());
 

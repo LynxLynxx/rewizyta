@@ -8,6 +8,9 @@ final class const VisitFormState({
   final bool isLoading = true,
   final bool isSaving = false,
 
+  /// An existing visit from the history, which the sheet can also delete.
+  final bool isEditing = false,
+
   /// The client's equipment, each a chip.
   final List<ClientEquipmentViewModel> equipment = const [],
 
@@ -35,6 +38,7 @@ final class const VisitFormState({
   VisitFormState copyWith({
     bool? isLoading,
     bool? isSaving,
+    bool? isEditing,
     List<ClientEquipmentViewModel>? equipment,
     Set<String>? ticked,
     String? date,
@@ -44,6 +48,7 @@ final class const VisitFormState({
     return VisitFormState(
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
+      isEditing: isEditing ?? this.isEditing,
       equipment: equipment ?? this.equipment,
       ticked: ticked ?? this.ticked,
       date: date ?? this.date,
@@ -59,6 +64,7 @@ final class const VisitFormState({
   List<Object?> get props => [
     isLoading,
     isSaving,
+    isEditing,
     equipment,
     ticked,
     date,
@@ -70,7 +76,10 @@ final class const VisitFormState({
   ];
 }
 
-/// The visit was written; the sheet closes.
 enum VisitFormSignal() {
+  /// The visit was written; the sheet closes.
   saved,
+
+  /// The visit was soft-deleted; the sheet closes and the card offers an undo.
+  deleted,
 }

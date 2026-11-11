@@ -218,4 +218,121 @@ void main() {
     await sub.cancel();
     await cubit.close();
   });
+
+  group('editing a visit from the history', () {
+    final stored = Visit(
+      id: 'v1',
+      clientId: 'c1',
+      doneAt: DateTime.utc(2026, 10, 2),
+      priceGrosze: 18050,
+      note: 'Sadza',
+      appointmentId: 'a1',
+      createdAt: now,
+      updatedAt: now,
+    );
+    VisitItem visitItem(String equipmentId) => VisitItem(
+      id: 'i-$equipmentId',
+      visitId: 'v1',
+      equipmentId: equipmentId,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    setUp(() {
+      when(() => visitsService.getVisit('v1')).thenAnswer((_) async => stored);
+      // e-gone was deleted since: no chip, but the item stays ticked.
+      when(
+        () => visitsService.findItems('v1'),
+      ).thenAnswer((_) async => [visitItem('e2'), visitItem('e-gone')]);
+    });
+
+    blocTest<VisitFormCubit, VisitFormState>(
+      'init fills the form from the stored visit',
+      build: build,
+      act: (cubit) => cubit.init('c1', visitId: 'v1'),
+      verify: (cubit) {
+        final state = cubit.state;
+        expect(state.isEditing, isTrue);
+        expect(state.ticked, {'e2', 'e-gone'});
+        expect((state.date, state.price, state.note), ('02.10.2026', '180,50', 'Sadza'));
+        expect(state.canSave, isTrue);
+      },
+    );
+
+    test('save updates the same visit and keeps its appointment', () async {
+      when(
+        () => visitsService.saveVisit(
+          id: 'v1',
+          clientId: 'c1',
+          doneAt: DateTime.utc(2026, 10, 2),
+          equipmentIds: {'e1', 'e2', 'e-gone'},
+          priceGrosze: 18050,
+          note: 'Sadza',
+          appointmentId: 'a1',
+        ),
+      ).thenAnswer((_) async => stored);
+      final cubit = build();
+
+      await cubit.init('c1', visitId: 'v1');
+      cubit.toggle('e1');
+      await cubit.save();
+
+      verify(
+        () => visitsService.saveVisit(
+          id: 'v1',
+          clientId: 'c1',
+          doneAt: DateTime.utc(2026, 10, 2),
+          equipmentIds: {'e1', 'e2', 'e-gone'},
+          priceGrosze: 18050,
+          note: 'Sadza',
+          appointmentId: 'a1',
+        ),
+      ).called(1);
+      await cubit.close();
+    });
+
+    test('delete soft-deletes the visit and signals', () async {
+      when(() => visitsService.deleteVisit('v1')).thenAnswer((_) async {});
+      final cubit = build();
+      final signals = <VisitFormSignal>[];
+      final sub = cubit.signalStream.listen(signals.add);
+
+      await cubit.init('c1', visitId: 'v1');
+      await cubit.delete();
+      await Future<void>.delayed(Duration.zero);
+
+      verify(() => visitsService.deleteVisit('v1')).called(1);
+      expect(signals, [VisitFormSignal.deleted]);
+      await sub.cancel();
+      await cubit.close();
+    });
+
+    test('a failing delete goes to the error channel', () async {
+      when(
+        () => visitsService.deleteVisit('v1'),
+      ).thenThrow(const VisitNotFoundException('v1'));
+      final cubit = build();
+      final errors = <Object>[];
+      final sub = cubit.errorStream.listen(errors.add);
+
+      await cubit.init('c1', visitId: 'v1');
+      await cubit.delete();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(errors, hasLength(1));
+      expect(cubit.state.isSaving, isFalse);
+      await sub.cancel();
+      await cubit.close();
+    });
+  });
+
+  test('delete does nothing for a new visit', () async {
+    final cubit = build();
+
+    await cubit.init('c1');
+    await cubit.delete();
+
+    verifyNever(() => visitsService.deleteVisit(any()));
+    await cubit.close();
+  });
 }

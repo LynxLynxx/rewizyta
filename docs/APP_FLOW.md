@@ -80,9 +80,9 @@ leaves the app.
 | Dziś – Tydzień | `/today` (toggle) | Dziś | One card per day: "{n} · {km} km" or "wolne", rows of time + "name · town" | M4 |
 | Terminy | `/due` | Tab | "{n} klientów do obsłużenia · SMS-y idą same"; groups "PO TERMINIE" and "NAJBLIŻSZE 60 DNI"; each row a status tag plus "umówiony pn 29.09, 09:30" or the SMS status, and a round "Dzwoń" button | M3 |
 | Klienci | `/clients` | Tab | Count; "Dodaj klienta", "Import z kontaktów", "Wklej numer"; search "Nazwisko, miejscowość, telefon" (digits match without spaces); list by name in Polish order with status tags | M2 |
-| Klient | `/clients/:id` | Klienci, Terminy, Dziś, caller card | "‹ {previous}"; name, phone, address, due status, equipment tags, note; Zadzwoń, SMS, Dojazd, Umów termin; history; sticky "Zapisz wizytę" | M2–M3 |
-| Nowy klient / edycja | `/clients/new`, `/clients/:id/edit` | Klienci, Wklej numer, Klient | Name or company, phone, address, town; one or more equipment rows, each with a service chip (its cycle comes from the user's service type), an optional label and "Ostatnia wizyta" (DD.MM.RRRR) with a live "Następny przegląd: {date}", or the hint "Nie pamiętasz? Zostaw puste – policzymy po pierwszej wizycie." A saved last visit is read-only. Save enabled when the name has 2+ characters, the phone 9+ digits and no last visit is an unreadable or future date. The prototype sets one service and cycle per client; the equipment model in `BACKEND_SCHEMA.md` wins (`DESIGN_BRIEF.md`, "Where the prototype and the docs disagree") | M2 |
-| Zapisz wizytę | sheet | Klient, Dziś | Work-done chips, price in zł, "Następny przegląd {date}" | M3 |
+| Klient | `/clients/:id` | Klienci, Terminy, Dziś, caller card | "‹ {previous}"; name, phone, address, due status, equipment tags, note; Zadzwoń, SMS, Dojazd, Umów termin; "HISTORIA" (visits newest first: date, work, price, note; a tap opens the visit on the sheet); sticky "Zapisz wizytę" | M2–M3 |
+| Nowy klient / edycja | `/clients/new`, `/clients/:id/edit` | Klienci, Wklej numer, Klient | Name or company, phone, address, town; one or more equipment rows, each with a service chip (its cycle comes from the user's service type), an optional label and "Ostatnia wizyta" (DD.MM.RRRR) with a live "Następny przegląd: {date}", or the hint "Nie pamiętasz? Zostaw puste – policzymy po pierwszej wizycie." A saved last visit is read-only; it is corrected in the card's history. Save enabled when the name has 2+ characters, the phone 9+ digits and no last visit is an unreadable or future date. The prototype sets one service and cycle per client; the equipment model in `BACKEND_SCHEMA.md` wins (`DESIGN_BRIEF.md`, "Where the prototype and the docs disagree") | M2 |
+| Zapisz wizytę | sheet | Klient, Dziś, a visit in Klient's history | Work-done chips, price in zł, "Następny przegląd {date}"; from the history titled "Wizyta", prefilled, with "Usuń wizytę" | M3 |
 | Umów termin | sheet | Klient, Terminy, call screen | 7-day picker ("{n} wiz." / "wolne"), free slots, "Umów na {day}, {time}"; replaces the client's open booking | M4 |
 | SMS | sheet | Klient | Prefilled from the template, editable, characters and SMS count | M6 |
 | Dojazd | sheet | Klient, Dziś | Open in maps, copy the address | M4 |
@@ -131,7 +131,7 @@ each path is a budget: a change that adds a step needs a reason.
 - **Toasts** sit at the bottom, ink with paper text, for 3.4 s. Errors reach
   them through `ErrorHandlerStateMixin`, confirmations ("Zapisano", "Trasa
   ułożona") through `SignalHandlerStateMixin`; field errors are inline.
-- **Destructive actions** (delete client, delete equipment) are soft deletes
+- **Destructive actions** (delete client, delete equipment, delete visit) are soft deletes
   with an "Cofnij" snackbar, not a confirmation dialog. Deleting the account is
   the one confirmed action.
 - **Deep links.** Push notifications open a route (`/due`, `/more/reminders`);
