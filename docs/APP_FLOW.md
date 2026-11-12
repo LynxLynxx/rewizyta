@@ -80,14 +80,14 @@ their sheets cover the bar.
 | Dziś – Dzień | `/today` | Tab | Subtitle "28.09 · 4 wizyty · ok. 18,5 km · 1 zrobione"; Dzień / Tydzień toggle; 7-day strip (dot on days with visits); red banner "N klientów po terminie bez umówionej wizyty ›" → Terminy; the next-stop card (Dojazd, Zadzwoń, Zapisz wizytę); the rest of the day as rows (time, name, town · service, "zrobione" or "{km} km"); "Ułóż trasę najkrócej · {x} km mniej". Empty: "Wolne." + "Otwórz terminy" | M4 |
 | Dziś – Tydzień | `/today` (toggle) | Dziś | One card per day: "{n} · {km} km" or "wolne", rows of time + "name · town" | M4 |
 | Terminy | `/due` | Tab | "{n} klientów do obsłużenia · SMS-y idą same"; groups "PO TERMINIE" and "NAJBLIŻSZE 60 DNI"; each row a status tag plus "umówiony pn 29.09, 09:30" or the SMS status, and a round "Dzwoń" button | M3 |
-| Klienci | `/clients` | Tab | Count; "Dodaj klienta", "Import z kontaktów", "Wklej numer"; search "Nazwisko, miejscowość, telefon" (digits match without spaces); list by name in Polish order with status tags | M2 |
+| Klienci | `/clients` | Tab | Count; "Dodaj klienta"; search "Nazwisko, miejscowość, telefon" (digits match without spaces); list by name in Polish order with status tags | M2 |
 | Klient | `/clients/:id` | Klienci, Terminy, Dziś, caller card | "‹ {previous}"; name, phone, address, due status, equipment tags, note; Zadzwoń, SMS, Dojazd, Umów termin; "HISTORIA" (visits newest first: date, work, price, note; a tap opens the visit on the sheet); sticky "Zapisz wizytę" | M2–M3 |
-| Nowy klient / edycja | `/clients/new`, `/clients/:id/edit` | Klienci, Wklej numer, Klient | Name or company, phone, address, town; one or more equipment rows, each with a service chip (its cycle comes from the user's service type), an optional label and "Ostatnia wizyta" (DD.MM.RRRR) with a live "Następny przegląd: {date}", or the hint "Nie pamiętasz? Zostaw puste – policzymy po pierwszej wizycie." A saved last visit is read-only; it is corrected in the card's history. Save enabled when the name has 2+ characters, the phone 9+ digits and no last visit is an unreadable or future date. The prototype sets one service and cycle per client; the equipment model in `BACKEND_SCHEMA.md` wins (`DESIGN_BRIEF.md`, "Where the prototype and the docs disagree") | M2 |
+| Nowy klient / edycja | `/clients/new`, `/clients/:id/edit` | Klienci, Klient | Name or company, phone, address, town; on a new client "Wybierz z kontaktów" opens the phone's contact picker and fills the name, phone (mobile first) and address, replacing what was typed, and a refused contacts permission says so in a snackbar and leaves the fields to type; a number copied elsewhere pastes into the phone field; one or more equipment rows, each with a service chip (its cycle comes from the user's service type), an optional label and "Ostatnia wizyta" (DD.MM.RRRR) with a live "Następny przegląd: {date}", or the hint "Nie pamiętasz? Zostaw puste – policzymy po pierwszej wizycie." A saved last visit is read-only; it is corrected in the card's history. Save enabled when the name has 2+ characters, the phone 9+ digits and no last visit is an unreadable or future date. The prototype sets one service and cycle per client; the equipment model in `BACKEND_SCHEMA.md` wins (`DESIGN_BRIEF.md`, "Where the prototype and the docs disagree") | M2 |
 | Zapisz wizytę | sheet | Klient, Dziś, a visit in Klient's history | Work-done chips, price in zł, "Następny przegląd {date}"; from the history titled "Wizyta", prefilled, with "Usuń wizytę" | M3 |
 | Umów termin | sheet | Klient, Terminy, call screen | 7-day picker ("{n} wiz." / "wolne"), free slots, "Umów na {day}, {time}"; replaces the client's open booking | M4 |
 | SMS | sheet | Klient | Prefilled from the template, editable, characters and SMS count | M6 |
 | Dojazd | sheet | Klient, Dziś | Open in maps, copy the address | M4 |
-| Import z kontaktów | sheet | Klienci, onboarding | Checklist of contacts, numbers already in the book greyed out ("już w bazie"), "Dodaj {n} kontaktów" | M2 |
+| Import z kontaktów | sheet | Onboarding | Checklist of contacts, numbers already in the book greyed out ("już w bazie"), "Dodaj {n} kontaktów" | M7 |
 | Więcej | `/more` | Tab | Przypomnienia SMS · Podsumowanie miesiąca · Usługi i cykle · Ustawienia · Pierwsze uruchomienie; profile line at the bottom; today only Usługi i cykle | M7 |
 | Usługi i cykle | `/more/services` | Więcej | The service types grouped by trade, each row "co {n} mies.", the default price and "w archiwum"; a tap opens Usługa; "Dodaj usługę" under each trade, "Dodaj branżę", "Przywróć domyślne"; an empty catalogue says to restore the defaults or add a trade | M7 |
 | Usługa | sheet | Usługi i cykle | Name (a default shows its own name until renamed; blank brings it back), cycle in months, 1 to 120 (moves the due dates), default price in zł, "W archiwum" (hidden from pickers, kept in history and due dates); new ones titled "Nowa usługa" | M7 |
@@ -103,8 +103,9 @@ their sheets cover the bar.
 The key flows from `PRD.md` as tap paths. Fewer taps is the product goal, so
 each path is a budget: a change that adds a step needs a reason.
 
-1. **Add a client.** Klienci → Dodaj klienta (or Wklej numer, which opens the
-   form with the phone filled in) → name, phone, address → an equipment row
+1. **Add a client.** Klienci → Dodaj klienta → name, phone, address (or
+   Wybierz z kontaktów, which fills them from a contact; a copied number
+   pastes into the phone field) → an equipment row
    (service chip, last visit; "Dodaj urządzenie" for another) → Zapisz →
    Klient. Each row's next due date shows while typing; a row without a last
    visit is "bez terminu" until the first visit.

@@ -1,5 +1,5 @@
 name: rewizyta_services
-description: Domain layer - services (the only tier cubits may inject), observers, sync managers, and the vendor-agnostic adapter interfaces for analytics, crash reporting and push notifications. Pure Dart.
+description: Domain layer - services (the only tier cubits may inject), observers, sync managers, and the vendor-agnostic adapter interfaces for analytics, crash reporting, push notifications and contacts. Pure Dart.
 publish_to: none
 version: 0.1.0
 resolution: workspace
@@ -8,6 +8,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  equatable: ^3.0.0
   meta: ^1.18.0
   rewizyta_models:
     path: ../rewizyta_models

@@ -40,7 +40,7 @@ Tick items as they land; add a short note when a decision changes.
 - [x] Default catalogue in `rewizyta_models` (`TradeTemplate` → `ServiceTypeTemplate` enums) and `CatalogService.copyDefaults` that copies the picked trades into the user's rows with `template_key` and no name (the UI localizes the enum through `localizedName(context.l10n)` until the user renames the row; `name` is nullable, a check requires a name or a template), for onboarding and "restore defaults" alike (restores soft-deleted templates, skips existing ones). No suggested prices: `default_price_grosze` stays null until the user sets one (2026-10-06). Still open: a second phone that seeds before its first pull creates other ids for the same `template_key` (code review FINDING-17); seed after the first pull or derive ids from the user id, decided in M5.
 - [x] Due-date recompute in the services, inside one `TransactionRunner.run` with the writes that cause it: `VisitsService` (`saveVisit` ticks, unticks and restores items; `deleteVisit`), `EquipmentService.saveEquipment` (a new service type moves the dates), `CatalogService.setCycle` (all equipment of the type). They share an internal `DueDateUpdater` that reads `VisitsRepository.lastDoneAt`, applies `nextDue` and saves only equipment whose caches changed (2026-10-22).
 - [x] Repository tests on `NativeDatabase.memory()` (2026-10-01), service tests with mocktail (2026-10-22).
-- [x] `TransactionRunner`, the catalogue, equipment and visit repositories and their services registered in `dependencies.dart` (2026-10-22). Appointments, reminders, devices, settings and sync state wait for the services that use them.
+- [x] `TransactionRunner`, the catalogue, equipment and visit repositories and their services registered in `dependencies.dart` (2026-10-22). Reminders, devices, settings and sync state wait for the services that use them.
 - [ ] Before the first release: snapshot drift schema v1 with `make-migrations` (see `BACKEND_SCHEMA.md`, "Migrations").
 
 ## M2 – Clients
@@ -48,7 +48,7 @@ Tick items as they land; add a short note when a decision changes.
 - [x] List with search (name and address without diacritics, phone digits whatever the spacing), detail, add/edit form with inline validation, soft delete with "Cofnij". `ClientsService.watchClients` sorts with `comparePolish` (`rewizyta_models`), because SQLite's `ORDER BY name` puts Ł, Ś and Ż after Z; the service turns a typed phone (`601 234 567`, `0048…`) into E.164. The card pops with `true` after a delete and the list offers the undo; the add form pops with the new id and the list opens the card, because go_router's `pushReplacement` never completes the original `push` (2026-10-22).
 - [x] End-to-end tests with Maestro: `apps/mobile/.maestro/clients.yaml` (add, card, edit, delete, undo, search), `melos run e2e` locally, `.github/workflows/e2e.yml` on an Android emulator for app changes, not a required check; Maestro's analytics off, no Maestro Cloud (2026-10-22). Each journey that lands adds a flow.
 - [x] Equipment on a client, each with a service type from the user's catalogue. The form's "Ostatnia wizyta" is saved as a visit with that equipment ticked (`VisitsService.saveVisit`), never typed into `last_visit_at`, so the caches stay derived; rows with the same date share one visit. `ClientsService.saveClientWithEquipment` writes the client, the equipment and the visits in one transaction. A saved last visit is read-only on the form, because a typed date could only add a visit and an earlier one would not move it; it is corrected in the client history (M3). Status tags on the list, the card and each row follow the rule in `DESIGN_BRIEF.md`, a client's being that of its earliest due equipment. `CatalogService.ensureDefaults` copies the whole catalogue the first time the form opens, standing in for onboarding's trade picker (M7) (2026-11-04).
-- [ ] Import from phone contacts (`flutter_contacts`), paste a number.
+- [x] Import from phone contacts, paste a number. "Wybierz z kontaktów" on the new-client form opens the system picker (`flutter_contacts` behind `ContactsService`, `FlutterContactsService` in `app/integrations/`) and fills the name, the phone (mobile first) and the address, replacing what was typed. Android asks for `READ_CONTACTS` on the first tap; a refusal says so and leaves the fields to type. Only the picked contact is read and its device id is not stored. Pasting a number already worked; the service now also drops the invisible direction marks a number copied from a messenger carries. The bulk "Import z kontaktów" sheet moves to onboarding (M7) (2026-11-12).
 - [x] Phone formatting (E.164 in, Polish display out – `formatPhone`), call and SMS via `url_launcher`: Zadzwoń and SMS on the card open the system dialer and messaging app (`tel:` / `sms:`), with a snackbar when nothing takes the link. No `<queries>` in the manifest, because nothing calls `canLaunchUrl`. The SMS button turns into the server-sent SMS sheet in M6 (2026-11-11).
 
 ## M3 – Visits and due list
@@ -62,7 +62,8 @@ Tick items as they land; add a short note when a decision changes.
 - [ ] Book appointment (day + hour), statuses.
 - [ ] Due list rows show "umówiony pn 29.09, 09:30" for a planned appointment from today on (the "booked" flag); the 'Umów termin' sheet opens from the row.
 - [ ] Today screen (day plan) and week view.
-- [ ] `DayPlanService`: capacity from `slots_per_day`/hours, haversine distances with road factor, nearest-neighbour order that keeps `is_time_fixed` stops, `route_position` persistence, drag-and-drop in `manual` mode.
+- [x] `DayPlanService`: capacity from `slots_per_day`/hours, haversine distances with road factor, nearest-neighbour order that keeps `is_time_fixed` stops, `route_position` persistence, drag-and-drop in `manual` mode. The rules are pure Dart in `rewizyta_models` (`roadKm`, `DayPlan` with legs, total km, travel and visit minutes, slots left, the working-hours fit and `optimised()`); `DayPlanService` reads the day (`watchDay`, appointments joined with their clients) and writes the order (`optimiseDay`, `reorder`), each in one transaction that saves only the rows whose `route_position` changes. `PlannerSettings` holds the schema defaults until `profiles` reaches the phone (M5) and gets an editor (M7). Drag handles, the route mode and the Today and week widgets land with the Today screen (2026-11-12).
+- [ ] Geocode the client's address on save (platform geocoder) so the planner has coordinates.
 - [ ] Booking proposals: days with a free slot whose stops are closest to the client.
 - [ ] Open a stop in maps; show "~km, ~min" between stops.
 
@@ -74,7 +75,7 @@ Tick items as they land; add a short note when a decision changes.
 - [ ] `devices` upload from `PushNotificationsService.onTokenRefresh`.
 - [ ] Restore-on-new-phone flow.
 - [ ] `purge-deleted` nightly cron (30 days) + `tombstones`; `sync_push` rejects tombstoned ids; phone-side purge.
-- [ ] `export-account` and `delete-account` functions (cancel reminders, hard delete, `account_deletions`, auth user removal); `account_deletions` table.
+- [ ] `export-account` and `delete-account` functions (cancel reminders, hard delete, `account_deletions`, auth user removal); `account_deletions` table; plus a service-role path to run it for an e-mail request (`/usun-konto/` promises it within a month).
 - [ ] Self-hosting notes (Docker compose on Hetzner) in `supabase/README.md`.
 
 ## M6 – SMS reminders
@@ -134,9 +135,10 @@ The app's information and support site that the store listings link to, not a
 web version of the app (see `TRD.md`, "Websites").
 
 - [ ] Home at launch: replace the waitlist hero with what the app does, pricing and store badges; keep `/potwierdz/`, `/wypisz/`, `/prywatnosc/`. PL + EN.
-- [ ] Support page: FAQ and contact address (App Store "Support URL").
+- [x] Support page: FAQ and contact address (App Store "Support URL"). `/pomoc/`, Polish, pre-launch wording, on the shared `TextPage` frame; the footer links to it (2026-11-12).
 - [ ] Privacy policy (both stores' "Privacy Policy URL") and terms with the DPA (umowa powierzenia), the sub-processor list (Supabase EU, SMSAPI/SerwerSMS, Scaleway, Sentry EU, PostHog EU, FCM) and the retention table from `BACKEND_SCHEMA.md`.
-- [ ] Account deletion page: the in-app path and an e-mail request route that works without reinstalling (Play Data safety "Delete account URL").
+- [x] Account deletion page: the in-app path and an e-mail request route that works without reinstalling (Play Data safety "Delete account URL"). `/usun-konto/`, Polish, pre-launch wording, on the shared `TextPage` frame (2026-11-12).
+- [ ] At launch: rewrite `/pomoc/` and `/usun-konto/` for the shipped app (drop the pre-launch lines and waitlist questions, check the Settings path and sign-in wording against M5/M7, name the SMS gateway and its log retention), add the `/usun-konto/` footer link and the EN versions.
 
 ## V1 (after MVP ships)
 

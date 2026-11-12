@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -11,6 +13,8 @@ class MockClientsService() extends Mock implements ClientsService;
 class MockEquipmentService() extends Mock implements EquipmentService;
 
 class MockCatalogService() extends Mock implements CatalogService;
+
+class MockContactsService() extends Mock implements ContactsService;
 
 void main() {
   final now = DateTime.utc(2026);
@@ -48,8 +52,10 @@ void main() {
   late MockClientsService clients;
   late MockEquipmentService equipment;
   late MockCatalogService catalog;
+  late MockContactsService contacts;
 
-  ClientFormCubit build() => ClientFormCubit(clients, equipment, catalog, now: () => today);
+  ClientFormCubit build() =>
+      ClientFormCubit(clients, equipment, catalog, contacts, now: () => today);
 
   void stubSave(Future<Client> Function() answer) {
     when(
@@ -87,6 +93,7 @@ void main() {
     clients = MockClientsService();
     equipment = MockEquipmentService();
     catalog = MockCatalogService();
+    contacts = MockContactsService();
     when(catalog.ensureDefaults).thenAnswer((_) async {});
     when(
       catalog.watchServiceTypes,
@@ -198,6 +205,98 @@ void main() {
     act: (cubit) => cubit.update(phone: '6'),
     expect: () => [const ClientFormState(phone: '6')],
   );
+
+  group('pickContact', () {
+    const typed = ClientFormState(
+      name: 'Ja',
+      phone: '601',
+      postalCode: '48-300',
+      error: ClientValidationError.phoneInvalid,
+    );
+
+    setUp(() => when(contacts.requestPermission).thenAnswer((_) async => true));
+
+    blocTest<ClientFormCubit, ClientFormState>(
+      'fills the fields from the contact, emptying what it lacks',
+      setUp: () => when(contacts.pickContact).thenAnswer(
+        (_) async => const PickedContact(
+          name: 'Jan Kowalski',
+          phone: '+48 601 234 567',
+          addressLine: 'ul. Leśna 12',
+          town: 'Nysa',
+        ),
+      ),
+      build: build,
+      seed: () => typed,
+      act: (cubit) => cubit.pickContact(),
+      expect: () => [
+        const ClientFormState(
+          name: 'Jan Kowalski',
+          phone: '+48 601 234 567',
+          addressLine: 'ul. Leśna 12',
+          town: 'Nysa',
+          fieldsVersion: 1,
+        ),
+      ],
+    );
+
+    blocTest<ClientFormCubit, ClientFormState>(
+      'backing out keeps what was typed',
+      setUp: () => when(contacts.pickContact).thenAnswer((_) async => null),
+      build: build,
+      seed: () => typed,
+      act: (cubit) => cubit.pickContact(),
+      expect: () => <ClientFormState>[],
+    );
+
+    test('a refused permission keeps what was typed, says so and opens no picker', () async {
+      when(contacts.requestPermission).thenAnswer((_) async => false);
+      final cubit = build()..emit(typed);
+      final errors = <Object>[];
+      final sub = cubit.errorStream.listen(errors.add);
+
+      await cubit.pickContact();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state, typed);
+      expect(errors.single, isA<LocalizedContactsPermissionDeniedException>());
+      verifyNever(contacts.pickContact);
+      await sub.cancel();
+      await cubit.close();
+    });
+
+    test('a failing picker keeps what was typed and goes to the error channel', () async {
+      when(contacts.pickContact).thenThrow(Exception('picker'));
+      final cubit = build()..emit(typed);
+      final errors = <Object>[];
+      final sub = cubit.errorStream.listen(errors.add);
+
+      await cubit.pickContact();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(errors.single, isA<LocalizedUnknownException>());
+      expect(cubit.state, typed);
+      await sub.cancel();
+      await cubit.close();
+    });
+
+    test('a second tap while the picker opens is ignored, a later one is not', () async {
+      final permission = Completer<bool>();
+      when(contacts.requestPermission).thenAnswer((_) => permission.future);
+      when(contacts.pickContact).thenAnswer((_) async => null);
+      final cubit = build();
+
+      final first = cubit.pickContact();
+      await cubit.pickContact();
+      permission.complete(true);
+      await first;
+      await cubit.pickContact();
+
+      verify(contacts.requestPermission).called(2);
+      verify(contacts.pickContact).called(2);
+      await cubit.close();
+    });
+  });
 
   group('the next due date while typing', () {
     Future<ClientFormEquipmentRow> afterTyping(String text, {String? serviceTypeId}) async {

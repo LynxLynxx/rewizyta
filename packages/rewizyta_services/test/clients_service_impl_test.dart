@@ -73,7 +73,15 @@ void main() {
     });
 
     test('stores a phone typed the Polish way as E.164', () async {
-      for (final typed in ['601 234 567', '601-234-567', '+48 601 234 567', '0048601234567']) {
+      for (final typed in [
+        '601 234 567',
+        '601-234-567',
+        '+48 601 234 567',
+        '0048601234567',
+        // Copied from a messenger, between invisible direction marks.
+        '\u202A+48 601 234 567\u202C',
+        '\u200E601 234 567',
+      ]) {
         final client = await service.saveClient(name: 'Jan', phone: typed);
         expect(client.phone, '+48601234567', reason: typed);
       }

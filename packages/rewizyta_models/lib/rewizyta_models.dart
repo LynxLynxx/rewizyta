@@ -1,5 +1,5 @@
 /// Domain layer of Rewizyta: entities, value objects, typed exceptions and
-/// pure rules (due dates). Depends on nothing else in the repo.
+/// pure rules (due dates, day planning). Depends on nothing else in the repo.
 library;
 
 export 'src/appointment/appointment.dart';
@@ -17,6 +17,9 @@ export 'src/due/due_date.dart';
 export 'src/equipment/equipment.dart';
 export 'src/equipment/equipment_draft.dart';
 export 'src/equipment/equipment_exceptions.dart';
+export 'src/planner/day_plan.dart';
+export 'src/planner/planner_settings.dart';
+export 'src/planner/road_distance.dart';
 export 'src/reminder/reminder.dart';
 export 'src/visit/visit.dart';
 export 'src/visit/visit_exceptions.dart';

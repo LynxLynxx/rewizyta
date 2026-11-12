@@ -180,25 +180,37 @@ Planning is on the phone, from the profile's settings, with no paid API:
 - **Settings (per user, synced on `profiles`):** working hours, slots per
   day, slot length, home location, travel speed (km/h) and route mode. The
   defaults suit a chimney sweep (8 slots of 60 minutes, 40 km/h); a boiler
-  technician sets 4 slots of 120 minutes.
-- **Capacity.** A day has `slots_per_day` slots; booking shows how many are
-  left and refuses (with an override) when the day is full or when the
-  estimated travel plus visits no longer fits between `work_start` and `work_end`.
+  technician sets 4 slots of 120 minutes. Until `profiles` reaches the phone
+  (M5) and gets an editor (M7) the planner uses the schema defaults
+  (`PlannerSettings()`, without slot length and route mode until booking and
+  the Today screen read them).
+- **Capacity.** A day has `slots_per_day` slots, taken by planned, done and
+  no-show appointments (cancelled ones neither take a slot nor appear); booking
+  shows how many are left and refuses (with an override) when the day is full
+  or when the estimated travel plus visits no longer fits between `work_start`
+  and `work_end`. Slots left go negative on an overbooked day. The fit check
+  counts the way home and only the legs whose both ends have coordinates.
 - **Distance.** Between two stops the planner uses the straight-line
   (haversine) distance from `clients.lat/lng`, multiplied by a road factor
   (1.3) and divided by `travel_speed_kmh`. It is an estimate for ordering and
   fit, not a promise; the technician sees "~12 km, ~20 min" between stops.
-- **Order.** `nearest_neighbour` starts from home (or the first fixed
-  appointment), keeps `is_time_fixed` appointments at their hour and fills
-  the flexible ones in between by nearest next stop; the result is written to
-  `appointments.route_position`. `manual` mode keeps the technician's
-  drag-and-drop order and only shows the distances. "Optimise" can always be
-  re-run; it never moves a fixed appointment.
+- **Order.** `nearest_neighbour` walks the day's stops in start order (then
+  id). A pinned stop (`is_time_fixed`, or already done or no-show) stays at its
+  place in that order; every other place takes the flexible stop nearest to
+  the last known location, starting from home, or without a home from the
+  earliest stop with coordinates. Stops without coordinates count as
+  infinitely far, so they come last; ties go to the earlier start, then the
+  lower id. Greedy, with no lookahead. The result is written to `appointments.route_position` (0-based
+  per local day), only for rows whose position changes and nothing when the
+  order would not change. `manual` mode keeps the technician's drag-and-drop
+  order and only shows the distances. "Optimise" can always be re-run; it
+  never moves a fixed appointment.
 - **Proposals.** When booking a due client, the planner suggests the days in
   the next two weeks with a free slot whose existing stops are closest to
   the client, so the technician clusters a village on one day.
-- Everything lives in a `DayPlanService` (pure Dart, `rewizyta_services`)
-  with unit tests on synthetic coordinates; the cubit only renders the plan.
+- The rules live in `rewizyta_models` like `nextDue` (`roadKm`, `DayPlan`),
+  reading and persisting in `DayPlanService` (`rewizyta_services`), with unit
+  tests on synthetic coordinates; the cubit only renders the plan.
 
 ### Third-party adapters
 
@@ -451,6 +463,13 @@ the system share sheet. The same function, filtered to one client, backs the
 There is no grace period: the export step is the safety net, and a paused
 account would still be holding third-party personal data.
 
+**By e-mail** (Play asks for a route that works without reinstalling the app,
+described on `/usun-konto/`). The request names the account's e-mail address.
+We always send a confirmation request to that address and delete only after the
+reply from it; we never ask for the password or ID documents. We run the same
+deletion as the app, with the service role instead of the user's session,
+within a month of the request; the data is gone from backups within 30 days.
+
 ## Messaging: start free, swap by config
 
 E-mail, SMS and push each sit behind one adapter with one environment
@@ -610,9 +629,9 @@ banner.
   | Page | Why |
   |---|---|
   | Home: what the app does, pricing, store badges | Play "Website" and App Store "Marketing URL" (optional in both) |
-  | Support: FAQ and a contact address | App Store "Support URL" (required) |
+  | Support (`/pomoc/`): FAQ and a contact address | App Store "Support URL" (required) |
   | Privacy policy, with the sub-processors and the retention table | "Privacy Policy URL" in both stores (required); the Play caller-ID review reads it |
-  | Account deletion: how to delete in the app, and how to ask by e-mail without reinstalling | Play "Delete account URL" in the Data safety form (required for apps with accounts); App Store needs the in-app path only |
+  | Account deletion (`/usun-konto/`): how to delete in the app, and how to ask by e-mail without reinstalling | Play "Delete account URL" in the Data safety form (required for apps with accounts); App Store needs the in-app path only |
   | Terms with the DPA (umowa powierzenia) | The technician is the controller of their clients' data; we are the processor |
   | Client portal, `/klient/` (after MVP) | Not a store requirement; the one client-facing surface, see "Client portal" |
 
@@ -742,7 +761,11 @@ that the portal shows a card on the technician's instruction.
   caller-ID directory extension can show a label at most.
 - **Background sync** on Android via `workmanager`; on iOS it is opportunistic
   (BGTaskScheduler), so reminders never depend on the phone syncing anyway.
-- **Contacts import** needs `READ_CONTACTS`; only the picked entries are stored.
+- **Contacts** go through the system picker behind `ContactsService`. Android
+  needs `READ_CONTACTS` for the picked contact's phone and address, asked on
+  the first tap of "Wybierz z kontaktów", never at start; iOS hands them over
+  without a permission (`NSContactsUsageDescription` is set anyway). Only the
+  picked contact is read, and its device contact id is not stored.
 - **Push** needs `POST_NOTIFICATIONS` on Android 13+; asked in onboarding, never
   on first launch.
 

@@ -39,6 +39,11 @@ final class const LocalizedClientNotFoundException() extends LocalizedException 
   String message(BuildContext context) => context.l10n.errorClientNotFound;
 }
 
+final class const LocalizedContactsPermissionDeniedException() extends LocalizedException {
+  @override
+  String message(BuildContext context) => context.l10n.errorContactsPermissionDenied;
+}
+
 final class const LocalizedEquipmentNotFoundException() extends LocalizedException {
   @override
   String message(BuildContext context) => context.l10n.errorEquipmentNotFound;

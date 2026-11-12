@@ -3,10 +3,12 @@ import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_router/jaspr_router.dart';
 
 import 'constants/theme.dart';
+import 'pages/delete_account_page.dart';
 import 'pages/home/home_page.dart';
 import 'pages/mail_page.dart';
 import 'pages/not_found_page.dart';
 import 'pages/privacy_page.dart';
+import 'pages/support_page.dart';
 import 'waitlist/confirm_action.dart';
 import 'waitlist/unsubscribe_action.dart';
 
@@ -39,6 +41,17 @@ class App extends StatelessComponent {
           path: '/prywatnosc',
           title: 'Polityka prywatności – Rewizyta',
           builder: (context, state) => const PrivacyPage(),
+        ),
+        // Linked from the store listings; keep the paths.
+        Route(
+          path: '/pomoc',
+          title: 'Pomoc – Rewizyta',
+          builder: (context, state) => const SupportPage(),
+        ),
+        Route(
+          path: '/usun-konto',
+          title: 'Usuwanie konta – Rewizyta',
+          builder: (context, state) => const DeleteAccountPage(),
         ),
         // Built as a file of its own (the path has an extension); the host
         // serves it for every unknown path.
