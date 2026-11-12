@@ -1,5 +1,6 @@
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:rewizyta/app/config/app_config.dart';
+import 'package:rewizyta/app/integrations/flutter_contacts_service.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 import 'package:rewizyta_services/rewizyta_services.dart';
@@ -80,12 +81,14 @@ final class Dependencies._() extends DependencyProvider {
     // M5.
   }
 
-  /// Tier 6 - analytics, crash reporting, push. Vendor adapters are chosen
-  /// here and nowhere else; an empty key in AppConfig means the no-op.
+  /// Tier 6 - analytics, crash reporting, push, contacts. Vendor adapters are
+  /// chosen here and nowhere else; an empty key in AppConfig means the no-op.
+  /// Contacts need no key, so the plugin is always on.
   void _registerReporting() {
     registerLazySingleton<ReportingService>(NoopReportingService.new);
     registerLazySingleton<AnalyticsService>(NoopAnalyticsService.new);
     registerLazySingleton<PushNotificationsService>(NoopPushNotificationsService.new);
+    registerLazySingleton<ContactsService>(FlutterContactsService.new);
   }
 
   /// Tier 7 - domain services, the only tier cubits may inject.
@@ -145,6 +148,7 @@ final class Dependencies._() extends DependencyProvider {
         get<ClientsService>(),
         get<EquipmentService>(),
         get<CatalogService>(),
+        get<ContactsService>(),
       ),
     );
     registerFactory<VisitFormCubit>(

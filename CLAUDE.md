@@ -16,7 +16,7 @@ when you change the thing they describe.
 | `apps/mobile` | The Flutter app (package `rewizyta`): bootstrap, DI container, router, pages, theme. | Flutter 3.47 / Dart 3.13, flutter_bloc, go_router, drift_flutter, supabase_flutter |
 | `packages/rewizyta_models` | Domain: Equatable entities, typed exceptions, pure rules (`nextDue`). Pure Dart; depends only on the `shared` leaf (`Optional`). | equatable |
 | `packages/rewizyta_repositories` | Data: drift `AppDatabase`, tables, DTOs, repository interfaces + impls, outbox. Pure Dart. | drift, json_serializable |
-| `packages/rewizyta_services` | Domain services (the only thing cubits inject), observers, sync managers, and the adapter interfaces for analytics, crash reporting and push. Pure Dart. | uuid |
+| `packages/rewizyta_services` | Domain services (the only thing cubits inject), observers, sync managers, and the adapter interfaces for analytics, crash reporting, push and contacts. Pure Dart. | equatable, uuid |
 | `packages/rewizyta_blocs` | Cubits + Equatable states, error/signal side-channel mixins, `AppBlocObserver`. Re-exports flutter_bloc. | flutter_bloc, bloc_test |
 | `packages/rewizyta_view_models` | What widgets render: view models, presentation enums, formatters, `LocalizedException`. | equatable, intl |
 | `packages/rewizyta_localization` | `app_pl.arb` and the generated `AppLocalizations`; `context.l10n`. | gen-l10n |
@@ -190,9 +190,10 @@ format → analyze matters; `melos run check` does it right.
   its label, a list tile by its first line (`"(?s)Name.*"`): merged semantics
   is what Maestro reads, so a missing label is a missing selector.
 - **Third-party SDKs sit behind adapters** in `rewizyta_services`
-  (`AnalyticsService`, `ReportingService`, `PushNotificationsService`) with a
-  no-op implementation each. Vendor implementations (PostHog EU, Sentry EU,
-  FCM) live in `apps/mobile/lib/app/integrations/` and are chosen in
+  (`AnalyticsService`, `ReportingService`, `PushNotificationsService`,
+  `ContactsService`) with a no-op implementation each. Vendor implementations
+  (PostHog EU, Sentry EU, FCM, flutter_contacts) live in
+  `apps/mobile/lib/app/integrations/` and are chosen in
   `_registerReporting()` from `AppConfig`. Nothing else knows the vendor.
 
 ## Conventions – website (apps/website)

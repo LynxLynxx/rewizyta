@@ -11,7 +11,8 @@ import 'package:rewizyta_view_models/rewizyta_view_models.dart';
 class ClientFormCubit(
   final ClientsService _clientsService,
   final EquipmentService _equipmentService,
-  final CatalogService _catalogService, {
+  final CatalogService _catalogService,
+  final ContactsService _contactsService, {
   DateTime Function()? now,
 }) extends Cubit<ClientFormState>
     with
@@ -22,6 +23,7 @@ class ClientFormCubit(
   final DateTime Function() _now = now ?? DateTime.now;
   String? _id;
   int _nextRowKey = 0;
+  bool _isPickingContact = false;
 
   Future<void> init(String? id) async {
     _id = id;
@@ -78,6 +80,41 @@ class ClientFormCubit(
         error: const Optional.empty(),
       ),
     );
+  }
+
+  /// Fills the name, phone and address from a contact the user picks,
+  /// replacing what was typed (a field the contact lacks is emptied). Backing
+  /// out of the picker changes nothing; a second tap while it opens is ignored,
+  /// since the plugin cannot run two pickers or permission prompts at once.
+  Future<void> pickContact() async {
+    if (_isPickingContact) return;
+    _isPickingContact = true;
+    try {
+      final isAllowed = await _contactsService.requestPermission();
+      if (isClosed) return;
+      if (!isAllowed) {
+        emitError(const LocalizedContactsPermissionDeniedException());
+        return;
+      }
+      final contact = await _contactsService.pickContact();
+      if (isClosed || contact == null) return;
+      emit(
+        state.copyWith(
+          name: contact.name,
+          phone: contact.phone ?? '',
+          addressLine: contact.addressLine ?? '',
+          postalCode: contact.postalCode ?? '',
+          town: contact.town ?? '',
+          error: const Optional.empty(),
+          fieldsVersion: state.fieldsVersion + 1,
+        ),
+      );
+    } on Exception catch (error) {
+      if (isClosed) return;
+      emitError(LocalizedException.create(error));
+    } finally {
+      _isPickingContact = false;
+    }
   }
 
   void addEquipment() {

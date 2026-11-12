@@ -57,13 +57,14 @@ class _ClientFormViewState()
       body: BlocBuilder<ClientFormCubit, ClientFormState>(
         builder: (context, state) => state.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : _Form(state: state),
+            // A new version rebuilds the text fields, which read their value once.
+            : _Form(key: ValueKey(state.fieldsVersion), state: state),
       ),
     );
   }
 }
 
-class const _Form({required final ClientFormState state}) extends StatelessWidget {
+class const _Form({super.key, required final ClientFormState state}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -84,6 +85,13 @@ class const _Form({required final ClientFormState state}) extends StatelessWidge
           style: context.textTheme.headlineMedium,
         ),
         const SizedBox(height: AppSpacing.md),
+        if (!state.isEditing) ...[
+          OutlinedButton(
+            onPressed: () => cubit().pickContact(),
+            child: Text(l10n.clientFormPickContact),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         LabeledField(
           label: l10n.clientFormName,
           child: TextFormField(

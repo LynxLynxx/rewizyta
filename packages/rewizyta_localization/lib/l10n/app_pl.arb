@@ -160,6 +160,10 @@
   "@clientFormRemoveEquipment": {
     "description": "Button that removes an equipment row from the client form."
   },
+  "clientFormPickContact": "Wybierz z kontaktów",
+  "@clientFormPickContact": {
+    "description": "Button on the new-client form that opens the phone's contact picker and fills the name, phone and address."
+  },
   "equipmentRemoved": "Usunięto urządzenie.",
   "@equipmentRemoved": {
     "description": "Snackbar after removing an equipment row, with an undo."
@@ -296,6 +300,10 @@
   "errorClientNotFound": "Nie znaleziono klienta.",
   "@errorClientNotFound": {
     "description": "Snackbar message when a client id is unknown."
+  },
+  "errorContactsPermissionDenied": "Brak dostępu do kontaktów. Wpisz dane ręcznie albo zezwól na dostęp w ustawieniach telefonu.",
+  "@errorContactsPermissionDenied": {
+    "description": "Snackbar when the phone refuses access to the contacts; the form stays to be typed."
   },
   "errorEquipmentNotFound": "Nie znaleziono urządzenia.",
   "@errorEquipmentNotFound": {

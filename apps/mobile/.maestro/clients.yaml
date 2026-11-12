@@ -20,6 +20,7 @@ name: Clients - add, edit, delete, undo, search
 # Add
 - tapOn: "Dodaj klienta"
 - assertVisible: "Nowy klient"
+- assertVisible: "Wybierz z kontaktów"
 - tapOn: "(?s)Imię i nazwisko albo nazwa.*"
 - inputText: "Jan Kowalski"
 - tapOn: "(?s)Telefon.*"

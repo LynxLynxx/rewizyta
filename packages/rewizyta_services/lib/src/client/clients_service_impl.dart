@@ -16,7 +16,7 @@ final class ClientsServiceImpl(
   Uuid? uuid,
 }) implements ClientsService {
   static final _e164 = RegExp(r'^\+[1-9]\d{6,14}$');
-  static final _separators = RegExp(r'[\s\-().]');
+  static final _separators = RegExp(r'[\s().\p{Cf}-]', unicode: true);
   static final _nationalNumber = RegExp(r'^\d{9}$');
 
   final DateTime Function() _now = now ?? DateTime.timestamp;
@@ -161,8 +161,9 @@ final class ClientsServiceImpl(
     );
   }
 
-  /// Drops separators and reads a bare nine-digit number as Polish. Anything
-  /// else is returned as typed, for the E.164 check to reject.
+  /// Drops separators, and the invisible direction marks a number copied from
+  /// a messenger carries (`\p{Cf}`), and reads a bare nine-digit number as
+  /// Polish. Anything else is returned as typed, for the E.164 check to reject.
   static String? _toE164(String? phone) {
     final compact = cleanText(phone)?.replaceAll(_separators, '');
     if (compact == null || compact.isEmpty) return null;

@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The phone and address of the contact picked on the client form. Read only. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <application
         android:label="rewizyta"
         android:name="${applicationName}"
