@@ -451,6 +451,13 @@ the system share sheet. The same function, filtered to one client, backs the
 There is no grace period: the export step is the safety net, and a paused
 account would still be holding third-party personal data.
 
+**By e-mail** (Play asks for a route that works without reinstalling the app,
+described on `/usun-konto/`). The request names the account's e-mail address.
+We always send a confirmation request to that address and delete only after the
+reply from it; we never ask for the password or ID documents. We run the same
+deletion as the app, with the service role instead of the user's session,
+within a month of the request; the data is gone from backups within 30 days.
+
 ## Messaging: start free, swap by config
 
 E-mail, SMS and push each sit behind one adapter with one environment
@@ -610,9 +617,9 @@ banner.
   | Page | Why |
   |---|---|
   | Home: what the app does, pricing, store badges | Play "Website" and App Store "Marketing URL" (optional in both) |
-  | Support: FAQ and a contact address | App Store "Support URL" (required) |
+  | Support (`/pomoc/`): FAQ and a contact address | App Store "Support URL" (required) |
   | Privacy policy, with the sub-processors and the retention table | "Privacy Policy URL" in both stores (required); the Play caller-ID review reads it |
-  | Account deletion: how to delete in the app, and how to ask by e-mail without reinstalling | Play "Delete account URL" in the Data safety form (required for apps with accounts); App Store needs the in-app path only |
+  | Account deletion (`/usun-konto/`): how to delete in the app, and how to ask by e-mail without reinstalling | Play "Delete account URL" in the Data safety form (required for apps with accounts); App Store needs the in-app path only |
   | Terms with the DPA (umowa powierzenia) | The technician is the controller of their clients' data; we are the processor |
   | Client portal, `/klient/` (after MVP) | Not a store requirement; the one client-facing surface, see "Client portal" |
 

@@ -1,9 +1,8 @@
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
-import '../components/site_page.dart';
+import '../components/text_page.dart';
 import '../constants/site.dart';
-import '../constants/theme.dart';
 
 /// `/prywatnosc/`: the privacy notice for the site and the waitlist (GDPR
 /// art. 13). What it promises must match `docs/BACKEND_SCHEMA.md`, "Personal data,
@@ -15,22 +14,20 @@ class PrivacyPage extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
-    return SitePage([
-      const Document.head(
-        meta: {'description': 'Jakie dane zbiera lista oczekujących Rewizyty, po co i jak długo je przechowujemy.'},
-      ),
-      article(classes: 'container privacy', [
-        header(classes: 'privacy-header', [
-          h1([.text('Polityka prywatności')]),
-          p([
-            .text(
-              'Dotyczy tej strony i listy oczekujących Rewizyty. Aplikacji jeszcze nie ma; '
-              'gdy wystartuje, dopiszemy tu jej zasady.',
-            ),
-          ]),
-          p(classes: 'privacy-date', [.text('Ostatnia zmiana: $lastChanged')]),
+    return TextPage(
+      title: 'Polityka prywatności',
+      description: 'Jakie dane zbiera lista oczekujących Rewizyty, po co i jak długo je przechowujemy.',
+      intro: [
+        p([
+          .text(
+            'Dotyczy tej strony i listy oczekujących Rewizyty. Aplikacji jeszcze nie ma; '
+            'gdy wystartuje, dopiszemy tu jej zasady.',
+          ),
         ]),
-        _section('Kto odpowiada za Twoje dane', [
+        p(classes: 'text-page-date', [.text('Ostatnia zmiana: $lastChanged')]),
+      ],
+      sections: [
+        textSection('Kto odpowiada za Twoje dane', [
           p([
             .text(
               'Administratorem danych jest firma $controllerName (NIP $controllerTaxId), która tworzy '
@@ -40,24 +37,24 @@ class PrivacyPage extends StatelessComponent {
             .text('. Odpowiemy najpóźniej w ciągu miesiąca.'),
           ]),
         ]),
-        _section('Co zbieramy, po co i na jakiej podstawie', [
+        textSection('Co zbieramy, po co i na jakiej podstawie', [
           ul([
-            _item(
+            textItem(
               'Adres e-mail i przypisany do niego kod',
               'żeby wysłać link potwierdzający i kod na 3 miesiące za darmo, a po potwierdzeniu '
                   'wiadomość o starcie aplikacji. Podstawa: Twoja zgoda (art. 6 ust. 1 lit. a RODO).',
             ),
-            _item(
+            textItem(
               'Numer telefonu, jeśli go podasz',
               'żeby oddzwonić na krótką rozmowę o Twojej pracy. Podstawa: Twoja zgoda.',
             ),
-            _item(
+            textItem(
               'Odpowiedzi z ankiety',
               'żeby zdecydować, co zbudować najpierw i na jakie telefony. Oglądamy je zbiorczo. '
                   'Podstawa: nasz prawnie uzasadniony interes, czyli zaplanowanie aplikacji '
                   '(art. 6 ust. 1 lit. f RODO).',
             ),
-            _item(
+            textItem(
               'Źródło zapisu i daty zapisu, potwierdzenia oraz wypisania',
               'żeby wiedzieć, skąd przychodzą zapisy, i móc wykazać, kiedy zgoda została wyrażona '
                   'lub cofnięta. Podstawa: prawnie uzasadniony interes.',
@@ -72,7 +69,7 @@ class PrivacyPage extends StatelessComponent {
             ]),
           ]),
         ]),
-        _section('Czego nie robimy', [
+        textSection('Czego nie robimy', [
           ul([
             li([
               .text(
@@ -90,19 +87,19 @@ class PrivacyPage extends StatelessComponent {
             ]),
           ]),
         ]),
-        _section('Komu powierzamy dane', [
+        textSection('Komu powierzamy dane', [
           p([.text('Korzystamy z firm, które przetwarzają dane w naszym imieniu, na podstawie umów powierzenia:')]),
           ul([
-            _item(
+            textItem(
               'Supabase Inc. (USA)',
               'baza danych i funkcje serwera. Dane są przechowywane we Frankfurcie (Niemcy).',
             ),
-            _item(
+            textItem(
               'Brevo (Francja)',
               'wysyłka e-maili. Brevo odnotowuje otwarcie wiadomości i kliknięcia w linki (linki '
                   'prowadzą przez jego serwer); nie korzystamy z tych informacji.',
             ),
-            _item(
+            textItem(
               'Cloudflare, Inc. (USA)',
               'DNS i hosting tej strony. Formularz wysyła dane prosto do Supabase, z pominięciem Cloudflare.',
             ),
@@ -116,7 +113,7 @@ class PrivacyPage extends StatelessComponent {
             ),
           ]),
         ]),
-        _section('Jak długo przechowujemy dane', [
+        textSection('Jak długo przechowujemy dane', [
           ul([
             li([
               .text(
@@ -128,7 +125,7 @@ class PrivacyPage extends StatelessComponent {
             li([.text('Liczniki chroniące przed spamem: jedną dobę.')]),
           ]),
         ]),
-        _section('Twoje prawa', [
+        textSection('Twoje prawa', [
           p([.text('W każdej chwili możesz:')]),
           ul([
             li([
@@ -155,7 +152,7 @@ class PrivacyPage extends StatelessComponent {
             ]),
           ]),
         ]),
-        _section('Czy musisz podać dane', [
+        textSection('Czy musisz podać dane', [
           p([
             .text(
               'Nie. Zapis jest dobrowolny, ale bez adresu e-mail nie wyślemy kodu ani wiadomości '
@@ -163,68 +160,7 @@ class PrivacyPage extends StatelessComponent {
             ),
           ]),
         ]),
-      ]),
-    ]);
+      ],
+    );
   }
-
-  static Component _section(String title, List<Component> children) {
-    return section([
-      h2([.text(title)]),
-      ...children,
-    ]);
-  }
-
-  static Component _item(String what, String why) {
-    return li([
-      strong([.text(what)]),
-      .text(' – $why'),
-    ]);
-  }
-
-  @css
-  static List<StyleRule> get styles => [
-    css('.privacy', [
-      css('&').styles(
-        display: .flex,
-        padding: .only(top: 32.px, bottom: 72.px),
-        flexDirection: .column,
-        gap: Gap(row: 32.px),
-      ),
-      css('section, .privacy-header').styles(
-        display: .flex,
-        maxWidth: 44.em,
-        flexDirection: .column,
-        gap: Gap(row: 12.px),
-      ),
-      css('h1').styles(
-        margin: .zero,
-        fontSize: Unit.expression('clamp(30px, 4.4vw, 42px)'),
-        fontWeight: .w700,
-        letterSpacing: (-0.02).em,
-        lineHeight: 1.1.em,
-      ),
-      css('h2').styles(
-        margin: .zero,
-        fontSize: Unit.expression('clamp(21px, 2.6vw, 24px)'),
-        fontWeight: .w600,
-        lineHeight: 1.25.em,
-      ),
-      css('p, li').styles(
-        color: Palette.text2,
-        fontSize: 16.px,
-        lineHeight: 1.6.em,
-        raw: {'text-wrap': 'pretty'},
-      ),
-      css('p').styles(margin: .zero),
-      css('ul').styles(
-        display: .flex,
-        padding: .only(left: 20.px),
-        margin: .zero,
-        flexDirection: .column,
-        gap: Gap(row: 8.px),
-      ),
-      css('strong').styles(color: Palette.ink, fontWeight: .w600),
-    ]),
-    css('.privacy .privacy-date').styles(color: Palette.muted, fontFamily: monoFont, fontSize: 14.px),
-  ];
 }

@@ -74,7 +74,7 @@ Tick items as they land; add a short note when a decision changes.
 - [ ] `devices` upload from `PushNotificationsService.onTokenRefresh`.
 - [ ] Restore-on-new-phone flow.
 - [ ] `purge-deleted` nightly cron (30 days) + `tombstones`; `sync_push` rejects tombstoned ids; phone-side purge.
-- [ ] `export-account` and `delete-account` functions (cancel reminders, hard delete, `account_deletions`, auth user removal); `account_deletions` table.
+- [ ] `export-account` and `delete-account` functions (cancel reminders, hard delete, `account_deletions`, auth user removal); `account_deletions` table; plus a service-role path to run it for an e-mail request (`/usun-konto/` promises it within a month).
 - [ ] Self-hosting notes (Docker compose on Hetzner) in `supabase/README.md`.
 
 ## M6 – SMS reminders
@@ -134,9 +134,10 @@ The app's information and support site that the store listings link to, not a
 web version of the app (see `TRD.md`, "Websites").
 
 - [ ] Home at launch: replace the waitlist hero with what the app does, pricing and store badges; keep `/potwierdz/`, `/wypisz/`, `/prywatnosc/`. PL + EN.
-- [ ] Support page: FAQ and contact address (App Store "Support URL").
+- [x] Support page: FAQ and contact address (App Store "Support URL"). `/pomoc/`, Polish, pre-launch wording, on the shared `TextPage` frame; the footer links to it (2026-11-12).
 - [ ] Privacy policy (both stores' "Privacy Policy URL") and terms with the DPA (umowa powierzenia), the sub-processor list (Supabase EU, SMSAPI/SerwerSMS, Scaleway, Sentry EU, PostHog EU, FCM) and the retention table from `BACKEND_SCHEMA.md`.
-- [ ] Account deletion page: the in-app path and an e-mail request route that works without reinstalling (Play Data safety "Delete account URL").
+- [x] Account deletion page: the in-app path and an e-mail request route that works without reinstalling (Play Data safety "Delete account URL"). `/usun-konto/`, Polish, pre-launch wording, on the shared `TextPage` frame (2026-11-12).
+- [ ] At launch: rewrite `/pomoc/` and `/usun-konto/` for the shipped app (drop the pre-launch lines and waitlist questions, check the Settings path and sign-in wording against M5/M7, name the SMS gateway and its log retention), add the `/usun-konto/` footer link and the EN versions.
 
 ## V1 (after MVP ships)
 

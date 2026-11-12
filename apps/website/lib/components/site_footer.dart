@@ -3,7 +3,7 @@ import 'package:jaspr/jaspr.dart';
 
 import '../constants/theme.dart';
 
-/// What Rewizyta is not, and the privacy link.
+/// What Rewizyta is not, and the support and privacy links.
 class SiteFooter extends StatelessComponent {
   const SiteFooter({super.key});
 
@@ -18,7 +18,10 @@ class SiteFooter extends StatelessComponent {
             'Jedna osoba, jeden telefon, jedno zadanie: żeby żaden klient nie przepadł.',
           ),
         ]),
-        a(href: '/prywatnosc/', classes: 'site-footer-privacy', [.text('Polityka prywatności')]),
+        div(classes: 'site-footer-links', [
+          a(href: '/pomoc/', [.text('Pomoc')]),
+          a(href: '/prywatnosc/', [.text('Polityka prywatności')]),
+        ]),
       ]),
     ]);
   }
@@ -43,11 +46,16 @@ class SiteFooter extends StatelessComponent {
       css('strong').styles(color: Palette.ink, fontWeight: .w600),
       css('span').styles(maxWidth: 44.em),
     ]),
-    css('.site-footer-privacy').styles(
-      margin: .only(top: 12.px),
-      alignSelf: .start,
-      color: Palette.muted,
-      fontSize: 14.px,
-    ),
+    css('.site-footer-links', [
+      css('&').styles(
+        display: .flex,
+        margin: .only(top: 12.px),
+        flexWrap: .wrap,
+        gap: Gap(column: 20.px),
+      ),
+      css('a').styles(color: Palette.muted, fontSize: 14.px),
+      // As specific as `a:hover` in styles.css and emitted after it, so restate it.
+      css('a:hover').styles(color: Palette.accentText),
+    ]),
   ];
 }
