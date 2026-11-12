@@ -182,7 +182,8 @@ Planning is on the phone, from the profile's settings, with no paid API:
   defaults suit a chimney sweep (8 slots of 60 minutes, 40 km/h); a boiler
   technician sets 4 slots of 120 minutes. Until `profiles` reaches the phone
   (M5) and gets an editor (M7) the planner uses the schema defaults
-  (`PlannerSettings()`).
+  (`PlannerSettings()`, without slot length and route mode until booking and
+  the Today screen read them).
 - **Capacity.** A day has `slots_per_day` slots, taken by planned, done and
   no-show appointments (cancelled ones neither take a slot nor appear); booking
   shows how many are left and refuses (with an override) when the day is full
