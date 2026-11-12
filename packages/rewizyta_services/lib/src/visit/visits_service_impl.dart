@@ -32,7 +32,10 @@ final class VisitsServiceImpl(
   @override
   Future<List<VisitItem>> findItems(String visitId) async {
     final items = await _visitItems.findByVisit(visitId);
-    return [for (final item in items) if (!item.isDeleted) item];
+    return [
+      for (final item in items)
+        if (!item.isDeleted) item,
+    ];
   }
 
   @override

@@ -53,7 +53,6 @@ final class const EquipmentRepositoryImpl(final AppDatabase _db) implements Equi
   Selectable<EquipmentRow> _byClient(String clientId, {bool includeDeleted = false}) {
     final query = _db.select(_db.equipmentTable)..where((e) => e.clientId.equals(clientId));
     if (!includeDeleted) query.where((e) => e.deletedAt.isNull());
-    return query
-      ..orderBy([(e) => OrderingTerm.asc(e.createdAt), (e) => OrderingTerm.asc(e.id)]);
+    return query..orderBy([(e) => OrderingTerm.asc(e.createdAt), (e) => OrderingTerm.asc(e.id)]);
   }
 }
