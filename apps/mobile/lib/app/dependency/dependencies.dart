@@ -65,6 +65,9 @@ final class Dependencies._() extends DependencyProvider {
   /// Tier 4 - repositories over the database. No caching, no orchestration.
   void _registerRepositories() {
     registerLazySingleton<TransactionRunner>(() => TransactionRunnerImpl(get<AppDatabase>()));
+    registerLazySingleton<AppointmentsRepository>(
+      () => AppointmentsRepositoryImpl(get<AppDatabase>()),
+    );
     registerLazySingleton<ClientsRepository>(() => ClientsRepositoryImpl(get<AppDatabase>()));
     registerLazySingleton<TradesRepository>(() => TradesRepositoryImpl(get<AppDatabase>()));
     registerLazySingleton<ServiceTypesRepository>(
@@ -114,6 +117,9 @@ final class Dependencies._() extends DependencyProvider {
         get<VisitsRepository>(),
         get<TransactionRunner>(),
       ),
+    );
+    registerLazySingleton<DayPlanService>(
+      () => DayPlanServiceImpl(get<AppointmentsRepository>(), get<TransactionRunner>()),
     );
     registerLazySingleton<VisitsService>(
       () => VisitsServiceImpl(

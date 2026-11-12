@@ -1,6 +1,8 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:rewizyta_repositories/rewizyta_repositories.dart';
 
+class MockAppointmentsRepository() extends Mock implements AppointmentsRepository;
+
 class MockTradesRepository() extends Mock implements TradesRepository;
 
 class MockServiceTypesRepository() extends Mock implements ServiceTypesRepository;

@@ -40,7 +40,7 @@ Tick items as they land; add a short note when a decision changes.
 - [x] Default catalogue in `rewizyta_models` (`TradeTemplate` → `ServiceTypeTemplate` enums) and `CatalogService.copyDefaults` that copies the picked trades into the user's rows with `template_key` and no name (the UI localizes the enum through `localizedName(context.l10n)` until the user renames the row; `name` is nullable, a check requires a name or a template), for onboarding and "restore defaults" alike (restores soft-deleted templates, skips existing ones). No suggested prices: `default_price_grosze` stays null until the user sets one (2026-10-06). Still open: a second phone that seeds before its first pull creates other ids for the same `template_key` (code review FINDING-17); seed after the first pull or derive ids from the user id, decided in M5.
 - [x] Due-date recompute in the services, inside one `TransactionRunner.run` with the writes that cause it: `VisitsService` (`saveVisit` ticks, unticks and restores items; `deleteVisit`), `EquipmentService.saveEquipment` (a new service type moves the dates), `CatalogService.setCycle` (all equipment of the type). They share an internal `DueDateUpdater` that reads `VisitsRepository.lastDoneAt`, applies `nextDue` and saves only equipment whose caches changed (2026-10-22).
 - [x] Repository tests on `NativeDatabase.memory()` (2026-10-01), service tests with mocktail (2026-10-22).
-- [x] `TransactionRunner`, the catalogue, equipment and visit repositories and their services registered in `dependencies.dart` (2026-10-22). Appointments, reminders, devices, settings and sync state wait for the services that use them.
+- [x] `TransactionRunner`, the catalogue, equipment and visit repositories and their services registered in `dependencies.dart` (2026-10-22). Reminders, devices, settings and sync state wait for the services that use them.
 - [ ] Before the first release: snapshot drift schema v1 with `make-migrations` (see `BACKEND_SCHEMA.md`, "Migrations").
 
 ## M2 – Clients
@@ -62,7 +62,8 @@ Tick items as they land; add a short note when a decision changes.
 - [ ] Book appointment (day + hour), statuses.
 - [ ] Due list rows show "umówiony pn 29.09, 09:30" for a planned appointment from today on (the "booked" flag); the 'Umów termin' sheet opens from the row.
 - [ ] Today screen (day plan) and week view.
-- [ ] `DayPlanService`: capacity from `slots_per_day`/hours, haversine distances with road factor, nearest-neighbour order that keeps `is_time_fixed` stops, `route_position` persistence, drag-and-drop in `manual` mode.
+- [x] `DayPlanService`: capacity from `slots_per_day`/hours, haversine distances with road factor, nearest-neighbour order that keeps `is_time_fixed` stops, `route_position` persistence, drag-and-drop in `manual` mode. The rules are pure Dart in `rewizyta_models` (`roadKm`, `DayPlan` with legs, total km, travel and visit minutes, slots left, the working-hours fit and `optimised()`); `DayPlanService` reads the day (`watchDay`, appointments joined with their clients) and writes the order (`optimiseDay`, `reorder`), each in one transaction that saves only the rows whose `route_position` changes. `PlannerSettings` holds the schema defaults until `profiles` reaches the phone (M5) and gets an editor (M7). Drag handles, the route mode and the Today and week widgets land with the Today screen (2026-11-12).
+- [ ] Geocode the client's address on save (platform geocoder) so the planner has coordinates.
 - [ ] Booking proposals: days with a free slot whose stops are closest to the client.
 - [ ] Open a stop in maps; show "~km, ~min" between stops.
 

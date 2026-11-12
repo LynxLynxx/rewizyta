@@ -15,6 +15,8 @@ export 'src/client/clients_service.dart';
 export 'src/client/clients_service_impl.dart';
 export 'src/equipment/equipment_service.dart';
 export 'src/equipment/equipment_service_impl.dart';
+export 'src/planner/day_plan_service.dart';
+export 'src/planner/day_plan_service_impl.dart';
 export 'src/push/noop_push_notifications_service.dart';
 export 'src/push/push_notifications_service.dart';
 export 'src/reporting/noop_reporting_service.dart';
