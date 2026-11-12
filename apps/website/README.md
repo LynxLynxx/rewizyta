@@ -2,9 +2,10 @@
 
 Until launch this is the waitlist, in Polish: the home page (`/`) with the
 survey and sign-up form that posts to the `waitlist-signup` edge function, the
-two pages the mails link to (`/potwierdz/`, `/wypisz/`) and the privacy notice
-(`/prywatnosc/`). After launch it becomes the app's information and support
-site (see `docs/TRD.md`, "Websites"). Built with
+two pages the mails link to (`/potwierdz/`, `/wypisz/`), the privacy notice
+(`/prywatnosc/`) and the two pages the store listings will link to: support
+(`/pomoc/`) and account deletion (`/usun-konto/`). After launch it becomes the
+app's information and support site (see `docs/TRD.md`, "Websites"). Built with
 [Jaspr](https://pub.dev/packages/jaspr) in static mode with `jaspr_router`,
 the same way as the author's `portfolio_rs`: every route is pre-rendered to
 HTML at build time; the only Dart in the browser is the three `@client`
@@ -40,17 +41,19 @@ jaspr build --dart-define=FUNCTIONS_URL=https://<ref>.supabase.co/functions/v1 -
   the result locally, `jaspr build`, then `npx wrangler@4.145.0 dev`
   (→ http://localhost:8787).
 - Layout: `lib/pages/` holds the pages (`home/` has one file per section),
-  `lib/components/` the header, footer and `SitePage` frame, `lib/waitlist/`
+  `lib/components/` the header, footer, the `SitePage` frame and `TextPage`, the
+  title-and-sections layout of the privacy, support and deletion pages; `lib/waitlist/`
   the survey (`survey.dart`, whose keys must match
   `supabase/functions/_shared/waitlist/survey.ts`), the flow state, the API
   client, the form and the mail-link buttons (`mail_action.dart`; Jaspr
   allows one `@client` component per file, hence `confirm_action.dart` and
   `unsubscribe_action.dart`). Colours are CSS custom properties in
   `web/styles.css`, read through `Palette` in `lib/constants/theme.dart`.
-- The data controller and contact address named on `/prywatnosc/` are in
-  `lib/constants/site.dart`; a fork that runs its own site changes them. What
-  the notice promises must match `docs/BACKEND_SCHEMA.md`, "Personal data,
-  encryption and retention".
+- The data controller and contact address named on `/prywatnosc/`, `/pomoc/`
+  and `/usun-konto/` are in `lib/constants/site.dart`; a fork that runs its own
+  site changes them. What the notice promises must match
+  `docs/BACKEND_SCHEMA.md`, "Personal data, encryption and retention"; what
+  `/usun-konto/` promises, `docs/TRD.md`, "Account export and deletion".
 - To try the mail pages locally, sign up through the form, read the tokens with
   `psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -c "select
   confirm_token, unsubscribe_token from waitlist_signups"` (or take the links

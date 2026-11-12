@@ -7,6 +7,7 @@
 import 'package:jaspr/server.dart';
 import 'package:rewizyta_website/components/site_footer.dart' as _site_footer;
 import 'package:rewizyta_website/components/site_header.dart' as _site_header;
+import 'package:rewizyta_website/components/text_page.dart' as _text_page;
 import 'package:rewizyta_website/pages/home/audience.dart' as _audience;
 import 'package:rewizyta_website/pages/home/comparison.dart' as _comparison;
 import 'package:rewizyta_website/pages/home/hero.dart' as _hero;
@@ -17,7 +18,6 @@ import 'package:rewizyta_website/pages/home/signup_section.dart'
     as _signup_section;
 import 'package:rewizyta_website/pages/mail_page.dart' as _mail_page;
 import 'package:rewizyta_website/pages/not_found_page.dart' as _not_found_page;
-import 'package:rewizyta_website/pages/privacy_page.dart' as _privacy_page;
 import 'package:rewizyta_website/waitlist/confirm_action.dart'
     as _confirm_action;
 import 'package:rewizyta_website/waitlist/mail_action.dart' as _mail_action;
@@ -60,9 +60,9 @@ ServerOptions get defaultServerOptions => ServerOptions(
     ..._app.App.styles,
     ..._site_footer.SiteFooter.styles,
     ..._site_header.SiteHeader.styles,
+    ..._text_page.TextPage.styles,
     ..._mail_page.MailPage.styles,
     ..._not_found_page.NotFoundPage.styles,
-    ..._privacy_page.PrivacyPage.styles,
     ..._audience.Audience.styles,
     ..._comparison.Comparison.styles,
     ..._hero.Hero.styles,
