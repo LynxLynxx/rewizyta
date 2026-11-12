@@ -68,7 +68,8 @@ sticky "Zapisz wizytę" at the bottom. (The prototype keeps the tab bar under
 the card; that would need the card route inside each tab's branch.) Short tasks (save a visit,
 book, SMS, directions, import) are bottom sheets, not routes. The system back
 button closes a sheet or pops; on a tab root it goes to Dziś, and on Dziś it
-leaves the app.
+leaves the app. The settings screens under Więcej stay inside the tab, and
+their sheets cover the bar.
 
 ## Screens
 
@@ -87,10 +88,13 @@ leaves the app.
 | SMS | sheet | Klient | Prefilled from the template, editable, characters and SMS count | M6 |
 | Dojazd | sheet | Klient, Dziś | Open in maps, copy the address | M4 |
 | Import z kontaktów | sheet | Onboarding | Checklist of contacts, numbers already in the book greyed out ("już w bazie"), "Dodaj {n} kontaktów" | M7 |
-| Więcej | `/more` | Tab | Przypomnienia SMS · Podsumowanie miesiąca · Ustawienia · Pierwsze uruchomienie; profile line at the bottom | M7 |
+| Więcej | `/more` | Tab | Przypomnienia SMS · Podsumowanie miesiąca · Usługi i cykle · Ustawienia · Pierwsze uruchomienie; profile line at the bottom; today only Usługi i cykle | M7 |
+| Usługi i cykle | `/more/services` | Więcej | The service types grouped by trade, each row "co {n} mies.", the default price and "w archiwum"; a tap opens Usługa; "Dodaj usługę" under each trade, "Dodaj branżę", "Przywróć domyślne"; an empty catalogue says to restore the defaults or add a trade | M7 |
+| Usługa | sheet | Usługi i cykle | Name (a default shows its own name until renamed; blank brings it back), cycle in months, 1 to 120 (moves the due dates), default price in zł, "W archiwum" (hidden from pickers, kept in history and due dates); new ones titled "Nowa usługa" | M7 |
+| Nowa branża | sheet | Usługi i cykle | A name, Zapisz | M7 |
 | Przypomnienia SMS | `/more/reminders` | Więcej | Auto-send toggle, offsets, SMS usage bar, template preview, "ZAPLANOWANE" queue, buy more | M6, buying V1 |
 | Podsumowanie miesiąca | `/more/summary` | Więcej | Month switcher, visits and the change on last month, revenue, average, weekly bars, services, next month's due count; send to the accountant | V1 |
-| Ustawienia | `/more/settings` | Więcej | Name, phone, trade chips, SMS template with placeholder chips and live preview ("{chars} znaków · {n} SMS"), offsets, services with cycles; planner settings, account (export, delete, sign out) | M5–M7 |
+| Ustawienia | `/more/settings` | Więcej | Name, phone, trade chips, SMS template with placeholder chips and live preview ("{chars} znaków · {n} SMS"), offsets; planner settings, account (export, delete, sign out) | M5–M7 |
 | Połączenie przychodzące | system overlay | Incoming call | "KARTA KLIENTA": name, phone, due tag, address, equipment, last two visits, note; Odrzuć / Odbierz. Answer opens Klient | V1 |
 | Połączenie wychodzące | `/call/:clientId` | Zadzwoń | "Łączenie…", then a timer; "Umów termin" or "Zmień termin wizyty"; hang up → toast "Rozmowa mm:ss z: {name}." | V1 |
 
@@ -118,6 +122,9 @@ each path is a budget: a change that adds a step needs a reason.
    Dziś with everything back, purchases included.
 7. **Leave.** Więcej → Ustawienia → Eksportuj dane (offered first) → Usuń konto
    → re-authenticate → type the confirmation word → local wipe → Logowanie.
+8. **Tune the catalogue.** Więcej → Usługi i cykle → a service → name, cycle,
+   price, archive → Zapisz (the due dates follow the cycle); Dodaj branżę →
+   Dodaj usługę; Przywróć domyślne.
 
 ## Cross-cutting behaviour
 

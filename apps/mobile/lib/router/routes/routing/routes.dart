@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:rewizyta/pages/shell/app_shell.dart';
 import 'package:rewizyta/router/routes/routing/clients_route.dart' as clients;
 import 'package:rewizyta/router/routes/routing/due_route.dart' as due;
+import 'package:rewizyta/router/routes/routing/more_route.dart' as more;
 
 /// Every feature's generated `$appRoutes`, spread once each. A tab is one
 /// shell branch, in [AppTab] order, so each keeps its own stack and scroll
@@ -22,6 +23,7 @@ abstract final class Routes() {
       branches: [
         StatefulShellBranch(routes: due.$appRoutes),
         StatefulShellBranch(routes: clients.$appRoutes),
+        StatefulShellBranch(routes: more.$appRoutes),
       ],
     ),
   ];

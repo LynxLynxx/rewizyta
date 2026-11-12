@@ -4,6 +4,7 @@
 library;
 
 export 'src/catalog/catalog_template_x.dart';
+export 'src/catalog/catalog_trade_view_model.dart';
 export 'src/catalog/service_type_view_model.dart';
 export 'src/client/client_detail_view_model.dart';
 export 'src/client/client_equipment_view_model.dart';

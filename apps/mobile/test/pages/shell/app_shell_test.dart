@@ -15,6 +15,7 @@ void main() {
 
     expect(find.text('content'), findsOneWidget);
     expect(find.text('Klienci'), findsOneWidget);
+    expect(find.text('Więcej'), findsOneWidget);
     expect(find.byType(Icon), findsNothing);
     expect(selected, [AppTab.due]);
     expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 1);

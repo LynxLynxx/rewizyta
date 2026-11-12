@@ -138,6 +138,8 @@ final class Dependencies._() extends DependencyProvider {
   /// Tier 8 - cubits. Per-page cubits are factories (the page's BlocProvider
   /// closes them); app-wide ones are lazy singletons with a dispose hook.
   void _registerBlocs() {
+    registerFactory<CatalogCubit>(() => CatalogCubit(get<CatalogService>()));
+    registerFactory<ServiceTypeFormCubit>(() => ServiceTypeFormCubit(get<CatalogService>()));
     registerFactory<ClientsCubit>(
       () => ClientsCubit(get<ClientsService>(), get<EquipmentService>()),
     );

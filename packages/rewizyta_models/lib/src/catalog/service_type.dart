@@ -25,6 +25,10 @@ final class const ServiceType({
 }) with Equatable {
   this : assert(name != null || template != null, 'A service type needs a name or a template');
 
+  /// The longest cycle the editor accepts: ten years. Keeps a typo like
+  /// 99999 out of the due dates and the server's `integer` column.
+  static const maxCycleMonths = 120;
+
   bool get isDeleted => deletedAt != null;
 
   ServiceType copyWith({
