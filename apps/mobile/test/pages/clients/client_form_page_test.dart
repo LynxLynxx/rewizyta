@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,6 +77,46 @@ void main() {
     await tester.pumpApp(subject());
 
     expect(find.text('Nieprawidłowy numer telefonu.'), findsOneWidget);
+  });
+
+  group('Wybierz z kontaktów', () {
+    final pick = find.widgetWithText(OutlinedButton, 'Wybierz z kontaktów');
+
+    testWidgets('a new form offers it and tapping asks the cubit', (tester) async {
+      when(() => cubit.state).thenReturn(const ClientFormState());
+      when(cubit.pickContact).thenAnswer((_) async {});
+
+      await tester.pumpApp(subject());
+      await tester.tap(pick);
+
+      verify(cubit.pickContact).called(1);
+    });
+
+    testWidgets('an edit does not offer it', (tester) async {
+      when(() => cubit.state).thenReturn(const ClientFormState(isEditing: true, name: 'Jan'));
+
+      await tester.pumpApp(subject());
+
+      expect(pick, findsNothing);
+    });
+
+    testWidgets('the picked contact replaces what was typed', (tester) async {
+      // Synchronous, so the state reaches the page before the pump draws.
+      final states = StreamController<ClientFormState>.broadcast(sync: true);
+      addTearDown(states.close);
+      whenListen(cubit, states.stream, initialState: const ClientFormState(name: 'Ja'));
+
+      await tester.pumpApp(subject());
+      expect(find.text('Ja'), findsOneWidget);
+      states.add(
+        const ClientFormState(name: 'Jan Kowalski', phone: '+48 601 234 567', fieldsVersion: 1),
+      );
+      await tester.pump();
+
+      expect(find.text('Ja'), findsNothing);
+      expect(find.text('Jan Kowalski'), findsOneWidget);
+      expect(find.text('+48 601 234 567'), findsOneWidget);
+    });
   });
 
   testWidgets('shows a spinner while an edit loads', (tester) async {

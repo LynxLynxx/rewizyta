@@ -1,10 +1,11 @@
 /// Domain layer. Cubits inject these services; nothing above this package may
 /// touch a repository directly.
 ///
-/// Adapters for third-party SDKs (analytics, reporting, push) are declared here
-/// as interfaces with no-op implementations. Vendor implementations live in
-/// the app (apps/mobile/lib/app/integrations/) because they need platform
-/// plugins, and are chosen in the DI container from AppConfig.
+/// Adapters for third-party SDKs (analytics, reporting, push, contacts) are
+/// declared here as interfaces with no-op implementations. Vendor
+/// implementations live in the app (apps/mobile/lib/app/integrations/)
+/// because they need platform plugins, and are chosen in the DI container
+/// from AppConfig.
 library;
 
 export 'src/analytics/analytics_service.dart';
@@ -13,6 +14,8 @@ export 'src/catalog/catalog_service.dart';
 export 'src/catalog/catalog_service_impl.dart';
 export 'src/client/clients_service.dart';
 export 'src/client/clients_service_impl.dart';
+export 'src/contacts/contacts_service.dart';
+export 'src/contacts/noop_contacts_service.dart';
 export 'src/equipment/equipment_service.dart';
 export 'src/equipment/equipment_service_impl.dart';
 export 'src/planner/day_plan_service.dart';

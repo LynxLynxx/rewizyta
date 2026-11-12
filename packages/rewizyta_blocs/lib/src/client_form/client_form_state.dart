@@ -20,6 +20,10 @@ final class const ClientFormState({
 
   /// The service's verdict on the last save; cleared by the next edit.
   final ClientValidationError? error,
+
+  /// Bumped when the cubit replaces what was typed (a picked contact), so the
+  /// page rebuilds its text fields, which read their value only once.
+  final int fieldsVersion = 0,
 }) with Equatable {
   static final _nonDigits = RegExp(r'\D');
 
@@ -56,6 +60,7 @@ final class const ClientFormState({
     List<ServiceTypeViewModel>? serviceTypes,
     List<ClientFormEquipmentRow>? equipment,
     Optional<ClientValidationError>? error,
+    int? fieldsVersion,
   }) {
     return ClientFormState(
       isEditing: isEditing ?? this.isEditing,
@@ -70,6 +75,7 @@ final class const ClientFormState({
       serviceTypes: serviceTypes ?? this.serviceTypes,
       equipment: equipment ?? this.equipment,
       error: error.dataOr(this.error),
+      fieldsVersion: fieldsVersion ?? this.fieldsVersion,
     );
   }
 
@@ -87,6 +93,7 @@ final class const ClientFormState({
     serviceTypes,
     equipment,
     error,
+    fieldsVersion,
   ];
 }
 

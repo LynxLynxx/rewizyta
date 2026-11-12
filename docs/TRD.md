@@ -761,7 +761,11 @@ that the portal shows a card on the technician's instruction.
   caller-ID directory extension can show a label at most.
 - **Background sync** on Android via `workmanager`; on iOS it is opportunistic
   (BGTaskScheduler), so reminders never depend on the phone syncing anyway.
-- **Contacts import** needs `READ_CONTACTS`; only the picked entries are stored.
+- **Contacts** go through the system picker behind `ContactsService`. Android
+  needs `READ_CONTACTS` for the picked contact's phone and address, asked on
+  the first tap of "Wybierz z kontaktów", never at start; iOS hands them over
+  without a permission (`NSContactsUsageDescription` is set anyway). Only the
+  picked contact is read, and its device contact id is not stored.
 - **Push** needs `POST_NOTIFICATIONS` on Android 13+; asked in onboarding, never
   on first launch.
 
