@@ -7,6 +7,7 @@ export 'src/catalog/default_catalog.dart';
 export 'src/catalog/service_type.dart';
 export 'src/catalog/service_type_exceptions.dart';
 export 'src/catalog/trade.dart';
+export 'src/catalog/trade_exceptions.dart';
 export 'src/client/client.dart';
 export 'src/client/client_exceptions.dart';
 export 'src/common/polish_text.dart';

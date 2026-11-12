@@ -223,11 +223,64 @@ void main() {
     });
   });
 
-  group('setCycle', () {
+  group('addTrade', () {
+    test('adds the trimmed custom name after the last trade', () async {
+      when(trades.watchAll).thenAnswer(
+        (_) => Stream.value([
+          Trade(id: 't1', template: TradeTemplate.chimney, createdAt: earlier, updatedAt: earlier),
+          Trade(id: 't2', name: 'Moje', sortOrder: 4, createdAt: earlier, updatedAt: earlier),
+        ]),
+      );
+
+      await service.addTrade('  Wentylacja ');
+
+      final added = upsertedTrades().single;
+      expect((added.name, added.template, added.sortOrder), ('Wentylacja', null, 5));
+      expect((added.createdAt, added.updatedAt), (now, now));
+      expect(added.id, isNotEmpty);
+    });
+
+    test('a trade added to an empty catalogue leaves room for the defaults', () async {
+      when(trades.watchAll).thenAnswer((_) => Stream.value(const []));
+
+      await service.addTrade('Wentylacja');
+
+      // copyDefaults puts the defaults at their template index, so restored
+      // later they still come first.
+      expect(upsertedTrades().single.sortOrder, TradeTemplate.values.length);
+    });
+
+    test('rejects a blank name and writes nothing', () async {
+      await expectLater(
+        service.addTrade('   '),
+        throwsA(
+          isA<TradeValidationException>().having(
+            (e) => e.error,
+            'error',
+            TradeValidationError.nameEmpty,
+          ),
+        ),
+      );
+
+      verifyNever(() => trades.upsert(any()));
+    });
+  });
+
+  group('saveServiceType', () {
     final type = ServiceType(
       id: 'st',
+      tradeId: 't1',
       name: 'Przegląd',
       cycleMonths: 12,
+      createdAt: earlier,
+      updatedAt: earlier,
+    );
+    final boiler = ServiceType(
+      id: 'boiler',
+      tradeId: 't1',
+      cycleMonths: 12,
+      template: ServiceTypeTemplate.boilerService,
+      sortOrder: 4,
       createdAt: earlier,
       updatedAt: earlier,
     );
@@ -240,10 +293,125 @@ void main() {
       createdAt: earlier,
       updatedAt: earlier,
     );
+    Matcher validation(ServiceTypeValidationError error) =>
+        throwsA(isA<ServiceTypeValidationException>().having((e) => e.error, 'error', error));
 
-    setUp(() => when(() => serviceTypes.find('st')).thenAnswer((_) async => type));
+    setUp(() {
+      when(() => serviceTypes.find('st')).thenAnswer((_) async => type);
+      when(() => serviceTypes.find('boiler')).thenAnswer((_) async => boiler);
+      when(serviceTypes.watchAll).thenAnswer((_) => Stream.value([boiler, type]));
+    });
 
-    test('saves the cycle and moves the due dates of its equipment in one transaction', () async {
+    test('adds a new type under the trade after the last one', () async {
+      await service.saveServiceType(
+        tradeId: 't2',
+        name: ' Przegląd wentylacji ',
+        cycleMonths: 24,
+        defaultPriceGrosze: 25000,
+        isArchived: true,
+      );
+
+      final added = upsertedTypes().single;
+      expect(
+        (added.tradeId, added.name, added.template, added.cycleMonths, added.sortOrder),
+        ('t2', 'Przegląd wentylacji', null, 24, 5),
+      );
+      expect((added.defaultPriceGrosze, added.isArchived), (25000, true));
+      expect((added.createdAt, added.updatedAt), (now, now));
+      verifyNever(() => equipment.findByServiceType(any()));
+    });
+
+    test('a type added to an empty catalogue leaves room for the defaults', () async {
+      when(serviceTypes.watchAll).thenAnswer((_) => Stream.value(const []));
+
+      await service.saveServiceType(tradeId: 't2', name: 'Wentylacja', cycleMonths: 12);
+
+      expect(upsertedTypes().single.sortOrder, ServiceTypeTemplate.values.length);
+    });
+
+    test('a new type needs a name', () async {
+      await expectLater(
+        service.saveServiceType(tradeId: 't1', name: ' ', cycleMonths: 12),
+        validation(ServiceTypeValidationError.nameEmpty),
+      );
+
+      verifyNever(() => serviceTypes.upsert(any()));
+    });
+
+    test('rejects a cycle below one month before reading anything', () async {
+      await expectLater(
+        service.saveServiceType(id: 'st', tradeId: 't1', name: 'Przegląd', cycleMonths: 0),
+        validation(ServiceTypeValidationError.cycleBelowOne),
+      );
+
+      expect(transaction.runs, 0);
+      verifyNever(() => serviceTypes.find(any()));
+    });
+
+    test('accepts a ten-year cycle and rejects a longer one', () async {
+      when(() => equipment.findByServiceType('st')).thenAnswer((_) async => []);
+
+      await service.saveServiceType(
+        id: 'st',
+        tradeId: 't1',
+        name: 'Przegląd',
+        cycleMonths: ServiceType.maxCycleMonths,
+      );
+      await expectLater(
+        service.saveServiceType(
+          tradeId: 't1',
+          name: 'Przegląd',
+          cycleMonths: ServiceType.maxCycleMonths + 1,
+        ),
+        validation(ServiceTypeValidationError.cycleTooLong),
+      );
+
+      expect(upsertedTypes().single.cycleMonths, 120);
+    });
+
+    test('renames, prices and archives without touching the due dates', () async {
+      await service.saveServiceType(
+        id: 'st',
+        tradeId: 't1',
+        name: ' Kocioł ',
+        cycleMonths: 12,
+        defaultPriceGrosze: 18050,
+        isArchived: true,
+      );
+
+      expect(transaction.runs, 1);
+      expect(
+        upsertedTypes().single,
+        type.copyWith(
+          name: const Optional('Kocioł'),
+          defaultPriceGrosze: const Optional(18050),
+          isArchived: true,
+          updatedAt: now,
+        ),
+      );
+      verifyNever(() => equipment.findByServiceType(any()));
+    });
+
+    test('a blank name on a default brings its localized name back', () async {
+      when(
+        () => serviceTypes.find('boiler'),
+      ).thenAnswer((_) async => boiler.copyWith(name: const Optional('Kocioł')));
+
+      await service.saveServiceType(id: 'boiler', tradeId: 't1', name: '', cycleMonths: 12);
+
+      expect(upsertedTypes().single, boiler.copyWith(updatedAt: now));
+    });
+
+    test('a type without a default keeps a name', () async {
+      await expectLater(
+        service.saveServiceType(id: 'st', tradeId: 't1', name: '  ', cycleMonths: 12),
+        validation(ServiceTypeValidationError.nameEmpty),
+      );
+
+      verifyNever(() => serviceTypes.upsert(any()));
+    });
+
+    test('a new cycle moves the due dates of its equipment in one transaction', () async {
       final visited = item(
         'visited',
         lastVisitAt: DateTime.utc(2026, 1, 31),
@@ -254,7 +422,7 @@ void main() {
       when(() => visits.lastDoneAt('visited')).thenAnswer((_) async => DateTime.utc(2026, 1, 31));
       when(() => visits.lastDoneAt('never')).thenAnswer((_) async => null);
 
-      await service.setCycle('st', 1);
+      await service.saveServiceType(id: 'st', tradeId: 't1', name: 'Przegląd', cycleMonths: 1);
 
       expect(transaction.runs, 1);
       expect(upsertedTypes().single, type.copyWith(cycleMonths: 1, updatedAt: now));
@@ -264,8 +432,8 @@ void main() {
       expect(saved.single.updatedAt, now);
     });
 
-    test('writes nothing when the cycle is unchanged', () async {
-      await service.setCycle('st', 12);
+    test('writes nothing when nothing changed', () async {
+      await service.saveServiceType(id: 'st', tradeId: 't1', name: 'Przegląd', cycleMonths: 12);
 
       verifyNever(() => serviceTypes.upsert(any()));
       verifyNever(() => equipment.findByServiceType(any()));
@@ -274,22 +442,18 @@ void main() {
     test('throws for an unknown service type', () async {
       when(() => serviceTypes.find('x')).thenAnswer((_) async => null);
 
-      await expectLater(service.setCycle('x', 6), throwsA(isA<ServiceTypeNotFoundException>()));
-    });
-
-    test('rejects a cycle below one month', () {
-      expect(
-        () => service.setCycle('st', 0),
-        throwsA(
-          isA<ServiceTypeValidationException>().having(
-            (e) => e.error,
-            'error',
-            ServiceTypeValidationError.cycleBelowOne,
-          ),
-        ),
+      await expectLater(
+        service.saveServiceType(id: 'x', tradeId: 't1', name: 'X', cycleMonths: 6),
+        throwsA(isA<ServiceTypeNotFoundException>()),
       );
-      expect(transaction.runs, 0);
     });
+  });
+
+  test('watchTrades passes through to the repository', () async {
+    final trade = Trade(id: 't', name: 'Mine', createdAt: now, updatedAt: now);
+    when(trades.watchAll).thenAnswer((_) => Stream.value([trade]));
+
+    expect(await service.watchTrades().first, [trade]);
   });
 
   test('watchServiceTypes passes through to the repository', () async {

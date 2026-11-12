@@ -313,6 +313,108 @@
   "@validationPhoneInvalid": {
     "description": "Inline validation: phone number is not E.164."
   },
+  "moreTitle": "Więcej",
+  "@moreTitle": {
+    "description": "App bar title of the Więcej screen, and its tab in the bottom navigation."
+  },
+  "catalogTitle": "Usługi i cykle",
+  "@catalogTitle": {
+    "description": "Row on Więcej and the heading of the trades and service types editor."
+  },
+  "catalogEmpty": "Nie masz jeszcze usług. Przywróć domyślne albo dodaj własną branżę.",
+  "@catalogEmpty": {
+    "description": "The service types editor when the user has no trade yet; names the two buttons below."
+  },
+  "catalogCycle": "co {count} mies.",
+  "@catalogCycle": {
+    "description": "A service type's cycle on its row in the editor: every {count} months.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogArchived": "w archiwum",
+  "@catalogArchived": {
+    "description": "Appended to an archived service type's row in the editor."
+  },
+  "catalogAddServiceType": "Dodaj usługę",
+  "@catalogAddServiceType": {
+    "description": "Button under a trade's service types that opens the sheet for a new one."
+  },
+  "catalogAddTrade": "Dodaj branżę",
+  "@catalogAddTrade": {
+    "description": "Button at the bottom of the editor that adds a custom trade."
+  },
+  "catalogRestoreDefaults": "Przywróć domyślne",
+  "@catalogRestoreDefaults": {
+    "description": "Button that copies the missing default trades and service types back; keeps the user's changes."
+  },
+  "catalogDefaultsRestored": "Przywrócono domyślne usługi.",
+  "@catalogDefaultsRestored": {
+    "description": "Snackbar after restoring the default catalogue."
+  },
+  "catalogNewTrade": "Nowa branża",
+  "@catalogNewTrade": {
+    "description": "Title of the sheet that adds a custom trade."
+  },
+  "catalogNewTradeHint": "np. Wentylacja",
+  "@catalogNewTradeHint": {
+    "description": "Placeholder of the name field on the new trade sheet."
+  },
+  "catalogNewServiceType": "Nowa usługa",
+  "@catalogNewServiceType": {
+    "description": "Title of the service type sheet for a new service type."
+  },
+  "catalogEditServiceType": "Usługa",
+  "@catalogEditServiceType": {
+    "description": "Title of the service type sheet when it edits an existing one."
+  },
+  "catalogName": "Nazwa",
+  "@catalogName": {
+    "description": "Label of the name field on the trade and service type sheets."
+  },
+  "catalogNewServiceTypeHint": "np. Przegląd wentylacji",
+  "@catalogNewServiceTypeHint": {
+    "description": "Placeholder of the name of a new service type; a default shows its own name instead."
+  },
+  "catalogCycleLabel": "Cykl w miesiącach",
+  "@catalogCycleLabel": {
+    "description": "Label of the cycle field on the service type sheet."
+  },
+  "catalogCycleHelper": "Zmiana przesunie terminy urządzeń z tą usługą.",
+  "@catalogCycleHelper": {
+    "description": "Helper under the cycle field: changing it moves the due dates of the equipment."
+  },
+  "catalogCycleInvalid": "Wpisz liczbę miesięcy od 1 do {max}.",
+  "@catalogCycleInvalid": {
+    "description": "Inline error when the cycle is not a whole number of months from 1 to {max}.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogPrice": "Cena domyślna (zł)",
+  "@catalogPrice": {
+    "description": "Label of the optional default price field on the service type sheet."
+  },
+  "catalogArchive": "W archiwum",
+  "@catalogArchive": {
+    "description": "Switch on the service type sheet that archives the service type."
+  },
+  "catalogArchiveHint": "Nie pokazuje się przy nowych urządzeniach. Historia i terminy zostają.",
+  "@catalogArchiveHint": {
+    "description": "Subtitle of the archive switch: hidden from pickers, history and due dates are kept."
+  },
+  "catalogSave": "Zapisz",
+  "@catalogSave": {
+    "description": "Primary button of the trade and service type sheets."
+  },
+  "catalogSaved": "Zapisano.",
+  "@catalogSaved": {
+    "description": "Snackbar after a service type is saved."
+  },
   "catalogTradeChimney": "Kominiarz",
   "@catalogTradeChimney": {
     "description": "Default trade (branża) copied into the user's trades at onboarding."

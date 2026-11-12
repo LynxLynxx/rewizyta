@@ -14,4 +14,6 @@ final class const ServiceTypeValidationException(final ServiceTypeValidationErro
 /// Field-level validation outcomes. Localized in the view-model layer.
 enum ServiceTypeValidationError() {
   cycleBelowOne,
+  cycleTooLong,
+  nameEmpty,
 }

@@ -3,14 +3,16 @@ import 'package:rewizyta/app/theme/app_colors.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
 
-/// The tabs, in the order of the shell branches in `Routes`. Dziś and Więcej join in M4 and M7.
+/// The tabs, in the order of the shell branches in `Routes`. Dziś joins in M4.
 enum AppTab() {
   due,
-  clients;
+  clients,
+  more;
 
   String label(AppLocalizations l10n) => switch (this) {
     AppTab.due => l10n.dueTitle,
     AppTab.clients => l10n.clientsTitle,
+    AppTab.more => l10n.moreTitle,
   };
 }
 

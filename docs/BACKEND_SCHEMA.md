@@ -601,7 +601,7 @@ Recompute the two cached columns on `equipment` whenever:
   each user's own row, so editing a default never touches another user).
 
 The app does this inside the writing transaction: `VisitsService`,
-`EquipmentService` and `CatalogService.setCycle` in `rewizyta_services`, which
+`EquipmentService` and `CatalogService.saveServiceType` in `rewizyta_services`, which
 save an equipment row only when a cache actually changed. The server does
 not recompute; it trusts the synced caches, which is fine because only the
 phone writes visits. If server-side writes ever appear (multi-technician), move

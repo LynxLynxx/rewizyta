@@ -1,0 +1,79 @@
+# Journey 8 in docs/APP_FLOW.md: Więcej → Usługi i cykle. Restore the
+# defaults into an empty catalogue, change a default's cycle and price, rename
+# and archive it, add a trade with a service of its own, then check the
+# client form's chips: the new service is offered, the archived one is not.
+# Starts from an empty database. ASCII input only; fields are matched by
+# their label, rows by their first line (see clients.yaml).
+appId: org.rsapps.rewizyta
+name: Catalogue - restore defaults, edit, archive, add a trade and a service
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Nie masz jeszcze żadnych klientów."
+    timeout: 30000
+
+# The editor does not seed the catalogue: it starts empty
+- tapOn: "(?s)Więcej.*"
+- tapOn: "(?s)Usługi i cykle.*"
+- assertVisible: "Nie masz jeszcze usług. Przywróć domyślne albo dodaj własną branżę."
+- tapOn: "Przywróć domyślne"
+- assertVisible: "Przywrócono domyślne usługi."
+
+# Cycle and default price of a default
+- scrollUntilVisible:
+    element: "(?s)Przegląd kotła.*co 12 mies\\..*"
+- tapOn: "(?s)Przegląd kotła.*co 12 mies\\..*"
+- assertVisible: "Usługa"
+- tapOn: "(?s)Cykl w miesiącach.*"
+- eraseText
+- inputText: "24"
+- tapOn: "(?s)Cena domyślna.*"
+- inputText: "250"
+- tapOn: "Zapisz"
+- assertVisible: "Zapisano."
+- scrollUntilVisible:
+    element: "(?s)Przegląd kotła.*co 24 mies\\..*250 zł.*"
+
+# Rename and archive it
+- tapOn: "(?s)Przegląd kotła.*co 24 mies\\..*"
+- tapOn: "(?s)Nazwa.*"
+- inputText: "Kociol gazowy"
+- tapOn: "(?s)W archiwum.*"
+- tapOn: "Zapisz"
+- scrollUntilVisible:
+    element: "(?s)Kociol gazowy.*w archiwum.*"
+
+# A trade of one's own, with a service of its own
+# Centred and settled: a tap while the list still flings only stops it.
+- scrollUntilVisible:
+    element: "Dodaj branżę"
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: "Dodaj branżę"
+- assertVisible: "Nowa branża"
+- tapOn: "(?s)Nazwa.*"
+- inputText: "Wentylacja"
+- tapOn: "Zapisz"
+- scrollUntilVisible:
+    element: "WENTYLACJA"
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn:
+    text: "Dodaj usługę"
+    below: "WENTYLACJA"
+- assertVisible: "Nowa usługa"
+- tapOn: "(?s)Nazwa.*"
+- inputText: "Przeglad wentylacji"
+- tapOn: "Zapisz"
+- scrollUntilVisible:
+    element: "(?s)Przeglad wentylacji.*co 12 mies\\..*"
+
+# The client form offers the new service and hides the archived one
+- tapOn: "(?s)Klienci.*"
+- tapOn: "Dodaj klienta"
+- scrollUntilVisible:
+    element: "Przeglad wentylacji"
+# The archived chip sat between these two, so both on screen means its slot is too
+- assertVisible: "Kontrola szczelności instalacji"
+- assertNotVisible: "Kociol gazowy"
