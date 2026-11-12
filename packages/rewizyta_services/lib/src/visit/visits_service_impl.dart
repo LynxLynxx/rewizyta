@@ -20,6 +20,25 @@ final class VisitsServiceImpl(
   final Uuid _uuid = uuid ?? const Uuid();
 
   @override
+  Stream<List<Visit>> watchByClient(String clientId) => _visits.watchByClient(clientId);
+
+  @override
+  Stream<List<VisitItem>> watchItemsByClient(String clientId) =>
+      _visitItems.watchByClient(clientId);
+
+  @override
+  Future<Visit> getVisit(String id) => _find(id);
+
+  @override
+  Future<List<VisitItem>> findItems(String visitId) async {
+    final items = await _visitItems.findByVisit(visitId);
+    return [
+      for (final item in items)
+        if (!item.isDeleted) item,
+    ];
+  }
+
+  @override
   Future<Visit> saveVisit({
     String? id,
     required String clientId,
@@ -80,11 +99,23 @@ final class VisitsServiceImpl(
   }
 
   @override
-  Future<void> deleteVisit(String id) {
+  Future<void> deleteVisit(String id) => _setDeleted(id, deleted: true);
+
+  @override
+  Future<void> restoreVisit(String id) => _setDeleted(id, deleted: false);
+
+  /// Deletes or restores the visit and recomputes the due dates of what it
+  /// serviced.
+  Future<void> _setDeleted(String id, {required bool deleted}) {
     final now = _now();
     return _transaction.run(() async {
       final visit = await _find(id);
-      await _visits.upsert(visit.copyWith(updatedAt: now, deletedAt: Optional(now)));
+      await _visits.upsert(
+        visit.copyWith(
+          updatedAt: now,
+          deletedAt: deleted ? Optional(now) : const Optional.empty(),
+        ),
+      );
       final items = await _visitItems.findByVisit(id);
       await _due.updateEquipment(items.map((item) => item.equipmentId), now);
     });

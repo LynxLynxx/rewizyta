@@ -15,4 +15,14 @@ void main() {
       expect(parseMoney(text), isNull, reason: text);
     }
   });
+
+  test('formats grosze as the amount people write', () {
+    expect(formatMoney(18000), '180');
+    expect(formatMoney(18050), '180,50');
+    expect(formatMoney(18005), '180,05');
+    expect(formatMoney(0), '0');
+    for (final grosze in [18000, 18050, 18005, 120000]) {
+      expect(parseMoney(formatMoney(grosze)), grosze);
+    }
+  });
 }

@@ -48,6 +48,8 @@ void main() {
 
     final list = await repository.watchByClient('c1').first;
     expect(list.map((e) => e.id), ['e1', 'e2']);
+    final all = await repository.watchByClient('c1', includeDeleted: true).first;
+    expect(all.map((e) => e.id), ['e1', 'gone', 'e2']);
   });
 
   test('findByServiceType returns the live equipment of that type', () async {

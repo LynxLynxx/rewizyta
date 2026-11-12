@@ -132,10 +132,14 @@ void main() {
   test('the reads pass through to the repository', () async {
     when(equipment.watchAll).thenAnswer((_) => Stream.value([stored]));
     when(() => equipment.watchByClient('c')).thenAnswer((_) => Stream.value([stored]));
+    when(
+      () => equipment.watchByClient('c', includeDeleted: true),
+    ).thenAnswer((_) => Stream.value([stored, stored]));
     when(() => equipment.findByClient('c')).thenAnswer((_) async => [stored]);
 
     expect(await service.watchAll().first, [stored]);
     expect(await service.watchByClient('c').first, [stored]);
+    expect(await service.watchByClient('c', includeDeleted: true).first, [stored, stored]);
     expect(await service.findByClient('c'), [stored]);
   });
 }

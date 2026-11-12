@@ -73,4 +73,70 @@ void main() {
     expect(vm.equipment.first.nextDueLabel, '01.02.2027');
     expect(vm.equipment.last.serviceType, isNull);
   });
+
+  test('leaves deleted equipment out of the list and the status, not out of the history', () {
+    final today = DateTime.utc(2026, 11, 4);
+    Equipment item(String id, {DateTime? nextDueAt, DateTime? deletedAt}) => Equipment(
+      id: id,
+      clientId: '1',
+      serviceTypeId: 's',
+      label: id,
+      nextDueAt: nextDueAt,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: deletedAt,
+    );
+    VisitItem visitItem(String visitId, String equipmentId) => VisitItem(
+      id: '$visitId-$equipmentId',
+      visitId: visitId,
+      equipmentId: equipmentId,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final vm = ClientDetailViewModel.fromDomain(
+      Client(id: '1', name: 'Jan', createdAt: now, updatedAt: now),
+      today: today,
+      serviceTypes: [
+        ServiceType(id: 's', name: 'Komin', cycleMonths: 12, createdAt: now, updatedAt: now),
+      ],
+      equipment: [
+        item('Kuchnia', nextDueAt: DateTime.utc(2027, 6)),
+        item('Piwnica', nextDueAt: DateTime.utc(2026), deletedAt: now),
+      ],
+      visits: [
+        Visit(
+          id: 'new',
+          clientId: '1',
+          doneAt: DateTime.utc(2026, 10, 2),
+          priceGrosze: 18050,
+          note: 'Sadza',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        Visit(
+          id: 'old',
+          clientId: '1',
+          doneAt: DateTime.utc(2025, 3),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      visitItems: [
+        visitItem('new', 'Piwnica'),
+        visitItem('new', 'Kuchnia'),
+        visitItem('gone', 'Kuchnia'),
+      ],
+    );
+
+    expect(vm.equipment.map((e) => e.label), ['Kuchnia']);
+    expect(vm.status?.kind, DueStatusKind.later);
+    expect(vm.history.map((v) => v.id), ['new', 'old']);
+    final latest = vm.history.first;
+    expect(latest.dateLabel, '02.10.2026');
+    expect(latest.work.map((e) => e.label), ['Kuchnia', 'Piwnica']);
+    expect(latest.priceLabel, '180,50');
+    expect(latest.note, 'Sadza');
+    expect(vm.history.last.work, isEmpty);
+    expect(vm.history.last.priceLabel, isNull);
+  });
 }

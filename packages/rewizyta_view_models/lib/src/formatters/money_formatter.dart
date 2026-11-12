@@ -8,3 +8,11 @@ int? parseMoney(String text) {
   if (match == null) return null;
   return int.parse(match[1]!) * 100 + int.parse((match[2] ?? '0').padRight(2, '0'));
 }
+
+/// Grosze as the złoty amount people write: `18000` → `180`, `18050` →
+/// `180,50`. No currency: the label or the l10n string carries "zł".
+String formatMoney(int grosze) {
+  final zloty = grosze ~/ 100;
+  final rest = grosze % 100;
+  return rest == 0 ? '$zloty' : '$zloty,${'$rest'.padLeft(2, '0')}';
+}

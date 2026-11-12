@@ -14,9 +14,11 @@ final class const EquipmentRepositoryImpl(final AppDatabase _db) implements Equi
   }
 
   @override
-  Stream<List<Equipment>> watchByClient(String clientId) => _byClient(
-    clientId,
-  ).watch().map((rows) => rows.map((row) => row.toDomain()).toList());
+  Stream<List<Equipment>> watchByClient(String clientId, {bool includeDeleted = false}) =>
+      _byClient(
+        clientId,
+        includeDeleted: includeDeleted,
+      ).watch().map((rows) => rows.map((row) => row.toDomain()).toList());
 
   @override
   Future<List<Equipment>> findByClient(String clientId) async {
@@ -48,7 +50,9 @@ final class const EquipmentRepositoryImpl(final AppDatabase _db) implements Equi
     payload: EquipmentDto.fromDomain(equipment).toJson(),
   );
 
-  Selectable<EquipmentRow> _byClient(String clientId) => _db.select(_db.equipmentTable)
-    ..where((e) => e.clientId.equals(clientId) & e.deletedAt.isNull())
-    ..orderBy([(e) => OrderingTerm.asc(e.createdAt), (e) => OrderingTerm.asc(e.id)]);
+  Selectable<EquipmentRow> _byClient(String clientId, {bool includeDeleted = false}) {
+    final query = _db.select(_db.equipmentTable)..where((e) => e.clientId.equals(clientId));
+    if (!includeDeleted) query.where((e) => e.deletedAt.isNull());
+    return query..orderBy([(e) => OrderingTerm.asc(e.createdAt), (e) => OrderingTerm.asc(e.id)]);
+  }
 }

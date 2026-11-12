@@ -6,6 +6,10 @@ abstract interface class VisitItemsRepository() {
   /// row per equipment, so re-ticking an item must restore its old row.
   Future<List<VisitItem>> findByVisit(String visitId);
 
+  /// The live items of the client's visits. Items of a deleted visit are
+  /// included; match them against the live visits.
+  Stream<List<VisitItem>> watchByClient(String clientId);
+
   /// Upserts the row and queues it for the push in one transaction.
   Future<void> upsert(VisitItem item);
 }

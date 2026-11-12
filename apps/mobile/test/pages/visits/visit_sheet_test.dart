@@ -136,4 +136,59 @@ void main() {
     expect(find.byType(VisitSheetView), findsNothing);
     expect(find.text('Zapisano wizytę.'), findsOneWidget);
   });
+
+  testWidgets('a new visit has no delete', (tester) async {
+    when(() => cubit.state).thenReturn(loaded);
+
+    await tester.pumpApp(subject());
+
+    expect(find.text('Zapisz wizytę'), findsOneWidget);
+    expect(find.text('Usuń wizytę'), findsNothing);
+  });
+
+  testWidgets('a stored visit can be deleted, and the signal pops with true', (tester) async {
+    when(() => cubit.state).thenReturn(
+      const VisitFormState(
+        isLoading: false,
+        isEditing: true,
+        equipment: [chimney],
+        ticked: {'e1'},
+        date: '02.10.2026',
+        price: '180,50',
+      ),
+    );
+    when(cubit.delete).thenAnswer((_) async {});
+    bool? result;
+    await tester.pumpApp(
+      Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => result = await showModalBottomSheet<bool>(
+              context: context,
+              isScrollControlled: true,
+              builder: (sheetContext) => BlocProvider<VisitFormCubit>.value(
+                value: cubit,
+                child: const VisitSheetView(),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Wizyta'), findsOneWidget);
+    expect(find.text('180,50'), findsOneWidget);
+    await tester.ensureVisible(find.text('Usuń wizytę'));
+    await tester.tap(find.text('Usuń wizytę'));
+    verify(cubit.delete).called(1);
+
+    signals.add(VisitFormSignal.deleted);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(VisitSheetView), findsNothing);
+    expect(result, isTrue);
+  });
 }

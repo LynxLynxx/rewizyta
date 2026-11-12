@@ -214,4 +214,55 @@ void main() {
       await expectLater(service.deleteVisit('x'), throwsA(isA<VisitNotFoundException>()));
     });
   });
+
+  group('restoreVisit', () {
+    test('restores the visit and moves the due dates forward again', () async {
+      final deleted = storedVisit.copyWith(deletedAt: Optional(earlier));
+      when(() => visits.find('v')).thenAnswer((_) async => deleted);
+      when(() => visitItems.findByVisit('v')).thenAnswer((_) async => [visitItem('e1')]);
+      stubEquipment(item('e1'), earlier);
+
+      await service.restoreVisit('v');
+
+      expect(transaction.runs, 1);
+      verify(
+        () => visits.upsert(deleted.copyWith(updatedAt: now, deletedAt: const Optional.empty())),
+      ).called(1);
+      expect(upsertedEquipment().single.lastVisitAt, earlier);
+    });
+
+    test('throws for an unknown visit id', () async {
+      when(() => visits.find('x')).thenAnswer((_) async => null);
+
+      await expectLater(service.restoreVisit('x'), throwsA(isA<VisitNotFoundException>()));
+    });
+  });
+
+  group('reads', () {
+    test('watchByClient and watchItemsByClient pass through', () async {
+      when(() => visits.watchByClient('c')).thenAnswer((_) => Stream.value([storedVisit]));
+      when(
+        () => visitItems.watchByClient('c'),
+      ).thenAnswer((_) => Stream.value([visitItem('e1')]));
+
+      expect(await service.watchByClient('c').first, [storedVisit]);
+      expect(await service.watchItemsByClient('c').first, [visitItem('e1')]);
+    });
+
+    test('getVisit returns the visit and throws for an unknown id', () async {
+      when(() => visits.find('v')).thenAnswer((_) async => storedVisit);
+      when(() => visits.find('x')).thenAnswer((_) async => null);
+
+      expect(await service.getVisit('v'), storedVisit);
+      await expectLater(service.getVisit('x'), throwsA(isA<VisitNotFoundException>()));
+    });
+
+    test('findItems leaves out unticked items', () async {
+      when(() => visitItems.findByVisit('v')).thenAnswer(
+        (_) async => [visitItem('e1'), visitItem('e2', deletedAt: earlier)],
+      );
+
+      expect(await service.findItems('v'), [visitItem('e1')]);
+    });
+  });
 }
