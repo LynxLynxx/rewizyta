@@ -244,7 +244,7 @@ equipment caches.
 | `duration_minutes` | `integer` default 60 | |
 | `status` | `text` | `planned`, `done`, `cancelled`, `no_show`. |
 | `is_time_fixed` | `boolean` default false | The client asked for this hour; the optimiser must not move it. |
-| `route_position` | `integer` | Order within the day, set by the optimiser or by drag-and-drop. Null = unordered. |
+| `route_position` | `integer` | Order within the day, set by the optimiser or by drag-and-drop; 0-based within the local day. Null = unordered; unordered rows follow the ordered ones by start. |
 | `note` | `text` | |
 
 Index: `(user_id, starts_at)` for day and week views. "Booked" in the due list

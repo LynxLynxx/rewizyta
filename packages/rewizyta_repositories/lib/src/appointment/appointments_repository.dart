@@ -6,6 +6,14 @@ abstract interface class AppointmentsRepository() {
   /// week views.
   Stream<List<Appointment>> watchBetween(DateTime from, DateTime to);
 
+  /// [watchBetween] with each appointment's client, for the day plan. A
+  /// soft-deleted client's appointments are left out. Re-emits when either
+  /// table changes (a client's coordinates move the distances).
+  Stream<List<DayStop>> watchStopsBetween(DateTime from, DateTime to);
+
+  /// The current value of [watchStopsBetween].
+  Future<List<DayStop>> findStopsBetween(DateTime from, DateTime to);
+
   /// The client's live appointments, latest first.
   Stream<List<Appointment>> watchByClient(String clientId);
 

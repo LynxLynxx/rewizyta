@@ -3,6 +3,7 @@ import 'package:rewizyta_models/rewizyta_models.dart';
 import 'package:rewizyta_repositories/src/appointment/appointment_row_mapping.dart';
 import 'package:rewizyta_repositories/src/appointment/appointments_repository.dart';
 import 'package:rewizyta_repositories/src/appointment/dto/appointment_dto.dart';
+import 'package:rewizyta_repositories/src/client/client_row_mapping.dart';
 import 'package:rewizyta_repositories/src/database/app_database.dart';
 import 'package:rewizyta_repositories/src/database/outbox_writer.dart';
 
@@ -21,6 +22,36 @@ final class const AppointmentsRepositoryImpl(final AppDatabase _db)
       )
       ..orderBy([(a) => OrderingTerm.asc(a.startsAt), (a) => OrderingTerm.asc(a.id)]);
     return query.watch().map((rows) => rows.map((row) => row.toDomain()).toList());
+  }
+
+  @override
+  Stream<List<DayStop>> watchStopsBetween(DateTime from, DateTime to) =>
+      _stopsBetween(from, to).watch();
+
+  @override
+  Future<List<DayStop>> findStopsBetween(DateTime from, DateTime to) =>
+      _stopsBetween(from, to).get();
+
+  Selectable<DayStop> _stopsBetween(DateTime from, DateTime to) {
+    final appointments = _db.appointments;
+    final clients = _db.clients;
+    final query =
+        _db.select(appointments).join([
+            innerJoin(clients, clients.id.equalsExp(appointments.clientId)),
+          ])
+          ..where(
+            appointments.deletedAt.isNull() &
+                clients.deletedAt.isNull() &
+                appointments.startsAt.isBiggerOrEqualValue(from.toUtc()) &
+                appointments.startsAt.isSmallerThanValue(to.toUtc()),
+          )
+          ..orderBy([OrderingTerm.asc(appointments.startsAt), OrderingTerm.asc(appointments.id)]);
+    return query.map(
+      (row) => DayStop(
+        appointment: row.readTable(appointments).toDomain(),
+        client: row.readTable(clients).toDomain(),
+      ),
+    );
   }
 
   @override
