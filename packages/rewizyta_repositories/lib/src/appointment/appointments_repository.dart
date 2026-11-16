@@ -17,6 +17,9 @@ abstract interface class AppointmentsRepository() {
   /// The client's live appointments, latest first.
   Stream<List<Appointment>> watchByClient(String clientId);
 
+  /// The current value of [watchByClient].
+  Future<List<Appointment>> findByClient(String clientId);
+
   /// Any appointment by id, soft-deleted included.
   Future<Appointment?> find(String id);
 

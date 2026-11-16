@@ -21,6 +21,9 @@ final class const ClientDetailViewModel({
 
   /// The visits, newest first.
   final List<ClientVisitViewModel> history = const [],
+
+  /// When the client's open booking starts, null without one.
+  final DateTime? bookingAt,
 }) with Equatable {
   /// [equipment] may include soft-deleted rows: they leave the status and the
   /// equipment list but still name the work in the [history] of [visits].
@@ -30,6 +33,7 @@ final class const ClientDetailViewModel({
     List<ServiceType> serviceTypes = const [],
     List<Visit> visits = const [],
     List<VisitItem> visitItems = const [],
+    Appointment? booking,
     required DateTime today,
   }) {
     final live = [
@@ -61,6 +65,7 @@ final class const ClientDetailViewModel({
             today: today,
           ),
       ],
+      bookingAt: booking?.startsAt,
     );
   }
 
@@ -75,5 +80,6 @@ final class const ClientDetailViewModel({
     status,
     equipment,
     history,
+    bookingAt,
   ];
 }

@@ -55,12 +55,19 @@ final class const AppointmentsRepositoryImpl(final AppDatabase _db)
   }
 
   @override
-  Stream<List<Appointment>> watchByClient(String clientId) {
-    final query = _db.select(_db.appointments)
-      ..where((a) => a.clientId.equals(clientId) & a.deletedAt.isNull())
-      ..orderBy([(a) => OrderingTerm.desc(a.startsAt)]);
-    return query.watch().map((rows) => rows.map((row) => row.toDomain()).toList());
+  Stream<List<Appointment>> watchByClient(String clientId) =>
+      _byClient(clientId).watch().map((rows) => rows.map((row) => row.toDomain()).toList());
+
+  @override
+  Future<List<Appointment>> findByClient(String clientId) async {
+    final rows = await _byClient(clientId).get();
+    return rows.map((row) => row.toDomain()).toList();
   }
+
+  SimpleSelectStatement<$AppointmentsTable, AppointmentRow> _byClient(String clientId) =>
+      _db.select(_db.appointments)
+        ..where((a) => a.clientId.equals(clientId) & a.deletedAt.isNull())
+        ..orderBy([(a) => OrderingTerm.desc(a.startsAt)]);
 
   @override
   Future<Appointment?> find(String id) async {

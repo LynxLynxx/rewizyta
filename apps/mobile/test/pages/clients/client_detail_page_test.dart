@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:rewizyta/app/dependency/dependencies.dart';
+import 'package:rewizyta/pages/booking/booking_sheet.dart';
 import 'package:rewizyta/pages/clients/client_detail_page.dart';
 import 'package:rewizyta/pages/visits/visit_sheet.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
@@ -18,6 +19,8 @@ import '../../helpers/pump_app.dart';
 class MockClientDetailCubit() extends MockCubit<ClientDetailState> implements ClientDetailCubit;
 
 class MockVisitFormCubit() extends MockCubit<VisitFormState> implements VisitFormCubit;
+
+class MockBookingCubit() extends MockCubit<BookingState> implements BookingCubit;
 
 /// Registers into the get_it instance that `Dependencies` resolves from;
 /// `register*` is protected to subclasses.
@@ -131,6 +134,61 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  group('booking', () {
+    final booked = ClientDetailState(
+      client: ClientDetailViewModel(
+        id: 'c1',
+        name: 'Jan',
+        phone: '+48601234567',
+        phoneLabel: '601 234 567',
+        addressLabel: null,
+        note: null,
+        bookingAt: DateTime(2026, 9, 29, 9, 30).toUtc(),
+      ),
+    );
+
+    testWidgets('Umów termin when nothing is booked, and no tag', (tester) async {
+      when(() => cubit.state).thenReturn(_withPhone);
+
+      await tester.pumpApp(subject());
+
+      expect(find.text('Umów termin'), findsOneWidget);
+      expect(find.text('Zmień termin'), findsNothing);
+      expect(find.textContaining('umówiony'), findsNothing);
+    });
+
+    testWidgets('an open booking shows as a tag and turns the button into Zmień termin', (
+      tester,
+    ) async {
+      when(() => cubit.state).thenReturn(booked);
+
+      await tester.pumpApp(subject());
+
+      expect(find.text('umówiony wt 29.09, 09:30'), findsOneWidget);
+      expect(find.text('Zmień termin'), findsOneWidget);
+      expect(find.text('Umów termin'), findsNothing);
+    });
+
+    testWidgets('the button opens the booking sheet for the client', (tester) async {
+      final bookingCubit = MockBookingCubit();
+      when(() => bookingCubit.state).thenReturn(const BookingState());
+      when(() => bookingCubit.errorStream).thenAnswer((_) => const Stream.empty());
+      when(() => bookingCubit.signalStream).thenAnswer((_) => const Stream.empty());
+      when(() => bookingCubit.init('c1')).thenReturn(null);
+      _TestDependencies().factory<BookingCubit>(() => bookingCubit);
+      addTearDown(() => Dependencies.instance.reset);
+      when(() => cubit.state).thenReturn(_withPhone);
+
+      await tester.pumpApp(subject());
+      await tester.tap(find.text('Umów termin'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.byType(BookingSheetView), findsOneWidget);
+      verify(() => bookingCubit.init('c1')).called(1);
+    });
   });
 
   testWidgets('says so when no app can take the call', (tester) async {

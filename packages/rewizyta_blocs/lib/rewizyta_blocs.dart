@@ -3,6 +3,8 @@ library;
 
 export 'package:flutter_bloc/flutter_bloc.dart';
 
+export 'src/booking/booking_cubit.dart';
+export 'src/booking/booking_state.dart';
 export 'src/catalog/catalog_cubit.dart';
 export 'src/catalog/catalog_state.dart';
 export 'src/client_detail/client_detail_cubit.dart';

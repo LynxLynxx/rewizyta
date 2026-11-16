@@ -26,6 +26,23 @@ void main() {
     expect(vm.note, 'Pies');
   });
 
+  test('carries when the open booking starts', () {
+    final booking = Appointment(
+      id: 'a',
+      clientId: '1',
+      startsAt: DateTime.utc(2026, 11, 13, 8),
+      createdAt: now,
+      updatedAt: now,
+    );
+    final client = Client(id: '1', name: 'Jan', createdAt: now, updatedAt: now);
+
+    expect(
+      ClientDetailViewModel.fromDomain(client, booking: booking, today: now).bookingAt,
+      DateTime.utc(2026, 11, 13, 8),
+    );
+    expect(ClientDetailViewModel.fromDomain(client, today: now).bookingAt, isNull);
+  });
+
   test('leaves missing fields null', () {
     final vm = ClientDetailViewModel.fromDomain(
       Client(id: '1', name: 'Jan', createdAt: now, updatedAt: now),

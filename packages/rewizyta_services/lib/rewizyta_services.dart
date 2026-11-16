@@ -10,6 +10,8 @@ library;
 
 export 'src/analytics/analytics_service.dart';
 export 'src/analytics/noop_analytics_service.dart';
+export 'src/appointment/appointments_service.dart';
+export 'src/appointment/appointments_service_impl.dart';
 export 'src/catalog/catalog_service.dart';
 export 'src/catalog/catalog_service_impl.dart';
 export 'src/client/clients_service.dart';

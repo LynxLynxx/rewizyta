@@ -454,5 +454,89 @@
   "catalogServiceTypeBoilerService": "Przegląd kotła",
   "@catalogServiceTypeBoilerService": {
     "description": "Default service type of the boiler trade, 12-month cycle."
+  },
+  "weekdayShort": "{day, select, mon{pn} tue{wt} wed{śr} thu{czw} fri{pt} sat{sob} sun{nd} other{}}",
+  "@weekdayShort": {
+    "description": "Two or three letter weekday in a booking label ('pn 29.09, 09:30'); {day} is mon..sun.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "bookingOpen": "Umów termin",
+  "@bookingOpen": {
+    "description": "Button on the client card that opens the booking sheet when nothing is booked."
+  },
+  "bookingChange": "Zmień termin",
+  "@bookingChange": {
+    "description": "Button on the client card and title of the booking sheet when the client already has a booking."
+  },
+  "bookingDayCount": "{count} wiz.",
+  "@bookingDayCount": {
+    "description": "Under a day in the booking picker: visits already booked that day.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookingDayFree": "wolne",
+  "@bookingDayFree": {
+    "description": "Under a day in the booking picker: nothing booked yet."
+  },
+  "bookingNoSlots": "Brak wolnych godzin tego dnia.",
+  "@bookingNoSlots": {
+    "description": "Shown on the booking sheet when the chosen day has no free hour."
+  },
+  "bookingPreviousWeek": "Poprzedni tydzień",
+  "@bookingPreviousWeek": {
+    "description": "Screen-reader label of the arrow back in the booking day picker."
+  },
+  "bookingNextWeek": "Następny tydzień",
+  "@bookingNextWeek": {
+    "description": "Screen-reader label of the arrow forward in the booking day picker."
+  },
+  "bookingFixedTime": "Klient chce dokładnie tę godzinę",
+  "@bookingFixedTime": {
+    "description": "Switch on the booking sheet: the route optimiser must not move the stop."
+  },
+  "bookingConfirm": "Umów na {when}",
+  "@bookingConfirm": {
+    "description": "Primary button of the booking sheet; {when} is like 'pn 29.09, 09:30'.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "bookingCancel": "Odwołaj wizytę",
+  "@bookingCancel": {
+    "description": "Button on the booking sheet that cancels the client's booking."
+  },
+  "bookingBooked": "Umówiono wizytę.",
+  "@bookingBooked": {
+    "description": "Snackbar after a booking is saved."
+  },
+  "bookingCancelled": "Odwołano wizytę.",
+  "@bookingCancelled": {
+    "description": "Snackbar after a booking is cancelled."
+  },
+  "bookingTag": "umówiony {when}",
+  "@bookingTag": {
+    "description": "Tag on the client card; {when} is like 'pn 29.09, 09:30'.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "errorAppointmentInPast": "Ta godzina już minęła.",
+  "@errorAppointmentInPast": {
+    "description": "Snackbar when the chosen booking hour has passed."
+  },
+  "errorAppointmentNotFound": "Nie znaleziono tej wizyty.",
+  "@errorAppointmentNotFound": {
+    "description": "Snackbar when a booking no longer exists."
   }
 }
