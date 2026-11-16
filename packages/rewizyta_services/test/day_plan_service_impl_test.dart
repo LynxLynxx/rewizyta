@@ -91,6 +91,29 @@ void main() {
     });
   });
 
+  group('watchDays', () {
+    test('groups one query by local day, with an empty plan for a free day', () async {
+      final stops = [
+        stop('a', 8, lng: 0.1),
+        stop('gone', 9, status: AppointmentStatus.cancelled),
+        stop('c', 8).copyWithDay(14),
+      ];
+      final range = (DateTime(2026, 11, 12), DateTime(2026, 11, 15));
+      when(
+        () => appointments.watchStopsBetween(range.$1, range.$2),
+      ).thenAnswer((_) => Stream.value(stops));
+
+      final plans = await service.watchDays(DateTime(2026, 11, 12, 18), 3).first;
+
+      expect(plans.map((p) => p.stops.map((s) => s.appointment.id).toList()), [
+        ['a'],
+        <String>[],
+        ['c'],
+      ]);
+      expect(plans.every((p) => p.settings == settings), isTrue);
+    });
+  });
+
   group('optimiseDay', () {
     test('writes the optimised order to every stop in one transaction', () async {
       stubDay([
@@ -161,4 +184,17 @@ void main() {
       verifyNever(() => appointments.upsert(any()));
     });
   });
+}
+
+extension on DayStop {
+  /// The same stop on [day] of November 2026, at the same UTC time.
+  DayStop copyWithDay(int day) {
+    final start = appointment.startsAt;
+    return DayStop(
+      appointment: appointment.copyWith(
+        startsAt: DateTime.utc(2026, 11, day, start.hour, start.minute),
+      ),
+      client: client,
+    );
+  }
 }

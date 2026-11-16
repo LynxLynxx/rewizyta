@@ -146,4 +146,16 @@ void main() {
     final list = await repository.watchByClient('c1').first;
     expect(list.map((a) => a.id), ['a2', 'a1']);
   });
+
+  test("findByClient returns the client's live appointments, latest first", () async {
+    await repository.upsert(appointment(startsAt: DateTime.utc(2026, 10)));
+    await repository.upsert(appointment(id: 'a2', startsAt: DateTime.utc(2026, 11)));
+    await repository.upsert(appointment(id: 'other', clientId: 'c2'));
+    await repository.upsert(
+      appointment(id: 'gone', startsAt: DateTime.utc(2026, 12), deletedAt: DateTime.utc(2026, 12)),
+    );
+
+    final list = await repository.findByClient('c1');
+    expect(list.map((a) => a.id), ['a2', 'a1']);
+  });
 }

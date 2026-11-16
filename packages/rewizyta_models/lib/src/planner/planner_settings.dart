@@ -9,10 +9,20 @@ final class const PlannerSettings({
   final int workStartMinutes = 8 * 60,
   final int workEndMinutes = 16 * 60,
   final int slotsPerDay = 8,
+  final int slotMinutes = 60,
   final int travelSpeedKmh = 40,
 }) with Equatable {
-  this : assert(travelSpeedKmh > 0, 'The travel speed divides the distance');
+  this
+    : assert(travelSpeedKmh > 0, 'The travel speed divides the distance'),
+      assert(slotMinutes > 0, 'The slot length steps the hour grid');
 
   @override
-  List<Object?> get props => [home, workStartMinutes, workEndMinutes, slotsPerDay, travelSpeedKmh];
+  List<Object?> get props => [
+    home,
+    workStartMinutes,
+    workEndMinutes,
+    slotsPerDay,
+    slotMinutes,
+    travelSpeedKmh,
+  ];
 }

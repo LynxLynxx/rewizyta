@@ -12,6 +12,14 @@ import 'package:rewizyta_models/rewizyta_models.dart';
 abstract base class const LocalizedException() with Equatable implements Exception {
   factory create(Object error) {
     if (error is LocalizedException) return error;
+    if (error is AppointmentNotFoundException) {
+      return const LocalizedAppointmentNotFoundException();
+    }
+    if (error is AppointmentValidationException) {
+      return switch (error.error) {
+        AppointmentValidationError.inPast => const LocalizedAppointmentInPastException(),
+      };
+    }
     if (error is ClientNotFoundException) return const LocalizedClientNotFoundException();
     if (error is EquipmentNotFoundException) return const LocalizedEquipmentNotFoundException();
     if (error is ServiceTypeNotFoundException) {
@@ -32,6 +40,16 @@ abstract base class const LocalizedException() with Equatable implements Excepti
     final fields = props.where((p) => p != null).join(', ');
     return fields.isEmpty ? '$runtimeType' : '$runtimeType($fields)';
   }
+}
+
+final class const LocalizedAppointmentInPastException() extends LocalizedException {
+  @override
+  String message(BuildContext context) => context.l10n.errorAppointmentInPast;
+}
+
+final class const LocalizedAppointmentNotFoundException() extends LocalizedException {
+  @override
+  String message(BuildContext context) => context.l10n.errorAppointmentNotFound;
 }
 
 final class const LocalizedClientNotFoundException() extends LocalizedException {

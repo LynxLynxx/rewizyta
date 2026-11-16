@@ -21,6 +21,28 @@ final class DayPlanServiceImpl(
   }
 
   @override
+  Stream<List<DayPlan>> watchDays(DateTime firstDay, int count) {
+    final (from, _) = _bounds(firstDay);
+    final to = DateTime(from.year, from.month, from.day + count);
+    return _appointments.watchStopsBetween(from, to).map((stops) {
+      final byDay = <(int, int, int), List<DayStop>>{};
+      for (final stop in stops) {
+        final start = stop.appointment.startsAt.toLocal();
+        (byDay[(start.year, start.month, start.day)] ??= []).add(stop);
+      }
+      return [
+        for (var i = 0; i < count; i++)
+          DayPlan.of(
+            byDay[_key(DateTime(from.year, from.month, from.day + i))] ?? const [],
+            _settings,
+          ),
+      ];
+    });
+  }
+
+  (int, int, int) _key(DateTime day) => (day.year, day.month, day.day);
+
+  @override
   Future<void> optimiseDay(DateTime day) => _write(day, (plan) => plan.optimised());
 
   @override

@@ -14,6 +14,7 @@ void main() {
   late MockVisitItemsRepository visitItems;
   late MockEquipmentRepository equipment;
   late MockServiceTypesRepository serviceTypes;
+  late MockAppointmentsRepository appointments;
   late FakeTransactionRunner transaction;
   late VisitsServiceImpl service;
 
@@ -51,6 +52,22 @@ void main() {
     updatedAt: earlier,
   );
 
+  /// A planned appointment of client `c` at 09:00 on 22 October.
+  Appointment booking({
+    String id = 'a',
+    AppointmentStatus status = AppointmentStatus.planned,
+    DateTime? startsAt,
+    DateTime? deletedAt,
+  }) => Appointment(
+    id: id,
+    clientId: 'c',
+    startsAt: startsAt ?? DateTime(2026, 10, 22, 9).toUtc(),
+    status: status,
+    createdAt: earlier,
+    updatedAt: earlier,
+    deletedAt: deletedAt,
+  );
+
   List<VisitItem> upsertedItems() =>
       verify(() => visitItems.upsert(captureAny())).captured.cast<VisitItem>();
   List<Equipment> upsertedEquipment() =>
@@ -66,6 +83,7 @@ void main() {
     registerFallbackValue(storedVisit);
     registerFallbackValue(visitItem(''));
     registerFallbackValue(item(''));
+    registerFallbackValue(booking());
   });
 
   setUp(() {
@@ -73,16 +91,20 @@ void main() {
     visitItems = MockVisitItemsRepository();
     equipment = MockEquipmentRepository();
     serviceTypes = MockServiceTypesRepository();
+    appointments = MockAppointmentsRepository();
     transaction = FakeTransactionRunner();
     when(() => visits.upsert(any())).thenAnswer((_) async {});
     when(() => visitItems.upsert(any())).thenAnswer((_) async {});
     when(() => equipment.upsert(any())).thenAnswer((_) async {});
     when(() => serviceTypes.find('st')).thenAnswer((_) async => serviceType);
+    when(() => appointments.upsert(any())).thenAnswer((_) async {});
+    when(() => appointments.findByClient(any())).thenAnswer((_) async => []);
     service = VisitsServiceImpl(
       visits,
       visitItems,
       equipment,
       serviceTypes,
+      appointments,
       transaction,
       now: () => now,
     );
@@ -235,6 +257,127 @@ void main() {
       when(() => visits.find('x')).thenAnswer((_) async => null);
 
       await expectLater(service.restoreVisit('x'), throwsA(isA<VisitNotFoundException>()));
+    });
+  });
+
+  group('appointments', () {
+    void stubEquipmentFor(String id) => stubEquipment(item(id), today);
+
+    test("a new visit fulfils the client's planned appointment of that day", () async {
+      stubEquipmentFor('e1');
+      when(() => appointments.findByClient('c')).thenAnswer(
+        (_) async => [
+          booking(id: 'later', startsAt: DateTime(2026, 10, 22, 14).toUtc()),
+          booking(id: 'other-day', startsAt: DateTime(2026, 10, 23, 9).toUtc()),
+          booking(id: 'cancelled', status: AppointmentStatus.cancelled),
+          booking(),
+        ],
+      );
+
+      final visit = await service.saveVisit(
+        clientId: 'c',
+        doneAt: DateTime(2026, 10, 22),
+        equipmentIds: {'e1'},
+      );
+
+      expect(visit.appointmentId, 'a');
+      verify(
+        () => appointments.upsert(
+          booking().copyWith(status: AppointmentStatus.done, updatedAt: now),
+        ),
+      ).called(1);
+    });
+
+    test('a visit on a day without a booking links nothing', () async {
+      stubEquipmentFor('e1');
+      when(() => appointments.findByClient('c')).thenAnswer(
+        (_) async => [booking(startsAt: DateTime(2026, 10, 25, 9).toUtc())],
+      );
+
+      final visit = await service.saveVisit(
+        clientId: 'c',
+        doneAt: DateTime(2026, 10, 22),
+        equipmentIds: {'e1'},
+      );
+
+      expect(visit.appointmentId, isNull);
+      verifyNever(() => appointments.upsert(any()));
+    });
+
+    test('a named appointment is marked done, a cancelled one is left alone', () async {
+      stubEquipmentFor('e1');
+      when(() => appointments.find('a')).thenAnswer((_) async => booking());
+      when(() => appointments.find('x')).thenAnswer(
+        (_) async => booking(id: 'x', status: AppointmentStatus.cancelled),
+      );
+
+      await service.saveVisit(
+        clientId: 'c',
+        doneAt: today,
+        equipmentIds: {'e1'},
+        appointmentId: 'a',
+      );
+      await service.saveVisit(
+        clientId: 'c',
+        doneAt: today,
+        equipmentIds: {'e1'},
+        appointmentId: 'x',
+      );
+
+      final saved = verify(() => appointments.upsert(captureAny())).captured.cast<Appointment>();
+      expect(saved.map((a) => (a.id, a.status)), [('a', AppointmentStatus.done)]);
+    });
+
+    test('editing a visit does not look for a booking', () async {
+      when(() => visits.find('v')).thenAnswer((_) async => storedVisit);
+      when(() => visitItems.findByVisit('v')).thenAnswer((_) async => []);
+      stubEquipmentFor('e1');
+
+      await service.saveVisit(id: 'v', clientId: 'c', doneAt: today, equipmentIds: {'e1'});
+
+      verifyNever(() => appointments.findByClient(any()));
+    });
+
+    test(
+      'deleting the visit puts its done appointment back to planned, restoring redoes it',
+      () async {
+        final fulfilled = storedVisit.copyWith(appointmentId: const Optional('a'));
+        when(() => visits.find('v')).thenAnswer((_) async => fulfilled);
+        when(() => visitItems.findByVisit('v')).thenAnswer((_) async => []);
+        when(() => appointments.find('a'))
+            .thenAnswer((_) async => booking(status: AppointmentStatus.done));
+
+        await service.deleteVisit('v');
+
+        verify(() => appointments.upsert(booking().copyWith(updatedAt: now))).called(1);
+
+        when(() => appointments.find('a')).thenAnswer((_) async => booking());
+        await service.restoreVisit('v');
+
+        verify(
+          () => appointments.upsert(
+            booking().copyWith(status: AppointmentStatus.done, updatedAt: now),
+          ),
+        ).called(1);
+      },
+    );
+
+    test('deleting a visit leaves a cancelled or deleted appointment alone', () async {
+      final fulfilled = storedVisit.copyWith(appointmentId: const Optional('a'));
+      when(() => visits.find('v')).thenAnswer((_) async => fulfilled);
+      when(() => visitItems.findByVisit('v')).thenAnswer((_) async => []);
+      when(() => appointments.find('a')).thenAnswer(
+        (_) async => booking(status: AppointmentStatus.noShow),
+      );
+
+      await service.deleteVisit('v');
+
+      when(() => appointments.find('a')).thenAnswer(
+        (_) async => booking(status: AppointmentStatus.done, deletedAt: earlier),
+      );
+      await service.deleteVisit('v');
+
+      verifyNever(() => appointments.upsert(any()));
     });
   });
 
