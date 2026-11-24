@@ -526,8 +526,8 @@ Three tiers, three answers:
 | Environment | Plan | Pause handling |
 |---|---|---|
 | local | `supabase start` | n/a |
-| dev / staging | free, EU region | `.github/workflows/supabase-keepalive.yml` calls the `keepalive()` RPC every second day; it updates the one row in `public.keepalive`. A no-op RPC twice a week did not stop staging from being paused in October 2026, so the ping now writes a real table and runs more often. |
-| production | free, EU region, while there are few users (2026-10-19); Pro or self-hosted Supabase on Hetzner (DE/FI) before reminders go live | the same keepalive job, from the unprotected `production-keepalive` environment. Free has no backups, so dump the waitlist yourself. A paused production project would silently stop every reminder, so move to Pro before reminders ship. |
+| dev / staging | free, EU region | `.github/workflows/supabase-keepalive.yml` calls the `keepalive()` RPC every second day; it updates the one row in `public.keepalive`. A no-op RPC twice a week did not stop staging from being paused in October 2026, so the ping now writes a real table and runs more often; staging has stayed up on it since. |
+| production | free, EU region, while there are few users (2026-10-19); Pro or self-hosted Supabase on Hetzner (DE/FI) before reminders go live | the same keepalive job, from the unprotected `production-keepalive` environment. The ping cannot revive a project that is already down: production was unreachable from about 2026-10-26 until it was restored on 2026-11-12 (the dashboard showed "coming up"; cause unknown, staging on the same ping stayed up), the keepalive runs were red the whole time and nobody noticed, and Supabase then warned of inactivity. A red run that says "Could not resolve host" needs a look at the dashboard that day. Free has no backups, so dump the waitlist yourself. A paused production project would silently stop every reminder, so move to Pro before reminders ship. |
 
 Self-hosting is the fully-EU route: the Supabase Docker stack on a Hetzner
 VPS (Falkenstein or Helsinki) with the same migrations and functions; the
