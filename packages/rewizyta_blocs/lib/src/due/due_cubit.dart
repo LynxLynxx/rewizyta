@@ -7,11 +7,13 @@ import 'package:rewizyta_services/rewizyta_services.dart';
 import 'package:rewizyta_view_models/rewizyta_view_models.dart';
 
 /// The due list (Terminy): clients overdue or due within 60 days. Reactive
-/// like the client list, so a visit saved anywhere moves the row.
+/// like the client list, so a visit saved anywhere moves the row and a
+/// booking made anywhere tags it.
 class DueCubit(
   final ClientsService _clientsService,
   final EquipmentService _equipmentService,
-  final CatalogService _catalogService, {
+  final CatalogService _catalogService,
+  final AppointmentsService _appointmentsService, {
   DateTime Function()? now,
 }) extends Cubit<DueState>
     with SubscriptionManagerMixin<DueState>, BlocErrorEmitterMixin<DueState> {
@@ -21,6 +23,7 @@ class DueCubit(
   List<Client>? _clients;
   List<Equipment>? _equipment;
   List<ServiceType>? _serviceTypes;
+  Map<String, Appointment>? _bookings;
 
   void init() {
     subscribe(#clients, _clientsService.watchClients(), (clients) {
@@ -35,6 +38,10 @@ class DueCubit(
       _serviceTypes = types;
       _emitItems();
     }, onError: _onError);
+    subscribe(#bookings, _appointmentsService.watchOpenBookings(), (bookings) {
+      _bookings = bookings;
+      _emitItems();
+    }, onError: _onError);
   }
 
   /// The "Cofnij" after a client is deleted on its card.
@@ -46,12 +53,19 @@ class DueCubit(
     }
   }
 
-  /// Waits for all three streams, so a row never shows half filled.
+  /// Waits for all four streams, so a row never shows half filled.
   void _emitItems() {
     final clients = _clients;
     final equipment = _equipment;
     final serviceTypes = _serviceTypes;
-    if (isClosed || clients == null || equipment == null || serviceTypes == null) return;
+    final bookings = _bookings;
+    if (isClosed ||
+        clients == null ||
+        equipment == null ||
+        serviceTypes == null ||
+        bookings == null) {
+      return;
+    }
     final today = calendarDay(_now());
     final byClient = <String, List<Equipment>>{};
     for (final item in equipment) {
@@ -64,6 +78,7 @@ class DueCubit(
           equipment: byClient[client.id] ?? const [],
           serviceTypes: serviceTypes,
           today: today,
+          bookingAt: bookings[client.id]?.startsAt,
         ),
     ];
     // Most overdue first, soonest first; [DueStatusViewModel.count] is days

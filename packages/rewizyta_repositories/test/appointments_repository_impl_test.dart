@@ -138,6 +138,21 @@ void main() {
     expect(list.map((a) => a.id), ['a1']);
   });
 
+  test('watchPlanned returns every live planned appointment, earliest first', () async {
+    await repository.upsert(appointment(id: 'late', startsAt: DateTime.utc(2026, 11, 2)));
+    await repository.upsert(appointment(id: 'b-tie', startsAt: DateTime.utc(2026, 11, 2)));
+    await repository.upsert(
+      appointment(id: 'early', clientId: 'c2', startsAt: DateTime.utc(2026, 10)),
+    );
+    await repository.upsert(appointment(id: 'cancelled', status: AppointmentStatus.cancelled));
+    await repository.upsert(appointment(id: 'done', status: AppointmentStatus.done));
+    await repository.upsert(appointment(id: 'noShow', status: AppointmentStatus.noShow));
+    await repository.upsert(appointment(id: 'gone', deletedAt: t0));
+
+    final list = await repository.watchPlanned().first;
+    expect(list.map((a) => a.id), ['early', 'b-tie', 'late']);
+  });
+
   test("watchByClient lists the client's live appointments, latest first", () async {
     await repository.upsert(appointment(startsAt: DateTime.utc(2026, 10)));
     await repository.upsert(appointment(id: 'a2', startsAt: DateTime.utc(2026, 11)));

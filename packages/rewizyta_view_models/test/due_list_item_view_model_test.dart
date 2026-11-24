@@ -69,6 +69,22 @@ void main() {
     expect(vm.subtitle(l10n), 'Nysa · Przegląd przewodów kominowych, Kocioł');
   });
 
+  test('carries the booking time through and compares by it', () {
+    final at = DateTime.utc(2026, 11, 5, 8);
+    final items = [equipment('e1', 's1', DateTime.utc(2026, 10, 30))];
+    final booked = DueListItemViewModel.fromDomain(
+      client,
+      equipment: items,
+      serviceTypes: [chimney],
+      today: today,
+      bookingAt: at,
+    )!;
+
+    expect(booked.bookingAt, at);
+    expect(build(items)!.bookingAt, isNull);
+    expect(booked, isNot(build(items)));
+  });
+
   test('is null when nothing is due within 60 days', () {
     expect(build([]), isNull);
     expect(build([equipment('e1', 's1', null)]), isNull);

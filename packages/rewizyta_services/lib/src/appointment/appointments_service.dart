@@ -7,6 +7,10 @@ abstract interface class AppointmentsService() {
   /// from local midnight today on, or null.
   Stream<Appointment?> watchOpenBooking(String clientId);
 
+  /// [watchOpenBooking] for every client at once, by client id; a client with
+  /// nothing open is absent. For the due list.
+  Stream<Map<String, Appointment>> watchOpenBookings();
+
   /// Books [clientId] at [startsAt]. A client has one open booking, so an
   /// existing one is moved (its route position is cleared, because the day
   /// changed); otherwise a planned appointment of the planner's slot length is
