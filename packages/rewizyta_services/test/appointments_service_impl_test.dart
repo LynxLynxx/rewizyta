@@ -16,6 +16,7 @@ void main() {
 
   Appointment appointment({
     String id = 'a',
+    String clientId = 'c',
     DateTime? startsAt,
     AppointmentStatus status = AppointmentStatus.planned,
     bool isTimeFixed = false,
@@ -23,7 +24,7 @@ void main() {
     DateTime? deletedAt,
   }) => Appointment(
     id: id,
-    clientId: 'c',
+    clientId: clientId,
     startsAt: startsAt ?? DateTime(2026, 11, 13, 9).toUtc(),
     status: status,
     isTimeFixed: isTimeFixed,
@@ -68,6 +69,34 @@ void main() {
       when(() => appointments.watchByClient('c')).thenAnswer((_) => Stream.value([]));
 
       expect(await service.watchOpenBooking('c').first, isNull);
+    });
+  });
+
+  group('watchOpenBookings', () {
+    test('maps each client to its earliest booking from today on', () async {
+      when(appointments.watchPlanned).thenAnswer(
+        (_) => Stream.value([
+          appointment(id: 'yesterday', startsAt: DateTime(2026, 11, 11, 9).toUtc()),
+          appointment(id: 'today', startsAt: DateTime(2026, 11, 12, 8).toUtc()),
+          appointment(id: 'next'),
+          appointment(id: 'other', clientId: 'd'),
+          appointment(
+            id: 'stale',
+            clientId: 'e',
+            startsAt: DateTime(2026, 11, 11, 9).toUtc(),
+          ),
+        ]),
+      );
+
+      final bookings = await service.watchOpenBookings().first;
+
+      expect(bookings.map((id, a) => MapEntry(id, a.id)), {'c': 'today', 'd': 'other'});
+    });
+
+    test('is empty when nothing is planned', () async {
+      when(appointments.watchPlanned).thenAnswer((_) => Stream.value([]));
+
+      expect(await service.watchOpenBookings().first, isEmpty);
     });
   });
 

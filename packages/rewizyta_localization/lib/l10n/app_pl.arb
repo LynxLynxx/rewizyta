@@ -466,11 +466,11 @@
   },
   "bookingOpen": "Umów termin",
   "@bookingOpen": {
-    "description": "Button on the client card that opens the booking sheet when nothing is booked."
+    "description": "Button on the client card and on each due list row that opens the booking sheet when nothing is booked."
   },
   "bookingChange": "Zmień termin",
   "@bookingChange": {
-    "description": "Button on the client card and title of the booking sheet when the client already has a booking."
+    "description": "Button on the client card and on each due list row, and title of the booking sheet, when the client already has a booking."
   },
   "bookingDayCount": "{count} wiz.",
   "@bookingDayCount": {
@@ -524,7 +524,7 @@
   },
   "bookingTag": "umówiony {when}",
   "@bookingTag": {
-    "description": "Tag on the client card; {when} is like 'pn 29.09, 09:30'.",
+    "description": "Tag on the client card and the due list row; {when} is like 'pn 29.09, 09:30'.",
     "placeholders": {
       "when": {
         "type": "String"

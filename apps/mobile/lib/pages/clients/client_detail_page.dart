@@ -7,6 +7,7 @@ import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/handlers/signal_handler_state_mixin.dart';
 import 'package:rewizyta/common/launch_external.dart';
 import 'package:rewizyta/common/widgets/back_link.dart';
+import 'package:rewizyta/common/widgets/booking_tag.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
 import 'package:rewizyta/pages/booking/booking_sheet.dart';
 import 'package:rewizyta/pages/visits/visit_sheet.dart';
@@ -149,7 +150,7 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
             runSpacing: AppSpacing.xs,
             children: [
               if (client.status != null) DueStatusTag(status: client.status!),
-              if (client.bookingAt != null) _BookingTag(startsAt: client.bookingAt!),
+              if (client.bookingAt != null) BookingTag(startsAt: client.bookingAt!),
             ],
           ),
         ],
@@ -198,30 +199,6 @@ class const _ClientCard({required final ClientDetailViewModel client}) extends S
           ),
         ),
       ],
-    );
-  }
-}
-
-/// "umówiony pn 29.09, 09:30", in the same shape as the due status tag.
-class const _BookingTag({required final DateTime startsAt}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.doneBackground,
-        borderRadius: BorderRadius.circular(AppRadius.tag),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-        child: Text(
-          context.l10n.bookingTag(formatBooking(context.l10n, startsAt)),
-          style: context.textTheme.labelMedium?.copyWith(
-            color: colors.doneForeground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
     );
   }
 }

@@ -4,7 +4,9 @@ import 'package:rewizyta/app/theme/app_colors.dart';
 import 'package:rewizyta/app/theme/app_theme.dart';
 import 'package:rewizyta/common/handlers/error_handler_state_mixin.dart';
 import 'package:rewizyta/common/launch_external.dart';
+import 'package:rewizyta/common/widgets/booking_tag.dart';
 import 'package:rewizyta/common/widgets/due_status_tag.dart';
+import 'package:rewizyta/pages/booking/booking_sheet.dart';
 import 'package:rewizyta/pages/clients/open_client_card.dart';
 import 'package:rewizyta_blocs/rewizyta_blocs.dart';
 import 'package:rewizyta_localization/rewizyta_localization.dart';
@@ -115,7 +117,8 @@ class const _DueRow({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final subtitle = item.subtitle(context.l10n);
+    final l10n = context.l10n;
+    final subtitle = item.subtitle(l10n);
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: context.colorScheme.outlineVariant)),
@@ -127,7 +130,20 @@ class const _DueRow({
           children: [
             if (subtitle != null) Text(subtitle),
             const SizedBox(height: AppSpacing.xs),
-            DueStatusTag(status: item.status),
+            // A Wrap, so the button drops to its own line at large font sizes.
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                DueStatusTag(status: item.status),
+                if (item.bookingAt != null) BookingTag(startsAt: item.bookingAt!),
+                TextButton(
+                  onPressed: () => BookingSheet.show(context, clientId: item.id),
+                  child: Text(item.bookingAt == null ? l10n.bookingOpen : l10n.bookingChange),
+                ),
+              ],
+            ),
           ],
         ),
         trailing: item.phone == null
@@ -139,7 +155,7 @@ class const _DueRow({
                   minimumSize: const Size(48, 48),
                 ),
                 onPressed: () => launchExternal(context, Uri(scheme: 'tel', path: item.phone)),
-                child: Text(context.l10n.dueCall),
+                child: Text(l10n.dueCall),
               ),
         onTap: () => onOpen(item.id),
       ),

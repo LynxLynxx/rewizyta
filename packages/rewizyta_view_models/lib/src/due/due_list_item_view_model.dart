@@ -16,6 +16,10 @@ final class const DueListItemViewModel({
 
   /// The service types of the equipment that is due, each once.
   final List<ServiceTypeViewModel> services = const [],
+
+  /// When the client's open booking starts, for the "umówiony" tag; null when
+  /// nothing is booked.
+  final DateTime? bookingAt,
 }) with Equatable {
   /// Null when nothing of the client's is due within 60 days, so the client
   /// does not belong on the list.
@@ -24,6 +28,7 @@ final class const DueListItemViewModel({
     required List<Equipment> equipment,
     required List<ServiceType> serviceTypes,
     required DateTime today,
+    DateTime? bookingAt,
   }) {
     final status = DueStatusViewModel.ofClient(equipment, today);
     if (status == null || !status.isDue) return null;
@@ -41,6 +46,7 @@ final class const DueListItemViewModel({
         for (final type in serviceTypes)
           if (dueTypeIds.contains(type.id)) ServiceTypeViewModel.fromDomain(type),
       ],
+      bookingAt: bookingAt,
     );
   }
 
@@ -52,5 +58,5 @@ final class const DueListItemViewModel({
   }
 
   @override
-  List<Object?> get props => [id, name, status, town, phone, services];
+  List<Object?> get props => [id, name, status, town, phone, services, bookingAt];
 }

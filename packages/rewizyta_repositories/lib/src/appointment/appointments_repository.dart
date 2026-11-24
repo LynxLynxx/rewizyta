@@ -14,6 +14,10 @@ abstract interface class AppointmentsRepository() {
   /// The current value of [watchStopsBetween].
   Future<List<DayStop>> findStopsBetween(DateTime from, DateTime to);
 
+  /// Every live planned appointment, earliest first, whatever its date: the
+  /// open bookings on the due list.
+  Stream<List<Appointment>> watchPlanned();
+
   /// The client's live appointments, latest first.
   Stream<List<Appointment>> watchByClient(String clientId);
 

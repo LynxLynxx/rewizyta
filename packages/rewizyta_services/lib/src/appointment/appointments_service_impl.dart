@@ -21,6 +21,21 @@ final class AppointmentsServiceImpl(
   Stream<Appointment?> watchOpenBooking(String clientId) =>
       _appointments.watchByClient(clientId).map(_openBooking);
 
+  /// "Today" is read on each emission, so after midnight yesterday's
+  /// unrecorded booking keeps its tag until the next write; the same limit as
+  /// [watchOpenBooking].
+  @override
+  Stream<Map<String, Appointment>> watchOpenBookings() =>
+      _appointments.watchPlanned().map((planned) {
+        final byClient = <String, List<Appointment>>{};
+        for (final appointment in planned) {
+          (byClient[appointment.clientId] ??= []).add(appointment);
+        }
+        return {
+          for (final MapEntry(:key, :value) in byClient.entries) key: ?_openBooking(value),
+        };
+      });
+
   @override
   Future<Appointment> book({
     required String clientId,

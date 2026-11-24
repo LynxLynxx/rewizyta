@@ -55,6 +55,14 @@ final class const AppointmentsRepositoryImpl(final AppDatabase _db)
   }
 
   @override
+  Stream<List<Appointment>> watchPlanned() {
+    final query = _db.select(_db.appointments)
+      ..where((a) => a.deletedAt.isNull() & a.status.equalsValue(AppointmentStatus.planned))
+      ..orderBy([(a) => OrderingTerm.asc(a.startsAt), (a) => OrderingTerm.asc(a.id)]);
+    return query.watch().map((rows) => rows.map((row) => row.toDomain()).toList());
+  }
+
+  @override
   Stream<List<Appointment>> watchByClient(String clientId) =>
       _byClient(clientId).watch().map((rows) => rows.map((row) => row.toDomain()).toList());
 
