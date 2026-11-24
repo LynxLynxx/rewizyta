@@ -11,6 +11,7 @@ final class VisitsServiceImpl(
   final VisitItemsRepository _visitItems,
   EquipmentRepository equipment,
   ServiceTypesRepository serviceTypes,
+  final AppointmentsRepository _appointments,
   final TransactionRunner _transaction, {
   DateTime Function()? now,
   Uuid? uuid,
@@ -54,17 +55,26 @@ final class VisitsServiceImpl(
     final now = _now();
     return _transaction.run(() async {
       final existing = id == null ? null : await _find(id);
+      final booking = await _bookingOf(
+        clientId: clientId,
+        doneAt: doneAt,
+        appointmentId: appointmentId,
+        isNew: existing == null,
+      );
       final visit = Visit(
         id: existing?.id ?? _uuid.v4(),
         clientId: clientId,
         doneAt: DateTime.utc(doneAt.year, doneAt.month, doneAt.day),
         priceGrosze: priceGrosze,
         note: cleanText(note),
-        appointmentId: appointmentId,
+        appointmentId: appointmentId ?? booking?.id,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );
       await _visits.upsert(visit);
+      if (booking != null) {
+        await _setBookingStatus(booking, AppointmentStatus.done, now);
+      }
 
       final items = existing == null
           ? const <VisitItem>[]
@@ -118,7 +128,53 @@ final class VisitsServiceImpl(
       );
       final items = await _visitItems.findByVisit(id);
       await _due.updateEquipment(items.map((item) => item.equipmentId), now);
+      final bookingId = visit.appointmentId;
+      final booking = bookingId == null ? null : await _appointments.find(bookingId);
+      if (booking != null) {
+        await _setBookingStatus(
+          booking,
+          deleted ? AppointmentStatus.planned : AppointmentStatus.done,
+          now,
+        );
+      }
     });
+  }
+
+  /// The booking a visit fulfils: the one it names, or for a new visit the
+  /// client's earliest planned appointment on the visit's day, so a visit
+  /// recorded from the card does not leave its booking open.
+  Future<Appointment?> _bookingOf({
+    required String clientId,
+    required DateTime doneAt,
+    required String? appointmentId,
+    required bool isNew,
+  }) async {
+    if (appointmentId != null) {
+      return await _appointments.find(appointmentId);
+    }
+    if (!isNew) {
+      return null;
+    }
+    final sameDay = [
+      for (final appointment in await _appointments.findByClient(clientId))
+        if (appointment.status == AppointmentStatus.planned &&
+            _isOn(appointment.startsAt.toLocal(), doneAt))
+          appointment,
+    ]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    return sameDay.firstOrNull;
+  }
+
+  bool _isOn(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// A recorded visit marks its planned booking done; deleting the visit puts
+  /// a done one back to planned. Any other status (cancelled, no-show) is the
+  /// technician's own word and stays.
+  Future<void> _setBookingStatus(Appointment booking, AppointmentStatus to, DateTime now) async {
+    final from = to == AppointmentStatus.done ? AppointmentStatus.planned : AppointmentStatus.done;
+    if (booking.isDeleted || booking.status != from) {
+      return;
+    }
+    await _appointments.upsert(booking.copyWith(status: to, updatedAt: now));
   }
 
   Future<Visit> _find(String id) async {

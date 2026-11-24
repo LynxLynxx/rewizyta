@@ -9,6 +9,10 @@ abstract interface class DayPlanService() {
   /// time and zone are ignored.
   Stream<DayPlan> watchDay(DateTime day);
 
+  /// [count] consecutive plans from [firstDay], one per local day, empty days
+  /// included: the booking sheet's day picker and the week view.
+  Stream<List<DayPlan>> watchDays(DateTime firstDay, int count);
+
   /// "Ułóż trasę najkrócej": writes [DayPlan.optimised]'s order to the route
   /// positions. Writes nothing when the order would not change.
   Future<void> optimiseDay(DateTime day);

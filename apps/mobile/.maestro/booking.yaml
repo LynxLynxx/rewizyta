@@ -1,0 +1,62 @@
+# Journey 3 in docs/APP_FLOW.md from the client card: book an hour, see the
+# "umówiony" tag, move the booking, then cancel it.
+# Starts from an empty database.
+# ASCII input only: Maestro's Android driver cannot type Polish letters.
+# Today's hours that have passed are not offered, so the flow books tomorrow,
+# the second day chip, which always has its whole grid; "\d\d:00" matches an
+# hour chip. The status tag and the booking tag read as one merged node
+# ("bez terminu\numówiony pt 13.11, 08:00"), hence the leading .* in the
+# tag assertions.
+appId: org.rsapps.rewizyta
+name: Booking - book, move, cancel
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Nie masz jeszcze żadnych klientów."
+    timeout: 30000
+
+# A client to book
+- tapOn: "Dodaj klienta"
+- tapOn: "(?s)Imię i nazwisko albo nazwa.*"
+- inputText: "Jan Kowalski"
+- tapOn: "(?s)Telefon.*"
+- inputText: "601234567"
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Zapisz klienta"
+- tapOn: "Zapisz klienta"
+- assertVisible: "Jan Kowalski"
+- assertNotVisible: "(?s).*umówiony.*"
+
+# Book: tomorrow (the second day chip, "wolne" on an empty database) has the
+# whole grid, whatever the clock says, and its first hour is picked
+- tapOn: "Umów termin"
+- assertVisible: "Klient chce dokładnie tę godzinę"
+- tapOn:
+    text: "(?s).*wolne.*"
+    index: 1
+- tapOn: "\\d\\d:00"
+- tapOn: "(?s)Umów na.*"
+- assertVisible: "Umówiono wizytę."
+- assertVisible: "(?s).*umówiony.*"
+- assertNotVisible: "Umów termin"
+
+# Move: the same booking, tomorrow's second hour, still one tag
+- tapOn: "Zmień termin"
+- assertVisible: "Odwołaj wizytę"
+- tapOn:
+    text: "(?s).*wolne.*"
+    index: 1
+- tapOn:
+    text: "\\d\\d:00"
+    index: 1
+- tapOn: "(?s)Umów na.*"
+- assertVisible: "(?s).*umówiony.*"
+
+# Cancel
+- tapOn: "Zmień termin"
+- tapOn: "Odwołaj wizytę"
+- assertVisible: "Odwołano wizytę."
+- assertNotVisible: "(?s).*umówiony.*"
+- assertVisible: "Umów termin"

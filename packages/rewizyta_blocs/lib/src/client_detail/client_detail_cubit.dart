@@ -13,7 +13,8 @@ class ClientDetailCubit(
   final ClientsService _clientsService,
   final EquipmentService _equipmentService,
   final CatalogService _catalogService,
-  final VisitsService _visitsService, {
+  final VisitsService _visitsService,
+  final AppointmentsService _appointmentsService, {
   DateTime Function()? now,
 }) extends Cubit<ClientDetailState>
     with
@@ -28,6 +29,8 @@ class ClientDetailCubit(
   List<ServiceType>? _serviceTypes;
   List<Visit>? _visits;
   List<VisitItem>? _visitItems;
+  bool _hasBookingState = false;
+  Appointment? _booking;
 
   void init(String id) {
     subscribe(#client, _clientsService.watchClient(id), (client) {
@@ -53,6 +56,11 @@ class ClientDetailCubit(
       _visitItems = items;
       _emitClient();
     }, onError: _onError);
+    subscribe(#booking, _appointmentsService.watchOpenBooking(id), (booking) {
+      _hasBookingState = true;
+      _booking = booking;
+      _emitClient();
+    }, onError: _onError);
   }
 
   /// The "Cofnij" after a visit is deleted on the visit sheet.
@@ -76,6 +84,7 @@ class ClientDetailCubit(
       cancelSubscription(#serviceTypes);
       cancelSubscription(#visits);
       cancelSubscription(#visitItems);
+      cancelSubscription(#booking);
       emitSignal(ClientDetailSignal.deleted);
     } on Exception catch (error) {
       emitError(LocalizedException.create(error));
@@ -94,7 +103,8 @@ class ClientDetailCubit(
         equipment == null ||
         serviceTypes == null ||
         visits == null ||
-        visitItems == null) {
+        visitItems == null ||
+        !_hasBookingState) {
       return;
     }
     emit(
@@ -105,6 +115,7 @@ class ClientDetailCubit(
           serviceTypes: serviceTypes,
           visits: visits,
           visitItems: visitItems,
+          booking: _booking,
           today: calendarDay(_now()),
         ),
       ),

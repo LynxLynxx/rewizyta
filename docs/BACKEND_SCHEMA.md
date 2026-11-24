@@ -249,6 +249,18 @@ equipment caches.
 
 Index: `(user_id, starts_at)` for day and week views. "Booked" in the due list
 means a `planned` appointment for the client with `starts_at >= today`.
+
+A client has one open booking: booking again moves it (new `starts_at`,
+`route_position` cleared) instead of adding a row. Status changes:
+
+- `planned` → `done` when a visit is recorded for it, in the same transaction
+  as the visit (`VisitsService.saveVisit`): the visit names it
+  (`visits.appointment_id`), or a new visit takes the client's earliest planned
+  appointment on the visit's day.
+- `done` → `planned` when that visit is deleted, and back to `done` when the
+  delete is undone.
+- `planned` → `cancelled` ("Odwołaj wizytę") and `planned` → `no_show`, set by
+  the technician; a visit never overrides either.
 Travel distance and time between stops are computed on read from
 `clients.lat/lng` and the profile's `travel_speed_kmh`; they are never stored.
 

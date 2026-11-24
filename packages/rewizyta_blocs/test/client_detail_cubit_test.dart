@@ -16,6 +16,8 @@ class MockCatalogService() extends Mock implements CatalogService;
 
 class MockVisitsService() extends Mock implements VisitsService;
 
+class MockAppointmentsService() extends Mock implements AppointmentsService;
+
 void main() {
   final now = DateTime.utc(2026);
   final jan = Client(id: 'c1', name: 'Jan', phone: '+48601234567', createdAt: now, updatedAt: now);
@@ -40,17 +42,20 @@ void main() {
   late MockEquipmentService equipmentService;
   late MockCatalogService catalogService;
   late MockVisitsService visitsService;
+  late MockAppointmentsService appointmentsService;
   late StreamController<Client> client;
   late StreamController<List<Equipment>> equipment;
   late StreamController<List<ServiceType>> serviceTypes;
   late StreamController<List<Visit>> visits;
   late StreamController<List<VisitItem>> visitItems;
+  late StreamController<Appointment?> booking;
 
   ClientDetailCubit build() => ClientDetailCubit(
     service,
     equipmentService,
     catalogService,
     visitsService,
+    appointmentsService,
     now: () => today,
   );
 
@@ -59,6 +64,7 @@ void main() {
     List<Equipment> equipment = const [],
     List<Visit> visits = const [],
     List<VisitItem> visitItems = const [],
+    Appointment? booking,
   ]) => ClientDetailState(
     client: ClientDetailViewModel.fromDomain(
       client,
@@ -66,6 +72,7 @@ void main() {
       serviceTypes: [komin],
       visits: visits,
       visitItems: visitItems,
+      booking: booking,
       today: today,
     ),
   );
@@ -76,6 +83,7 @@ void main() {
     serviceTypes.add([komin]);
     visits.add(const []);
     visitItems.add(const []);
+    booking.add(null);
   }
 
   setUp(() {
@@ -83,11 +91,13 @@ void main() {
     equipmentService = MockEquipmentService();
     catalogService = MockCatalogService();
     visitsService = MockVisitsService();
+    appointmentsService = MockAppointmentsService();
     client = StreamController<Client>.broadcast();
     equipment = StreamController<List<Equipment>>.broadcast();
     serviceTypes = StreamController<List<ServiceType>>.broadcast();
     visits = StreamController<List<Visit>>.broadcast();
     visitItems = StreamController<List<VisitItem>>.broadcast();
+    booking = StreamController<Appointment?>.broadcast();
     when(() => service.watchClient('c1')).thenAnswer((_) => client.stream);
     when(
       () => equipmentService.watchByClient('c1', includeDeleted: true),
@@ -95,6 +105,7 @@ void main() {
     when(catalogService.watchServiceTypes).thenAnswer((_) => serviceTypes.stream);
     when(() => visitsService.watchByClient('c1')).thenAnswer((_) => visits.stream);
     when(() => visitsService.watchItemsByClient('c1')).thenAnswer((_) => visitItems.stream);
+    when(() => appointmentsService.watchOpenBooking('c1')).thenAnswer((_) => booking.stream);
   });
 
   tearDown(() async {
@@ -103,6 +114,7 @@ void main() {
     await serviceTypes.close();
     await visits.close();
     await visitItems.close();
+    await booking.close();
   });
 
   blocTest<ClientDetailCubit, ClientDetailState>(
@@ -126,6 +138,7 @@ void main() {
       client.add(jan);
       visits.add(const []);
       visitItems.add(const []);
+      booking.add(null);
       await Future<void>.delayed(Duration.zero);
       equipment.add([kitchen]);
       await Future<void>.delayed(Duration.zero);
@@ -135,6 +148,38 @@ void main() {
     },
     expect: () => [
       stateOf(jan, [kitchen]),
+      stateOf(jan),
+    ],
+  );
+
+  blocTest<ClientDetailCubit, ClientDetailState>(
+    'waits for the open booking, then follows it',
+    build: build,
+    act: (cubit) async {
+      final planned = Appointment(
+        id: 'a1',
+        clientId: 'c1',
+        startsAt: DateTime.utc(2026, 11, 13, 8),
+        createdAt: now,
+        updatedAt: now,
+      );
+      cubit.init('c1');
+      client.add(jan);
+      equipment.add(const []);
+      serviceTypes.add([komin]);
+      visits.add(const []);
+      visitItems.add(const []);
+      await Future<void>.delayed(Duration.zero);
+      booking.add(planned);
+      await Future<void>.delayed(Duration.zero);
+      booking.add(null);
+    },
+    expect: () => [
+      isA<ClientDetailState>().having(
+        (s) => s.client?.bookingAt,
+        'bookingAt',
+        DateTime.utc(2026, 11, 13, 8),
+      ),
       stateOf(jan),
     ],
   );
@@ -195,6 +240,7 @@ void main() {
       client.add(jan);
       equipment.add([kitchen]);
       serviceTypes.add([komin]);
+      booking.add(null);
       visits.add([done]);
       await Future<void>.delayed(Duration.zero);
       visitItems.add([item]);

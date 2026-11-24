@@ -5,7 +5,9 @@
 # `keepalive()` RPC (supabase/migrations/..._keepalive_heartbeat.sql) through
 # PostgREST every second day; it updates the one row in `public.keepalive`, so
 # the project sees a real table write, and `pinged_at` shows the last ping.
-# (A no-op RPC twice a week did not stop staging from being paused.) Drop the
+# (A no-op RPC twice a week did not stop staging from being paused.) A red run
+# whose log says "Could not resolve host" means the project is down (paused or
+# stuck): check the dashboard the same day, the ping cannot reach it. Drop the
 # production leg once production is on Pro or self-hosted. See docs/TRD.md,
 # "Hosting and the free-tier pause".
 #

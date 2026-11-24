@@ -3,6 +3,7 @@
 library;
 
 export 'src/appointment/appointment.dart';
+export 'src/appointment/appointment_exceptions.dart';
 export 'src/catalog/default_catalog.dart';
 export 'src/catalog/service_type.dart';
 export 'src/catalog/service_type_exceptions.dart';
@@ -18,6 +19,7 @@ export 'src/equipment/equipment.dart';
 export 'src/equipment/equipment_draft.dart';
 export 'src/equipment/equipment_exceptions.dart';
 export 'src/planner/day_plan.dart';
+export 'src/planner/free_slots.dart';
 export 'src/planner/planner_settings.dart';
 export 'src/planner/road_distance.dart';
 export 'src/reminder/reminder.dart';

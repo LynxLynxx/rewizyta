@@ -121,6 +121,9 @@ final class Dependencies._() extends DependencyProvider {
         get<TransactionRunner>(),
       ),
     );
+    registerLazySingleton<AppointmentsService>(
+      () => AppointmentsServiceImpl(get<AppointmentsRepository>(), get<TransactionRunner>()),
+    );
     registerLazySingleton<DayPlanService>(
       () => DayPlanServiceImpl(get<AppointmentsRepository>(), get<TransactionRunner>()),
     );
@@ -130,6 +133,7 @@ final class Dependencies._() extends DependencyProvider {
         get<VisitItemsRepository>(),
         get<EquipmentRepository>(),
         get<ServiceTypesRepository>(),
+        get<AppointmentsRepository>(),
         get<TransactionRunner>(),
       ),
     );
@@ -149,7 +153,11 @@ final class Dependencies._() extends DependencyProvider {
         get<EquipmentService>(),
         get<CatalogService>(),
         get<VisitsService>(),
+        get<AppointmentsService>(),
       ),
+    );
+    registerFactory<BookingCubit>(
+      () => BookingCubit(get<AppointmentsService>(), get<DayPlanService>()),
     );
     registerFactory<ClientFormCubit>(
       () => ClientFormCubit(
